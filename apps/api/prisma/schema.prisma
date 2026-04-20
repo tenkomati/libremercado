@@ -91,6 +91,20 @@ enum MeetingProposalStatus {
   CANCELLED
 }
 
+enum AvailabilitySlotStatus {
+  OPEN
+  SELECTED
+  CANCELLED
+}
+
+enum NotificationType {
+  MEETING_PROPOSED
+  MEETING_RESPONDED
+  AVAILABILITY_ADDED
+  AVAILABILITY_SELECTED
+  ESCROW_MESSAGE
+}
+
 model User {
   id               String              @id @default(cuid())
   email            String              @unique
@@ -112,6 +126,10 @@ model User {
   buyerEscrows     EscrowTransaction[] @relation("EscrowBuyer")
   sellerEscrows    EscrowTransaction[] @relation("EscrowSeller")
   meetingProposals EscrowMeetingProposal[]
+  availabilitySlots EscrowAvailabilitySlot[] @relation("AvailabilityCreatedBy")
+  selectedAvailabilitySlots EscrowAvailabilitySlot[] @relation("AvailabilitySelectedBy")
+  escrowMessages    EscrowMessage[]
+  notifications     UserNotification[]
   adminAuditLogs   AdminAuditLog[]
 
   @@index([status])
@@ -220,10 +238,60 @@ model EscrowTransaction {
   seller              User            @relation("EscrowSeller", fields: [sellerId], references: [id], onDelete: Restrict)
   events              EscrowEvent[]
   meetingProposals    EscrowMeetingProposal[]
+  availabilitySlots   EscrowAvailabilitySlot[]
+  messages            EscrowMessage[]
 
   @@index([buyerId, status])
   @@index([sellerId, status])
   @@index([listingId, status])
+}
+
+model EscrowAvailabilitySlot {
+  id               String                 @id @default(cuid())
+  escrowId         String
+  createdByUserId  String
+  selectedByUserId String?
+  startsAt         DateTime
+  endsAt           DateTime
+  status           AvailabilitySlotStatus @default(OPEN)
+  createdAt        DateTime               @default(now())
+  updatedAt        DateTime               @updatedAt
+  escrow           EscrowTransaction      @relation(fields: [escrowId], references: [id], onDelete: Cascade)
+  createdBy        User                   @relation("AvailabilityCreatedBy", fields: [createdByUserId], references: [id], onDelete: Restrict)
+  selectedBy       User?                  @relation("AvailabilitySelectedBy", fields: [selectedByUserId], references: [id], onDelete: Restrict)
+
+  @@index([escrowId, status])
+  @@index([createdByUserId, startsAt])
+  @@index([selectedByUserId, startsAt])
+}
+
+model EscrowMessage {
+  id           String             @id @default(cuid())
+  escrowId     String
+  senderUserId String
+  body         String
+  createdAt    DateTime           @default(now())
+  escrow       EscrowTransaction  @relation(fields: [escrowId], references: [id], onDelete: Cascade)
+  sender       User               @relation(fields: [senderUserId], references: [id], onDelete: Restrict)
+
+  @@index([escrowId, createdAt])
+  @@index([senderUserId, createdAt])
+}
+
+model UserNotification {
+  id           String           @id @default(cuid())
+  userId       String
+  type         NotificationType
+  title        String
+  body         String
+  resourceType String
+  resourceId   String
+  readAt       DateTime?
+  createdAt    DateTime         @default(now())
+  user         User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, readAt, createdAt])
+  @@index([resourceType, resourceId])
 }
 
 model EscrowMeetingProposal {

@@ -9,8 +9,11 @@ import { formatCurrency, formatDate, formatDateTime } from "../../lib/format";
 import { LogoutButton } from "../admin/logout-button";
 
 import {
+  createAvailabilitySlotAction,
   createMeetingProposalAction,
-  respondMeetingProposalAction
+  respondMeetingProposalAction,
+  selectAvailabilitySlotAction,
+  sendEscrowMessageAction
 } from "./actions";
 
 export const dynamic = "force-dynamic";
@@ -37,6 +40,51 @@ type MeetingProposal = {
     firstName: string;
     lastName: string;
   };
+};
+
+type MeetingSuggestion = {
+  brand: "YPF" | "SHELL" | "AXION";
+  stationName: string;
+  address: string;
+  city: string;
+  province: string;
+  source: "google_maps" | "fallback";
+};
+
+type AvailabilitySlot = {
+  id: string;
+  startsAt: string;
+  endsAt: string;
+  status: string;
+  createdBy: {
+    id: string;
+    firstName: string;
+    lastName: string;
+  };
+  selectedBy: {
+    id: string;
+    firstName: string;
+    lastName: string;
+  } | null;
+};
+
+type EscrowMessage = {
+  id: string;
+  body: string;
+  createdAt: string;
+  sender: {
+    id: string;
+    firstName: string;
+    lastName: string;
+  };
+};
+
+type Notification = {
+  id: string;
+  title: string;
+  body: string;
+  readAt: string | null;
+  createdAt: string;
 };
 
 type AccountUser = {
@@ -69,6 +117,8 @@ type AccountUser = {
     listing: { id: string; title: string };
     seller: { firstName: string; lastName: string };
     meetingProposals: MeetingProposal[];
+    availabilitySlots: AvailabilitySlot[];
+    messages: EscrowMessage[];
   }>;
   sellerEscrows: Array<{
     id: string;
@@ -78,6 +128,8 @@ type AccountUser = {
     listing: { id: string; title: string };
     buyer: { firstName: string; lastName: string };
     meetingProposals: MeetingProposal[];
+    availabilitySlots: AvailabilitySlot[];
+    messages: EscrowMessage[];
   }>;
   kycVerifications: Array<{
     id: string;
@@ -87,6 +139,7 @@ type AccountUser = {
     createdAt: string;
     reviewerNotes: string | null;
   }>;
+  notifications: Notification[];
 };
 
 async function getAccount() {
@@ -108,6 +161,18 @@ async function getAccount() {
   return { token, user };
 }
 
+async function getMeetingSuggestions(token: string, escrowId: string) {
+  try {
+    const response = await apiFetchWithToken<{ items: MeetingSuggestion[] }>(
+      `/escrows/${escrowId}/meeting-suggestions`,
+      token
+    );
+    return response.items;
+  } catch {
+    return [];
+  }
+}
+
 function StatusPill({ label }: { label: string }) {
   return (
     <span className="rounded-full bg-[#eef4ff] px-3 py-1 text-xs font-semibold text-[var(--brand-strong)]">
@@ -119,25 +184,144 @@ function StatusPill({ label }: { label: string }) {
 function MeetingPlanner({
   escrowId,
   currentUserId,
+  role,
   proposals,
+  suggestions,
+  availabilitySlots,
+  messages,
   defaultCity,
   defaultProvince
 }: {
   escrowId: string;
   currentUserId: string;
+  role: "buyer" | "seller";
   proposals: MeetingProposal[];
+  suggestions: MeetingSuggestion[];
+  availabilitySlots: AvailabilitySlot[];
+  messages: EscrowMessage[];
   defaultCity: string;
   defaultProvince: string;
 }) {
+  const openSlots = availabilitySlots.filter((slot) => slot.status === "OPEN");
+
   return (
     <div className="mt-4 rounded-[1.25rem] border border-[rgba(18,107,255,0.12)] bg-white p-4">
       <div>
         <p className="text-sm font-semibold text-[var(--navy)]">Encuentro seguro</p>
         <p className="mt-1 text-xs leading-5 text-[var(--muted)]">
-          Coordiná día, hora y shop de estación de servicio. Por ahora aceptamos
-          YPF, Shell o Axion.
+          El vendedor propone franjas, el comprador elige una o responde con un
+          mensaje. Recomendamos shops YPF, Shell o Axion en un punto intermedio.
         </p>
       </div>
+
+      {suggestions.length > 0 ? (
+        <div className="mt-4 rounded-2xl bg-[#f8fbff] p-3">
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--brand-strong)]">
+            Puntos sugeridos
+          </p>
+          <div className="mt-3 grid gap-2 md:grid-cols-3">
+            {suggestions.map((suggestion, index) => (
+              <form
+                action={createMeetingProposalAction}
+                className="rounded-2xl border border-[var(--surface-border)] bg-white p-3"
+                key={`${suggestion.brand}-${suggestion.stationName}-${index}`}
+              >
+                <input name="escrowId" type="hidden" value={escrowId} />
+                <input name="brand" type="hidden" value={suggestion.brand} />
+                <input name="stationName" type="hidden" value={suggestion.stationName} />
+                <input name="address" type="hidden" value={suggestion.address} />
+                <input name="city" type="hidden" value={suggestion.city} />
+                <input name="province" type="hidden" value={suggestion.province} />
+                <p className="text-sm font-semibold text-[var(--navy)]">
+                  {suggestion.brand} · {suggestion.stationName}
+                </p>
+                <p className="mt-1 min-h-10 text-xs leading-5 text-[var(--muted)]">
+                  {suggestion.address}
+                </p>
+                <p className="mt-1 text-[0.65rem] uppercase tracking-[0.12em] text-[var(--muted)]">
+                  {suggestion.source === "google_maps" ? "Google Maps" : "Fallback local"}
+                </p>
+                <label className="mt-3 grid gap-1 text-xs font-semibold text-[var(--navy)]">
+                  Fecha y hora
+                  <input
+                    className="rounded-2xl border border-[var(--surface-border)] bg-[#f8fbff] px-3 py-2"
+                    name="proposedAt"
+                    required
+                    type="datetime-local"
+                  />
+                </label>
+                <button className="mt-3 w-full rounded-full bg-[var(--navy)] px-3 py-2 text-xs font-semibold text-white" type="submit">
+                  Proponer este punto
+                </button>
+              </form>
+            ))}
+          </div>
+        </div>
+      ) : null}
+
+      {availabilitySlots.length > 0 ? (
+        <div className="mt-4 rounded-2xl bg-[#f8fbff] p-3">
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--brand-strong)]">
+            Franjas del vendedor
+          </p>
+          <div className="mt-3 grid gap-2">
+            {availabilitySlots.map((slot) => (
+              <article className="rounded-2xl bg-white p-3 text-sm" key={slot.id}>
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <p className="font-semibold text-[var(--navy)]">
+                      {formatDateTime(slot.startsAt)} a {formatDateTime(slot.endsAt)}
+                    </p>
+                    <p className="text-xs text-[var(--muted)]">
+                      Creado por {slot.createdBy.firstName} {slot.createdBy.lastName}
+                      {slot.selectedBy
+                        ? ` · elegido por ${slot.selectedBy.firstName} ${slot.selectedBy.lastName}`
+                        : ""}
+                    </p>
+                  </div>
+                  <StatusPill label={slot.status} />
+                </div>
+                {role === "buyer" && slot.status === "OPEN" ? (
+                  <form action={selectAvailabilitySlotAction} className="mt-3 flex flex-wrap gap-2">
+                    <input name="escrowId" type="hidden" value={escrowId} />
+                    <input name="slotId" type="hidden" value={slot.id} />
+                    <input
+                      className="min-w-44 flex-1 rounded-full border border-[var(--surface-border)] bg-white px-3 py-2 text-xs"
+                      name="note"
+                      placeholder="Mensaje opcional para el vendedor"
+                    />
+                    <button className="rounded-full bg-[#059669] px-3 py-2 text-xs font-semibold text-white" type="submit">
+                      Elegir horario
+                    </button>
+                  </form>
+                ) : null}
+              </article>
+            ))}
+          </div>
+        </div>
+      ) : null}
+
+      {role === "seller" ? (
+        <form action={createAvailabilitySlotAction} className="mt-4 grid gap-3 rounded-2xl bg-[#f8fbff] p-3 md:grid-cols-2">
+          <input name="escrowId" type="hidden" value={escrowId} />
+          <label className="grid gap-1 text-xs font-semibold text-[var(--navy)]">
+            Disponible desde
+            <input className="rounded-2xl border border-[var(--surface-border)] bg-white px-3 py-2" name="startsAt" required type="datetime-local" />
+          </label>
+          <label className="grid gap-1 text-xs font-semibold text-[var(--navy)]">
+            Disponible hasta
+            <input className="rounded-2xl border border-[var(--surface-border)] bg-white px-3 py-2" name="endsAt" required type="datetime-local" />
+          </label>
+          <button className="rounded-full bg-[var(--brand-strong)] px-4 py-3 text-sm font-semibold text-white md:col-span-2" type="submit">
+            Pintar franja disponible
+          </button>
+        </form>
+      ) : openSlots.length === 0 ? (
+        <p className="mt-4 rounded-2xl bg-[#fff7ed] p-3 text-xs leading-5 text-[#92400e]">
+          Todavía no hay franjas abiertas del vendedor. Podés escribirle para pedir
+          alternativas.
+        </p>
+      ) : null}
 
       {proposals.length > 0 ? (
         <div className="mt-3 grid gap-2">
@@ -230,12 +414,47 @@ function MeetingPlanner({
           Proponer encuentro seguro
         </button>
       </form>
+
+      <div className="mt-4 rounded-2xl bg-[#f8fbff] p-3">
+        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--brand-strong)]">
+          Mensajes de coordinación
+        </p>
+        {messages.length > 0 ? (
+          <div className="mt-3 grid gap-2">
+            {messages.map((message) => (
+              <article className="rounded-2xl bg-white p-3 text-xs" key={message.id}>
+                <p className="font-semibold text-[var(--navy)]">
+                  {message.sender.firstName} {message.sender.lastName}
+                </p>
+                <p className="mt-1 leading-5 text-[var(--muted)]">{message.body}</p>
+                <p className="mt-2 text-[0.65rem] uppercase tracking-[0.12em] text-[var(--muted)]">
+                  {formatDateTime(message.createdAt)}
+                </p>
+              </article>
+            ))}
+          </div>
+        ) : (
+          <p className="mt-3 text-xs text-[var(--muted)]">Aún no hay mensajes.</p>
+        )}
+        <form action={sendEscrowMessageAction} className="mt-3 flex flex-wrap gap-2">
+          <input name="escrowId" type="hidden" value={escrowId} />
+          <input
+            className="min-w-52 flex-1 rounded-full border border-[var(--surface-border)] bg-white px-3 py-2 text-xs"
+            name="body"
+            placeholder="Ej: No llego a ese horario, puedo 30 minutos después."
+            required
+          />
+          <button className="rounded-full bg-[var(--navy)] px-3 py-2 text-xs font-semibold text-white" type="submit">
+            Enviar
+          </button>
+        </form>
+      </div>
     </div>
   );
 }
 
 export default async function AccountPage({ searchParams }: AccountPageProps) {
-  const [{ user }, params] = await Promise.all([
+  const [{ token, user }, params] = await Promise.all([
     getAccount(),
     (searchParams ?? Promise.resolve({})) as Promise<{
       success?: string;
@@ -243,6 +462,14 @@ export default async function AccountPage({ searchParams }: AccountPageProps) {
     }>
   ]);
   const canCreateListing = user.status === "ACTIVE" && user.kycStatus === "APPROVED";
+  const escrowIds = [...user.buyerEscrows, ...user.sellerEscrows].map((escrow) => escrow.id);
+  const suggestionEntries = await Promise.all(
+    escrowIds.map(async (escrowId) => [
+      escrowId,
+      await getMeetingSuggestions(token, escrowId)
+    ] as const)
+  );
+  const suggestionsByEscrowId = Object.fromEntries(suggestionEntries);
 
   return (
     <main className="mx-auto w-full max-w-7xl px-6 py-8 sm:px-10 lg:px-12">
@@ -328,6 +555,34 @@ export default async function AccountPage({ searchParams }: AccountPageProps) {
               ) : null}
             </div>
           </div>
+
+          <div className="rounded-[1.75rem] border border-[var(--surface-border)] bg-white/85 p-6">
+            <div className="flex items-center justify-between gap-4">
+              <h2 className="text-2xl font-semibold text-[var(--navy)]">Notificaciones</h2>
+              <span className="text-sm text-[var(--muted)]">{user.notifications.length}</span>
+            </div>
+            <div className="mt-4 grid gap-3">
+              {user.notifications.map((notification) => (
+                <article
+                  className="rounded-[1.25rem] border border-[rgba(18,107,255,0.12)] bg-[#f8fbff] p-4"
+                  key={notification.id}
+                >
+                  <p className="text-sm font-semibold text-[var(--navy)]">
+                    {notification.title}
+                  </p>
+                  <p className="mt-1 text-xs leading-5 text-[var(--muted)]">
+                    {notification.body}
+                  </p>
+                  <p className="mt-2 text-[0.65rem] uppercase tracking-[0.12em] text-[var(--muted)]">
+                    {formatDateTime(notification.createdAt)}
+                  </p>
+                </article>
+              ))}
+              {user.notifications.length === 0 ? (
+                <p className="text-sm text-[var(--muted)]">No hay novedades por ahora.</p>
+              ) : null}
+            </div>
+          </div>
         </aside>
 
         <div className="space-y-6">
@@ -383,7 +638,11 @@ export default async function AccountPage({ searchParams }: AccountPageProps) {
                     defaultCity={user.city}
                     defaultProvince={user.province}
                     escrowId={escrow.id}
+                    role="buyer"
                     proposals={escrow.meetingProposals}
+                    suggestions={suggestionsByEscrowId[escrow.id] ?? []}
+                    availabilitySlots={escrow.availabilitySlots}
+                    messages={escrow.messages}
                   />
                 </article>
               ))}
@@ -415,7 +674,11 @@ export default async function AccountPage({ searchParams }: AccountPageProps) {
                     defaultCity={user.city}
                     defaultProvince={user.province}
                     escrowId={escrow.id}
+                    role="seller"
                     proposals={escrow.meetingProposals}
+                    suggestions={suggestionsByEscrowId[escrow.id] ?? []}
+                    availabilitySlots={escrow.availabilitySlots}
+                    messages={escrow.messages}
                   />
                 </article>
               ))}

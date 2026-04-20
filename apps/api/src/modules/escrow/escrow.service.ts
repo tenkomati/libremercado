@@ -4,11 +4,13 @@ import {
   NotFoundException
 } from "@nestjs/common";
 import {
+  AvailabilitySlotStatus,
   EscrowEventType,
   EscrowStatus,
   KycStatus,
   ListingStatus,
   MeetingProposalStatus,
+  NotificationType,
   Prisma
 } from "@prisma/client";
 
@@ -22,19 +24,24 @@ import { ListingsService } from "../listings/listings.service";
 import { PrismaService } from "../prisma/prisma.service";
 import { UsersService } from "../users/users.service";
 
+import { CreateAvailabilitySlotDto } from "./dto/create-availability-slot.dto";
+import { CreateEscrowMessageDto } from "./dto/create-escrow-message.dto";
 import { CreateEscrowDto } from "./dto/create-escrow.dto";
 import { CreateMeetingProposalDto } from "./dto/create-meeting-proposal.dto";
 import { ListEscrowsQueryDto } from "./dto/list-escrows-query.dto";
 import { MarkEscrowShippedDto } from "./dto/mark-escrow-shipped.dto";
 import { OpenDisputeDto } from "./dto/open-dispute.dto";
 import { RespondMeetingProposalDto } from "./dto/respond-meeting-proposal.dto";
+import { SelectAvailabilitySlotDto } from "./dto/select-availability-slot.dto";
+import { GoogleMapsService } from "./google-maps.service";
 
 @Injectable()
 export class EscrowService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly usersService: UsersService,
-    private readonly listingsService: ListingsService
+    private readonly listingsService: ListingsService,
+    private readonly googleMapsService: GoogleMapsService
   ) {}
 
   async createEscrow(dto: CreateEscrowDto) {
@@ -194,6 +201,42 @@ export class EscrowService {
             orderBy: {
               proposedAt: "asc"
             }
+          },
+          availabilitySlots: {
+            include: {
+              createdBy: {
+                select: {
+                  id: true,
+                  firstName: true,
+                  lastName: true
+                }
+              },
+              selectedBy: {
+                select: {
+                  id: true,
+                  firstName: true,
+                  lastName: true
+                }
+              }
+            },
+            orderBy: {
+              startsAt: "asc"
+            }
+          },
+          messages: {
+            include: {
+              sender: {
+                select: {
+                  id: true,
+                  firstName: true,
+                  lastName: true
+                }
+              }
+            },
+            orderBy: {
+              createdAt: "asc"
+            },
+            take: 30
           }
         },
         orderBy: {
@@ -240,6 +283,41 @@ export class EscrowService {
           orderBy: {
             proposedAt: "asc"
           }
+        },
+        availabilitySlots: {
+          include: {
+            createdBy: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true
+              }
+            },
+            selectedBy: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true
+              }
+            }
+          },
+          orderBy: {
+            startsAt: "asc"
+          }
+        },
+        messages: {
+          include: {
+            sender: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true
+              }
+            }
+          },
+          orderBy: {
+            createdAt: "asc"
+          }
         }
       }
     });
@@ -273,7 +351,7 @@ export class EscrowService {
       throw new BadRequestException("Meeting date must be in the future");
     }
 
-    return this.prisma.escrowMeetingProposal.create({
+    const proposal = await this.prisma.escrowMeetingProposal.create({
       data: {
         escrowId,
         createdByUserId: user.sub,
@@ -294,6 +372,16 @@ export class EscrowService {
         }
       }
     });
+
+    await this.notifyCounterparty(escrow, user.sub, {
+      type: NotificationType.MEETING_PROPOSED,
+      title: "Nueva propuesta de encuentro",
+      body: `${dto.brand} · ${dto.stationName} para coordinar la entrega segura.`,
+      resourceType: "escrow",
+      resourceId: escrowId
+    });
+
+    return proposal;
   }
 
   async respondMeetingProposal(
@@ -328,7 +416,7 @@ export class EscrowService {
       throw new BadRequestException("Meeting proposal is not pending");
     }
 
-    return this.prisma.escrowMeetingProposal.update({
+    const updatedProposal = await this.prisma.escrowMeetingProposal.update({
       where: { id: proposalId },
       data: {
         status: dto.status,
@@ -345,6 +433,210 @@ export class EscrowService {
         }
       }
     });
+
+    await this.createNotification({
+      userId: proposal.createdByUserId,
+      type: NotificationType.MEETING_RESPONDED,
+      title:
+        dto.status === MeetingProposalStatus.ACCEPTED
+          ? "Encuentro aceptado"
+          : "Encuentro rechazado",
+      body: dto.responseNote ?? "La otra parte respondió tu propuesta de encuentro.",
+      resourceType: "escrow",
+      resourceId: escrowId
+    });
+
+    return updatedProposal;
+  }
+
+  async getMeetingSuggestions(
+    escrowId: string,
+    user: { sub: string; role: string }
+  ) {
+    const escrow = await this.getEscrowById(escrowId);
+    this.ensureCanOperateEscrow(escrow, user);
+
+    return {
+      items: await this.googleMapsService.getFuelStationSuggestions({
+        buyer: {
+          city: escrow.buyer.city,
+          province: escrow.buyer.province
+        },
+        seller: {
+          city: escrow.seller.city,
+          province: escrow.seller.province
+        }
+      })
+    };
+  }
+
+  async createAvailabilitySlot(
+    escrowId: string,
+    dto: CreateAvailabilitySlotDto,
+    user: { sub: string; role: string }
+  ) {
+    const escrow = await this.getEscrowById(escrowId);
+    this.ensureCanOperateEscrow(escrow, user);
+
+    if (user.role === "USER" && escrow.sellerId !== user.sub) {
+      throw new BadRequestException("Only the seller can publish availability");
+    }
+
+    this.ensureActiveMeetingEscrow(escrow);
+
+    const startsAt = new Date(dto.startsAt);
+    const endsAt = new Date(dto.endsAt);
+
+    if (Number.isNaN(startsAt.getTime()) || startsAt <= new Date()) {
+      throw new BadRequestException("Availability must start in the future");
+    }
+
+    if (Number.isNaN(endsAt.getTime()) || endsAt <= startsAt) {
+      throw new BadRequestException("Availability end must be after start");
+    }
+
+    const slot = await this.prisma.escrowAvailabilitySlot.create({
+      data: {
+        escrowId,
+        createdByUserId: user.sub,
+        startsAt,
+        endsAt
+      },
+      include: {
+        createdBy: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true
+          }
+        },
+        selectedBy: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true
+          }
+        }
+      }
+    });
+
+    await this.createNotification({
+      userId: escrow.buyerId,
+      type: NotificationType.AVAILABILITY_ADDED,
+      title: "El vendedor propuso horarios",
+      body: "Ya podés elegir una franja para coordinar el encuentro seguro.",
+      resourceType: "escrow",
+      resourceId: escrowId
+    });
+
+    return slot;
+  }
+
+  async selectAvailabilitySlot(
+    escrowId: string,
+    slotId: string,
+    dto: SelectAvailabilitySlotDto,
+    user: { sub: string; role: string }
+  ) {
+    const escrow = await this.getEscrowById(escrowId);
+    this.ensureCanOperateEscrow(escrow, user);
+
+    if (user.role === "USER" && escrow.buyerId !== user.sub) {
+      throw new BadRequestException("Only the buyer can select seller availability");
+    }
+
+    const slot = await this.prisma.escrowAvailabilitySlot.findUnique({
+      where: { id: slotId }
+    });
+
+    if (!slot || slot.escrowId !== escrowId) {
+      throw new NotFoundException(`Availability slot ${slotId} not found`);
+    }
+
+    if (slot.status !== AvailabilitySlotStatus.OPEN) {
+      throw new BadRequestException("Availability slot is not open");
+    }
+
+    const updatedSlot = await this.prisma.escrowAvailabilitySlot.update({
+      where: { id: slotId },
+      data: {
+        status: AvailabilitySlotStatus.SELECTED,
+        selectedByUserId: user.sub
+      },
+      include: {
+        createdBy: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true
+          }
+        },
+        selectedBy: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true
+          }
+        }
+      }
+    });
+
+    if (dto.note) {
+      await this.prisma.escrowMessage.create({
+        data: {
+          escrowId,
+          senderUserId: user.sub,
+          body: dto.note
+        }
+      });
+    }
+
+    await this.createNotification({
+      userId: escrow.sellerId,
+      type: NotificationType.AVAILABILITY_SELECTED,
+      title: "El comprador eligió un horario",
+      body: dto.note ?? "Revisá la coordinación del encuentro seguro.",
+      resourceType: "escrow",
+      resourceId: escrowId
+    });
+
+    return updatedSlot;
+  }
+
+  async sendMessage(
+    escrowId: string,
+    dto: CreateEscrowMessageDto,
+    user: { sub: string; role: string }
+  ) {
+    const escrow = await this.getEscrowById(escrowId);
+    this.ensureCanOperateEscrow(escrow, user);
+
+    const message = await this.prisma.escrowMessage.create({
+      data: {
+        escrowId,
+        senderUserId: user.sub,
+        body: dto.body
+      },
+      include: {
+        sender: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true
+          }
+        }
+      }
+    });
+
+    await this.notifyCounterparty(escrow, user.sub, {
+      type: NotificationType.ESCROW_MESSAGE,
+      title: "Nuevo mensaje en la operación",
+      body: dto.body,
+      resourceType: "escrow",
+      resourceId: escrowId
+    });
+
+    return message;
   }
 
   private ensureCanOperateEscrow(
@@ -358,6 +650,47 @@ export class EscrowService {
     if (escrow.buyerId !== user.sub && escrow.sellerId !== user.sub) {
       throw new BadRequestException("Users can only operate their own escrow");
     }
+  }
+
+  private ensureActiveMeetingEscrow(escrow: { status: EscrowStatus }) {
+    if (
+      escrow.status !== EscrowStatus.FUNDS_HELD &&
+      escrow.status !== EscrowStatus.SHIPPED &&
+      escrow.status !== EscrowStatus.DELIVERED
+    ) {
+      throw new BadRequestException("Meeting can only be coordinated for active escrows");
+    }
+  }
+
+  private async notifyCounterparty(
+    escrow: { buyerId: string; sellerId: string },
+    actorUserId: string,
+    data: Omit<Prisma.UserNotificationUncheckedCreateInput, "id" | "userId" | "createdAt">
+  ) {
+    const userId =
+      actorUserId === escrow.buyerId
+        ? escrow.sellerId
+        : actorUserId === escrow.sellerId
+          ? escrow.buyerId
+          : null;
+
+    if (!userId) {
+      return;
+    }
+
+    await this.createNotification({
+      ...data,
+      userId
+    });
+  }
+
+  private createNotification(data: Prisma.UserNotificationUncheckedCreateInput) {
+    return this.prisma.userNotification.create({
+      data: {
+        ...data,
+        body: data.body.length > 220 ? `${data.body.slice(0, 217)}...` : data.body
+      }
+    });
   }
 
   async markShipped(id: string, dto: MarkEscrowShippedDto) {

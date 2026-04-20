@@ -239,3 +239,83 @@ export async function respondMeetingProposalAction(formData: FormData) {
     status === "ACCEPTED" ? "Encuentro seguro aceptado." : "Encuentro seguro rechazado."
   );
 }
+
+export async function createAvailabilitySlotAction(formData: FormData) {
+  const { token } = await getSessionToken();
+  const escrowId = String(formData.get("escrowId"));
+  const returnTo = "/account";
+
+  const response = await fetch(`${API_URL}/escrows/${escrowId}/availability-slots`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      startsAt: formData.get("startsAt"),
+      endsAt: formData.get("endsAt")
+    }),
+    cache: "no-store"
+  });
+
+  if (!response.ok) {
+    redirectWithMessage(returnTo, "error", await getApiError(response));
+  }
+
+  revalidatePath("/account");
+  redirectWithMessage(returnTo, "success", "Disponibilidad publicada para el comprador.");
+}
+
+export async function selectAvailabilitySlotAction(formData: FormData) {
+  const { token } = await getSessionToken();
+  const escrowId = String(formData.get("escrowId"));
+  const slotId = String(formData.get("slotId"));
+  const returnTo = "/account";
+
+  const response = await fetch(
+    `${API_URL}/escrows/${escrowId}/availability-slots/${slotId}/select`,
+    {
+      method: "PATCH",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        note: formData.get("note") || undefined
+      }),
+      cache: "no-store"
+    }
+  );
+
+  if (!response.ok) {
+    redirectWithMessage(returnTo, "error", await getApiError(response));
+  }
+
+  revalidatePath("/account");
+  redirectWithMessage(returnTo, "success", "Horario elegido. El vendedor fue notificado.");
+}
+
+export async function sendEscrowMessageAction(formData: FormData) {
+  const { token } = await getSessionToken();
+  const escrowId = String(formData.get("escrowId"));
+  const returnTo = "/account";
+
+  const response = await fetch(`${API_URL}/escrows/${escrowId}/messages`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      body: formData.get("body")
+    }),
+    cache: "no-store"
+  });
+
+  if (!response.ok) {
+    redirectWithMessage(returnTo, "error", await getApiError(response));
+  }
+
+  revalidatePath("/account");
+  redirectWithMessage(returnTo, "success", "Mensaje enviado.");
+}

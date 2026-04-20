@@ -47,6 +47,10 @@ Modelos relevantes:
 - `Listing`
 - `ListingImage`
 - `EscrowTransaction`
+- `EscrowAvailabilitySlot`
+- `EscrowMeetingProposal`
+- `EscrowMessage`
+- `UserNotification`
 - `EscrowEvent`
 - `AdminAuditLog`
 
@@ -122,6 +126,12 @@ Query params de listado:
 - `POST /escrows`
 - `GET /escrows` -> `ADMIN` / `OPS`
 - `GET /escrows/:id` -> `ADMIN` / `OPS`
+- `GET /escrows/:id/meeting-suggestions`
+- `POST /escrows/:id/meeting-proposals`
+- `PATCH /escrows/:id/meeting-proposals/:proposalId/respond`
+- `POST /escrows/:id/availability-slots`
+- `PATCH /escrows/:id/availability-slots/:slotId/select`
+- `POST /escrows/:id/messages`
 - `PATCH /escrows/:id/ship`
 - `PATCH /escrows/:id/confirm-delivery`
 - `PATCH /escrows/:id/release`
@@ -253,6 +263,12 @@ Implementado con:
 - historial de compras protegidas
 - historial de ventas protegidas
 - propuestas de encuentro seguro por operación protegida
+- sugerencias de puntos intermedios en estaciones YPF/Shell/Axion con Google Maps si hay `GOOGLE_MAPS_API_KEY`
+- fallback local de puntos sugeridos cuando no hay API key o Google Maps falla
+- disponibilidad del vendedor por franjas horarias
+- selección de franja por parte del comprador
+- mensajes de coordinación por operación protegida
+- notificaciones visibles para cambios de encuentro, horarios y mensajes
 - creación de publicación desde frontend
 - edición de publicación propia
 - pausa/reactivación de publicación propia
@@ -277,8 +293,11 @@ Notas:
 - si un HEIC/HEIF puntual no puede decodificarse, el usuario recibe error amigable para exportarlo como JPG.
 - antes de producción, migrar imágenes a storage externo/CDN con límites de ancho de banda.
 - antes de producción, conectar validación documental/biométrica con proveedor real; el MVP no debe aprobar identidad solo por detección local de navegador.
-- encuentros seguros MVP: comprador/vendedor pueden proponer fecha, hora y shop de estación `YPF`, `SHELL` o `AXION`; la contraparte puede aceptar o rechazar.
-- antes de producción, reemplazar carga manual de sucursal por catálogo/geocoding verificado de estaciones y reglas de ventana horaria.
+- encuentros seguros MVP: comprador/vendedor pueden proponer fecha, hora y shop de estación `YPF`, `SHELL` o `AXION`; la contraparte puede aceptar o rechazar con nota.
+- coordinación segura MVP: el vendedor puede "pintar" franjas horarias y el comprador puede elegir una o enviar un mensaje si no le sirve.
+- las notificaciones actuales son persistentes en base de datos y visibles en `/account`; falta canal push/email/WhatsApp para cambios de último momento.
+- `GOOGLE_MAPS_API_KEY` habilita sugerencias reales por Google Maps; sin clave se usa fallback local para mantener el flujo operativo.
+- antes de producción, validar que todos los puntos sugeridos sean shops reales y seguros, guardar place IDs, horarios de atención y auditoría de cambios de último momento.
 
 ### Admin
 
@@ -361,6 +380,10 @@ Cada uno muestra:
 - `apps/web/app/market/[id]/actions.ts`
 - `apps/api/src/modules/escrow/dto/create-meeting-proposal.dto.ts`
 - `apps/api/src/modules/escrow/dto/respond-meeting-proposal.dto.ts`
+- `apps/api/src/modules/escrow/dto/create-availability-slot.dto.ts`
+- `apps/api/src/modules/escrow/dto/select-availability-slot.dto.ts`
+- `apps/api/src/modules/escrow/dto/create-escrow-message.dto.ts`
+- `apps/api/src/modules/escrow/google-maps.service.ts`
 - `apps/web/app/admin/page.tsx`
 - `apps/web/app/admin/actions.ts`
 - `apps/web/app/admin/form-controls.tsx`
@@ -450,6 +473,10 @@ Incluye:
 - tracking visible para comprador/vendedor
 - QR de conformidad para entrega presencial
 - storage externo/CDN para imágenes en producción
+- calendario visual para disponibilidad con drag/select real en vez de campos `datetime-local`
+- notificaciones externas para cambios de último momento: email, push web o WhatsApp/SMS transaccional
+- reglas de reprogramación y no-show para encuentros presenciales
+- integración completa con Google Maps Places: place IDs, distancia estimada, horarios de shop y navegación
 
 ### 3. Compliance/Risk layer
 

@@ -17,12 +17,15 @@ import { Roles } from "../auth/decorators/roles.decorator";
 import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
 import { RolesGuard } from "../auth/guards/roles.guard";
 
+import { CreateAvailabilitySlotDto } from "./dto/create-availability-slot.dto";
+import { CreateEscrowMessageDto } from "./dto/create-escrow-message.dto";
 import { CreateEscrowDto } from "./dto/create-escrow.dto";
 import { CreateMeetingProposalDto } from "./dto/create-meeting-proposal.dto";
 import { ListEscrowsQueryDto } from "./dto/list-escrows-query.dto";
 import { MarkEscrowShippedDto } from "./dto/mark-escrow-shipped.dto";
 import { OpenDisputeDto } from "./dto/open-dispute.dto";
 import { RespondMeetingProposalDto } from "./dto/respond-meeting-proposal.dto";
+import { SelectAvailabilitySlotDto } from "./dto/select-availability-slot.dto";
 import { EscrowService } from "./escrow.service";
 
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -69,6 +72,14 @@ export class EscrowController {
   @Get(":id")
   getEscrow(@Param("id") id: string) {
     return this.escrowService.getEscrowById(id);
+  }
+
+  @Get(":id/meeting-suggestions")
+  getMeetingSuggestions(
+    @Param("id") id: string,
+    @CurrentUser() user: { sub: string; role: UserRole }
+  ) {
+    return this.escrowService.getMeetingSuggestions(id, user);
   }
 
   @Post(":id/meeting-proposals")
@@ -119,6 +130,78 @@ export class EscrowController {
 
         return proposal;
       });
+  }
+
+  @Post(":id/availability-slots")
+  createAvailabilitySlot(
+    @Param("id") id: string,
+    @Body() dto: CreateAvailabilitySlotDto,
+    @CurrentUser() user: { sub: string; role: UserRole }
+  ) {
+    return this.escrowService.createAvailabilitySlot(id, dto, user).then(async (slot) => {
+      await this.auditService.logAction({
+        actorUserId: user.sub,
+        actorRole: user.role,
+        action: "ESCROW_AVAILABILITY_ADDED",
+        resourceType: "escrow",
+        resourceId: id,
+        metadata: {
+          slotId: slot.id,
+          startsAt: slot.startsAt.toISOString(),
+          endsAt: slot.endsAt.toISOString()
+        }
+      });
+
+      return slot;
+    });
+  }
+
+  @Patch(":id/availability-slots/:slotId/select")
+  selectAvailabilitySlot(
+    @Param("id") id: string,
+    @Param("slotId") slotId: string,
+    @Body() dto: SelectAvailabilitySlotDto,
+    @CurrentUser() user: { sub: string; role: UserRole }
+  ) {
+    return this.escrowService
+      .selectAvailabilitySlot(id, slotId, dto, user)
+      .then(async (slot) => {
+        await this.auditService.logAction({
+          actorUserId: user.sub,
+          actorRole: user.role,
+          action: "ESCROW_AVAILABILITY_SELECTED",
+          resourceType: "escrow",
+          resourceId: id,
+          metadata: {
+            slotId: slot.id,
+            startsAt: slot.startsAt.toISOString()
+          }
+        });
+
+        return slot;
+      });
+  }
+
+  @Post(":id/messages")
+  sendMessage(
+    @Param("id") id: string,
+    @Body() dto: CreateEscrowMessageDto,
+    @CurrentUser() user: { sub: string; role: UserRole }
+  ) {
+    return this.escrowService.sendMessage(id, dto, user).then(async (message) => {
+      await this.auditService.logAction({
+        actorUserId: user.sub,
+        actorRole: user.role,
+        action: "ESCROW_MESSAGE_SENT",
+        resourceType: "escrow",
+        resourceId: id,
+        metadata: {
+          messageId: message.id
+        }
+      });
+
+      return message;
+    });
   }
 
   @Roles(UserRole.ADMIN, UserRole.OPS)

@@ -141,6 +141,42 @@ export class UsersService {
               orderBy: {
                 proposedAt: "asc"
               }
+            },
+            availabilitySlots: {
+              include: {
+                createdBy: {
+                  select: {
+                    id: true,
+                    firstName: true,
+                    lastName: true
+                  }
+                },
+                selectedBy: {
+                  select: {
+                    id: true,
+                    firstName: true,
+                    lastName: true
+                  }
+                }
+              },
+              orderBy: {
+                startsAt: "asc"
+              }
+            },
+            messages: {
+              include: {
+                sender: {
+                  select: {
+                    id: true,
+                    firstName: true,
+                    lastName: true
+                  }
+                }
+              },
+              orderBy: {
+                createdAt: "asc"
+              },
+              take: 20
             }
           },
           orderBy: {
@@ -180,11 +216,53 @@ export class UsersService {
               orderBy: {
                 proposedAt: "asc"
               }
+            },
+            availabilitySlots: {
+              include: {
+                createdBy: {
+                  select: {
+                    id: true,
+                    firstName: true,
+                    lastName: true
+                  }
+                },
+                selectedBy: {
+                  select: {
+                    id: true,
+                    firstName: true,
+                    lastName: true
+                  }
+                }
+              },
+              orderBy: {
+                startsAt: "asc"
+              }
+            },
+            messages: {
+              include: {
+                sender: {
+                  select: {
+                    id: true,
+                    firstName: true,
+                    lastName: true
+                  }
+                }
+              },
+              orderBy: {
+                createdAt: "asc"
+              },
+              take: 20
             }
           },
           orderBy: {
             createdAt: "desc"
           }
+        },
+        notifications: {
+          orderBy: {
+            createdAt: "desc"
+          },
+          take: 10
         }
       }
     });
