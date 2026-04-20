@@ -1,0 +1,219 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserStatus {
+  ACTIVE
+  BLOCKED
+  PENDING_REVIEW
+}
+
+enum UserRole {
+  USER
+  OPS
+  ADMIN
+}
+
+enum KycStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  REQUIRES_REVIEW
+}
+
+enum KycDocumentType {
+  DNI
+  CUIL
+  CUIT
+  PASSPORT
+}
+
+enum ListingStatus {
+  DRAFT
+  PUBLISHED
+  RESERVED
+  SOLD
+  PAUSED
+  UNDER_REVIEW
+  REMOVED
+}
+
+enum ListingCondition {
+  NEW
+  LIKE_NEW
+  VERY_GOOD
+  GOOD
+  FAIR
+}
+
+enum CurrencyCode {
+  ARS
+  USD
+}
+
+enum EscrowStatus {
+  FUNDS_PENDING
+  FUNDS_HELD
+  SHIPPED
+  DELIVERED
+  DISPUTED
+  RELEASED
+  CANCELLED
+  REFUNDED
+}
+
+enum EscrowEventType {
+  CREATED
+  FUNDS_HELD
+  SHIPPED
+  DELIVERED
+  DISPUTED
+  RELEASED
+  CANCELLED
+  REFUNDED
+}
+
+model User {
+  id               String              @id @default(cuid())
+  email            String              @unique
+  dni              String              @unique
+  passwordHash     String
+  firstName        String
+  lastName         String
+  phone            String?
+  province         String
+  city             String
+  status           UserStatus          @default(ACTIVE)
+  role             UserRole            @default(USER)
+  kycStatus        KycStatus           @default(PENDING)
+  reputationScore  Decimal             @default(5.0) @db.Decimal(3, 2)
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+  kycVerifications KycVerification[]
+  listings         Listing[]
+  buyerEscrows     EscrowTransaction[] @relation("EscrowBuyer")
+  sellerEscrows    EscrowTransaction[] @relation("EscrowSeller")
+  adminAuditLogs   AdminAuditLog[]
+
+  @@index([status])
+  @@index([role])
+  @@index([kycStatus])
+  @@index([province, city])
+}
+
+model AdminAuditLog {
+  id          String   @id @default(cuid())
+  actorUserId String
+  actorRole   UserRole
+  action      String
+  resourceType String
+  resourceId  String
+  metadata    Json?
+  createdAt   DateTime @default(now())
+  actor       User     @relation(fields: [actorUserId], references: [id], onDelete: Restrict)
+
+  @@index([actorUserId, createdAt])
+  @@index([resourceType, resourceId, createdAt])
+  @@index([createdAt])
+}
+
+model KycVerification {
+  id             String          @id @default(cuid())
+  userId         String
+  provider       String
+  documentType   KycDocumentType
+  documentNumber String
+  status         KycStatus       @default(PENDING)
+  riskScore      Decimal?        @db.Decimal(5, 2)
+  faceMatchScore Decimal?        @db.Decimal(5, 2)
+  reviewerNotes  String?
+  reviewedAt     DateTime?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, status])
+  @@index([provider, documentNumber])
+}
+
+model Listing {
+  id               String              @id @default(cuid())
+  sellerId         String
+  title            String
+  description      String
+  category         String
+  condition        ListingCondition
+  status           ListingStatus       @default(DRAFT)
+  price            Decimal             @db.Decimal(12, 2)
+  currency         CurrencyCode        @default(ARS)
+  locationProvince String
+  locationCity     String
+  aiSuggestedPrice Decimal?            @db.Decimal(12, 2)
+  publishedAt      DateTime?
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+  seller           User                @relation(fields: [sellerId], references: [id], onDelete: Restrict)
+  images           ListingImage[]
+  escrows          EscrowTransaction[]
+
+  @@index([sellerId, status])
+  @@index([category, status])
+  @@index([locationProvince, locationCity, status])
+}
+
+model ListingImage {
+  id        String   @id @default(cuid())
+  listingId String
+  url       String
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  listing   Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  @@index([listingId, sortOrder])
+}
+
+model EscrowTransaction {
+  id                  String          @id @default(cuid())
+  listingId           String
+  buyerId             String
+  sellerId            String
+  amount              Decimal         @db.Decimal(12, 2)
+  feePercentage       Decimal         @db.Decimal(5, 2)
+  feeAmount           Decimal         @db.Decimal(12, 2)
+  netAmount           Decimal         @db.Decimal(12, 2)
+  currency            CurrencyCode    @default(ARS)
+  status              EscrowStatus    @default(FUNDS_HELD)
+  shippingProvider    String
+  shippingTrackingCode String?
+  shippedAt           DateTime?
+  deliveredAt         DateTime?
+  releaseEligibleAt   DateTime?
+  releasedAt          DateTime?
+  disputeReason       String?
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+  listing             Listing         @relation(fields: [listingId], references: [id], onDelete: Restrict)
+  buyer               User            @relation("EscrowBuyer", fields: [buyerId], references: [id], onDelete: Restrict)
+  seller              User            @relation("EscrowSeller", fields: [sellerId], references: [id], onDelete: Restrict)
+  events              EscrowEvent[]
+
+  @@index([buyerId, status])
+  @@index([sellerId, status])
+  @@index([listingId, status])
+}
+
+model EscrowEvent {
+  id        String          @id @default(cuid())
+  escrowId  String
+  type      EscrowEventType
+  payload   Json?
+  createdAt DateTime        @default(now())
+  escrow    EscrowTransaction @relation(fields: [escrowId], references: [id], onDelete: Cascade)
+
+  @@index([escrowId, createdAt])
+}
