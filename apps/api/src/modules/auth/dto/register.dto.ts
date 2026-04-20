@@ -1,8 +1,11 @@
 import {
+  Equals,
   IsEmail,
+  IsBoolean,
   IsOptional,
   IsString,
   Length,
+  Matches,
   MinLength
 } from "class-validator";
 
@@ -38,4 +41,23 @@ export class RegisterDto {
   @IsString()
   @Length(2, 80)
   city!: string;
+
+  @IsString()
+  @Length(1, 300)
+  @Matches(/^\/uploads\/kyc\/.+/)
+  documentFrontImageUrl!: string;
+
+  @IsString()
+  @Length(1, 300)
+  @Matches(/^\/uploads\/kyc\/.+/)
+  documentBackImageUrl!: string;
+
+  @IsString()
+  @Length(1, 300)
+  @Matches(/^\/uploads\/kyc\/.+/)
+  selfieImageUrl!: string;
+
+  @IsBoolean()
+  @Equals(true)
+  identityVerificationConsent!: boolean;
 }

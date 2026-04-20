@@ -6,6 +6,8 @@ import { apiFetchWithToken } from "../../lib/api";
 import { AUTH_COOKIE_NAME, verifySessionToken } from "../../lib/auth";
 import { formatCurrency, formatDate } from "../../lib/format";
 
+import { LogoutButton } from "../admin/logout-button";
+
 export const dynamic = "force-dynamic";
 
 type AccountUser = {
@@ -110,6 +112,7 @@ export default async function AccountPage() {
             <Link href="/market" className="rounded-full border border-white/15 bg-white/10 px-5 py-3 font-semibold">
               Ver market
             </Link>
+            <LogoutButton />
             <Link href="/account/listings/new" className="rounded-full bg-white px-5 py-3 font-semibold text-[var(--navy)]">
               Publicar producto
             </Link>

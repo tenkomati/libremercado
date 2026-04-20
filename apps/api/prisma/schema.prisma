@@ -128,6 +128,10 @@ model KycVerification {
   provider       String
   documentType   KycDocumentType
   documentNumber String
+  documentFrontImageUrl String?
+  documentBackImageUrl  String?
+  selfieImageUrl        String?
+  biometricConsentAt    DateTime?
   status         KycStatus       @default(PENDING)
   riskScore      Decimal?        @db.Decimal(5, 2)
   faceMatchScore Decimal?        @db.Decimal(5, 2)

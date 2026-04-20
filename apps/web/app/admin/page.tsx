@@ -40,6 +40,10 @@ type Verification = {
   status: string;
   documentType: string;
   createdAt: string;
+  documentFrontImageUrl: string | null;
+  documentBackImageUrl: string | null;
+  selfieImageUrl: string | null;
+  biometricConsentAt: string | null;
   reviewerNotes: string | null;
   user: {
     firstName: string;
@@ -693,6 +697,28 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
                   <p className="mt-3 text-sm leading-6 text-[var(--muted)]">
                     {verification.reviewerNotes ?? "Sin observaciones cargadas."}
                   </p>
+                  <div className="mt-3 flex flex-wrap gap-2 text-xs font-semibold">
+                    {verification.documentFrontImageUrl ? (
+                      <a className="rounded-full bg-[#eef4ff] px-3 py-1 text-[var(--brand-strong)]" href={verification.documentFrontImageUrl} target="_blank" rel="noreferrer">
+                        Frente DNI
+                      </a>
+                    ) : null}
+                    {verification.documentBackImageUrl ? (
+                      <a className="rounded-full bg-[#eef4ff] px-3 py-1 text-[var(--brand-strong)]" href={verification.documentBackImageUrl} target="_blank" rel="noreferrer">
+                        Dorso DNI
+                      </a>
+                    ) : null}
+                    {verification.selfieImageUrl ? (
+                      <a className="rounded-full bg-[#eef4ff] px-3 py-1 text-[var(--brand-strong)]" href={verification.selfieImageUrl} target="_blank" rel="noreferrer">
+                        Selfie
+                      </a>
+                    ) : null}
+                    {verification.biometricConsentAt ? (
+                      <span className="rounded-full bg-[#ecfdf5] px-3 py-1 text-[#047857]">
+                        Consentimiento registrado
+                      </span>
+                    ) : null}
+                  </div>
                   <ConfirmForm action={reviewKycAction} className="mt-4 flex flex-wrap gap-2">
                     <input name="verificationId" type="hidden" value={verification.id} />
                     <SubmitButton

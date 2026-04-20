@@ -225,6 +225,7 @@ Implementado con:
 - almacenamiento de JWT en cookie `httpOnly`
 - logout via route handler Next
 - soporte de usuarios comunes y admins/ops con `next`
+- botón visible de cerrar sesión en `/account`
 
 ### DX local
 
@@ -258,16 +259,22 @@ Implementado con:
 - conversión automática de HEIC/HEIF a JPG con `sharp`
 - onboarding público de verificación de identidad con historial de verificaciones
 - copy público más amigable: se usa "verificación de identidad" en lugar de KYC y "pago/compra protegida" en lugar de escrow
+- registro público exige frente de DNI, dorso de DNI, selfie y consentimiento de validación de identidad
+- alta pública crea automáticamente una verificación de identidad `PENDING` asociada al usuario
+- la selfie intenta detección local de rostro si el navegador soporta `FaceDetector`; si no, queda para revisión manual
 
 Notas:
 
 - `POST /kyc/verifications` valida que un usuario común solo pueda iniciar KYC propio.
+- `POST /auth/register` ahora requiere imágenes de identidad subidas previamente a `/api/uploads/kyc-image`.
 - `POST /listings` ya valida que un usuario común solo pueda publicar como vendedor propio.
 - crear publicación sigue exigiendo usuario `ACTIVE` e identidad `APPROVED`, por regla del backend.
 - editar publicación propia permite cambiar datos básicos e imagen principal.
 - la carga de imágenes actual es local/dev: guarda en `apps/web/public/uploads/listings`.
+- la carga de imágenes de identidad actual es local/dev: guarda en `apps/web/public/uploads/kyc`.
 - si un HEIC/HEIF puntual no puede decodificarse, el usuario recibe error amigable para exportarlo como JPG.
 - antes de producción, migrar imágenes a storage externo/CDN con límites de ancho de banda.
+- antes de producción, conectar validación documental/biométrica con proveedor real; el MVP no debe aprobar identidad solo por detección local de navegador.
 
 ### Admin
 
@@ -343,6 +350,7 @@ Cada uno muestra:
 - `apps/web/app/account/listings/[id]/page.tsx`
 - `apps/web/app/account/listings/new/page.tsx`
 - `apps/web/app/account/kyc/page.tsx`
+- `apps/web/app/api/uploads/kyc-image/route.ts`
 - `apps/web/app/api/uploads/listing-image/route.ts`
 - `apps/web/app/market/page.tsx`
 - `apps/web/app/market/[id]/page.tsx`

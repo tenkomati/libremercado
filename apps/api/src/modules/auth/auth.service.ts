@@ -7,10 +7,11 @@ import {
 } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { JwtService } from "@nestjs/jwt";
-import { UserRole } from "@prisma/client";
+import { KycDocumentType, UserRole } from "@prisma/client";
 import { compare, hash } from "bcryptjs";
 
 import { AuditService } from "../audit/audit.service";
+import { PrismaService } from "../prisma/prisma.service";
 import { UsersService } from "../users/users.service";
 
 import { LoginDto } from "./dto/login.dto";
@@ -33,7 +34,8 @@ export class AuthService {
     private readonly usersService: UsersService,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
-    private readonly auditService: AuditService
+    private readonly auditService: AuditService,
+    private readonly prisma: PrismaService
   ) {
     this.accessTokenTtlSeconds = Number(
       this.configService.get<string>("JWT_ACCESS_TOKEN_TTL_SECONDS") ??
@@ -56,15 +58,36 @@ export class AuthService {
 
     const passwordHash = await hash(dto.password, 12);
 
-    const user = await this.usersService.createUser({
-      email: dto.email,
-      dni: dto.dni,
-      passwordHash,
-      firstName: dto.firstName,
-      lastName: dto.lastName,
-      phone: dto.phone,
-      province: dto.province,
-      city: dto.city
+    const user = await this.prisma.$transaction(async (tx) => {
+      const createdUser = await tx.user.create({
+        data: {
+          email: dto.email,
+          dni: dto.dni,
+          passwordHash,
+          firstName: dto.firstName,
+          lastName: dto.lastName,
+          phone: dto.phone,
+          province: dto.province,
+          city: dto.city
+        }
+      });
+
+      await tx.kycVerification.create({
+        data: {
+          userId: createdUser.id,
+          provider: "frontoffice_signup",
+          documentType: KycDocumentType.DNI,
+          documentNumber: dto.dni,
+          documentFrontImageUrl: dto.documentFrontImageUrl,
+          documentBackImageUrl: dto.documentBackImageUrl,
+          selfieImageUrl: dto.selfieImageUrl,
+          biometricConsentAt: new Date(),
+          reviewerNotes:
+            "Alta pública con frente de DNI, dorso de DNI y selfie. Requiere revisión operativa o proveedor biométrico antes de aprobar."
+        }
+      });
+
+      return createdUser;
     });
 
     return this.buildAuthResponse(user);

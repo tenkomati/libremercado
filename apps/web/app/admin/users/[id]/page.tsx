@@ -26,6 +26,10 @@ type KycVerification = {
   status: string;
   riskScore: string | null;
   faceMatchScore: string | null;
+  documentFrontImageUrl: string | null;
+  documentBackImageUrl: string | null;
+  selfieImageUrl: string | null;
+  biometricConsentAt: string | null;
   reviewerNotes: string | null;
   reviewedAt: string | null;
   createdAt: string;
@@ -308,6 +312,28 @@ export default async function UserDetailPage({
                             Risk: {kyc.riskScore} · FaceMatch: {kyc.faceMatchScore ?? "N/A"}
                           </p>
                         ) : null}
+                        <div className="flex flex-wrap gap-2 pt-2 text-xs font-semibold">
+                          {kyc.documentFrontImageUrl ? (
+                            <a className="rounded-full bg-white px-3 py-1 text-[var(--brand-strong)]" href={kyc.documentFrontImageUrl} target="_blank" rel="noreferrer">
+                              Frente DNI
+                            </a>
+                          ) : null}
+                          {kyc.documentBackImageUrl ? (
+                            <a className="rounded-full bg-white px-3 py-1 text-[var(--brand-strong)]" href={kyc.documentBackImageUrl} target="_blank" rel="noreferrer">
+                              Dorso DNI
+                            </a>
+                          ) : null}
+                          {kyc.selfieImageUrl ? (
+                            <a className="rounded-full bg-white px-3 py-1 text-[var(--brand-strong)]" href={kyc.selfieImageUrl} target="_blank" rel="noreferrer">
+                              Selfie
+                            </a>
+                          ) : null}
+                          {kyc.biometricConsentAt ? (
+                            <span className="rounded-full bg-[#ecfdf5] px-3 py-1 text-[#047857]">
+                              Consentimiento registrado
+                            </span>
+                          ) : null}
+                        </div>
                       </div>
                       <div className="text-right text-xs text-[var(--muted)]">
                         <p>{formatDate(kyc.createdAt)}</p>

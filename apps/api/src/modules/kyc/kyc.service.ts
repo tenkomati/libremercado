@@ -38,7 +38,13 @@ export class KycService {
         provider: dto.provider,
         documentType: dto.documentType,
         documentNumber: dto.documentNumber,
-        reviewerNotes: dto.reviewerNotes
+        reviewerNotes: dto.reviewerNotes,
+        documentFrontImageUrl: dto.documentFrontImageUrl,
+        documentBackImageUrl: dto.documentBackImageUrl,
+        selfieImageUrl: dto.selfieImageUrl,
+        biometricConsentAt: dto.biometricConsentAt
+          ? new Date(dto.biometricConsentAt)
+          : undefined
       }
     });
 

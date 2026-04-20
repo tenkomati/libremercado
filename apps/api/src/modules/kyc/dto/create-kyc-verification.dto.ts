@@ -1,5 +1,5 @@
 import { KycDocumentType } from "@prisma/client";
-import { IsEnum, IsOptional, IsString, Length } from "class-validator";
+import { IsDateString, IsEnum, IsOptional, IsString, Length, Matches } from "class-validator";
 
 export class CreateKycVerificationDto {
   @IsString()
@@ -20,4 +20,26 @@ export class CreateKycVerificationDto {
   @IsString()
   @Length(1, 1000)
   reviewerNotes?: string;
+
+  @IsOptional()
+  @IsString()
+  @Length(1, 300)
+  @Matches(/^\/uploads\/kyc\/.+/)
+  documentFrontImageUrl?: string;
+
+  @IsOptional()
+  @IsString()
+  @Length(1, 300)
+  @Matches(/^\/uploads\/kyc\/.+/)
+  documentBackImageUrl?: string;
+
+  @IsOptional()
+  @IsString()
+  @Length(1, 300)
+  @Matches(/^\/uploads\/kyc\/.+/)
+  selfieImageUrl?: string;
+
+  @IsOptional()
+  @IsDateString()
+  biometricConsentAt?: string;
 }
