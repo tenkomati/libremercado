@@ -4,11 +4,40 @@ import { redirect } from "next/navigation";
 
 import { apiFetchWithToken } from "../../lib/api";
 import { AUTH_COOKIE_NAME, verifySessionToken } from "../../lib/auth";
-import { formatCurrency, formatDate } from "../../lib/format";
+import { formatCurrency, formatDate, formatDateTime } from "../../lib/format";
 
 import { LogoutButton } from "../admin/logout-button";
 
+import {
+  createMeetingProposalAction,
+  respondMeetingProposalAction
+} from "./actions";
+
 export const dynamic = "force-dynamic";
+
+type AccountPageProps = {
+  searchParams?: Promise<{
+    success?: string;
+    error?: string;
+  }>;
+};
+
+type MeetingProposal = {
+  id: string;
+  brand: "YPF" | "SHELL" | "AXION";
+  stationName: string;
+  address: string;
+  city: string;
+  province: string;
+  proposedAt: string;
+  status: string;
+  responseNote: string | null;
+  createdBy: {
+    id: string;
+    firstName: string;
+    lastName: string;
+  };
+};
 
 type AccountUser = {
   id: string;
@@ -39,6 +68,7 @@ type AccountUser = {
     createdAt: string;
     listing: { id: string; title: string };
     seller: { firstName: string; lastName: string };
+    meetingProposals: MeetingProposal[];
   }>;
   sellerEscrows: Array<{
     id: string;
@@ -47,6 +77,7 @@ type AccountUser = {
     createdAt: string;
     listing: { id: string; title: string };
     buyer: { firstName: string; lastName: string };
+    meetingProposals: MeetingProposal[];
   }>;
   kycVerifications: Array<{
     id: string;
@@ -85,8 +116,132 @@ function StatusPill({ label }: { label: string }) {
   );
 }
 
-export default async function AccountPage() {
-  const { user } = await getAccount();
+function MeetingPlanner({
+  escrowId,
+  currentUserId,
+  proposals,
+  defaultCity,
+  defaultProvince
+}: {
+  escrowId: string;
+  currentUserId: string;
+  proposals: MeetingProposal[];
+  defaultCity: string;
+  defaultProvince: string;
+}) {
+  return (
+    <div className="mt-4 rounded-[1.25rem] border border-[rgba(18,107,255,0.12)] bg-white p-4">
+      <div>
+        <p className="text-sm font-semibold text-[var(--navy)]">Encuentro seguro</p>
+        <p className="mt-1 text-xs leading-5 text-[var(--muted)]">
+          Coordiná día, hora y shop de estación de servicio. Por ahora aceptamos
+          YPF, Shell o Axion.
+        </p>
+      </div>
+
+      {proposals.length > 0 ? (
+        <div className="mt-3 grid gap-2">
+          {proposals.map((proposal) => {
+            const canRespond =
+              proposal.status === "PENDING" && proposal.createdBy.id !== currentUserId;
+
+            return (
+              <article className="rounded-2xl bg-[#f8fbff] p-3 text-sm" key={proposal.id}>
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <p className="font-semibold text-[var(--navy)]">
+                      {proposal.brand} · {proposal.stationName}
+                    </p>
+                    <p className="text-xs leading-5 text-[var(--muted)]">
+                      {proposal.address}, {proposal.city}, {proposal.province}
+                    </p>
+                    <p className="text-xs leading-5 text-[var(--muted)]">
+                      {formatDateTime(proposal.proposedAt)} · propuesto por{" "}
+                      {proposal.createdBy.firstName} {proposal.createdBy.lastName}
+                    </p>
+                  </div>
+                  <StatusPill label={proposal.status} />
+                </div>
+
+                {canRespond ? (
+                  <form action={respondMeetingProposalAction} className="mt-3 flex flex-wrap gap-2">
+                    <input name="escrowId" type="hidden" value={escrowId} />
+                    <input name="proposalId" type="hidden" value={proposal.id} />
+                    <input
+                      className="min-w-44 flex-1 rounded-full border border-[var(--surface-border)] bg-white px-3 py-2 text-xs"
+                      name="responseNote"
+                      placeholder="Nota opcional"
+                    />
+                    <button
+                      className="rounded-full bg-[#059669] px-3 py-2 text-xs font-semibold text-white"
+                      name="status"
+                      type="submit"
+                      value="ACCEPTED"
+                    >
+                      Aceptar
+                    </button>
+                    <button
+                      className="rounded-full bg-[#dc2626] px-3 py-2 text-xs font-semibold text-white"
+                      name="status"
+                      type="submit"
+                      value="DECLINED"
+                    >
+                      Rechazar
+                    </button>
+                  </form>
+                ) : null}
+              </article>
+            );
+          })}
+        </div>
+      ) : null}
+
+      <form action={createMeetingProposalAction} className="mt-4 grid gap-3 md:grid-cols-2">
+        <input name="escrowId" type="hidden" value={escrowId} />
+        <label className="grid gap-1 text-xs font-semibold text-[var(--navy)]">
+          Estación
+          <select className="rounded-2xl border border-[var(--surface-border)] bg-[#f8fbff] px-3 py-2" name="brand" required>
+            <option value="YPF">YPF</option>
+            <option value="SHELL">Shell</option>
+            <option value="AXION">Axion</option>
+          </select>
+        </label>
+        <label className="grid gap-1 text-xs font-semibold text-[var(--navy)]">
+          Fecha y hora
+          <input className="rounded-2xl border border-[var(--surface-border)] bg-[#f8fbff] px-3 py-2" name="proposedAt" required type="datetime-local" />
+        </label>
+        <label className="grid gap-1 text-xs font-semibold text-[var(--navy)]">
+          Shop / sucursal
+          <input className="rounded-2xl border border-[var(--surface-border)] bg-[#f8fbff] px-3 py-2" name="stationName" placeholder="Ej: YPF Panamericana km 32" required />
+        </label>
+        <label className="grid gap-1 text-xs font-semibold text-[var(--navy)]">
+          Dirección
+          <input className="rounded-2xl border border-[var(--surface-border)] bg-[#f8fbff] px-3 py-2" name="address" placeholder="Av. / calle y altura" required />
+        </label>
+        <label className="grid gap-1 text-xs font-semibold text-[var(--navy)]">
+          Ciudad
+          <input className="rounded-2xl border border-[var(--surface-border)] bg-[#f8fbff] px-3 py-2" defaultValue={defaultCity} name="city" required />
+        </label>
+        <label className="grid gap-1 text-xs font-semibold text-[var(--navy)]">
+          Provincia
+          <input className="rounded-2xl border border-[var(--surface-border)] bg-[#f8fbff] px-3 py-2" defaultValue={defaultProvince} name="province" required />
+        </label>
+        <button className="rounded-full bg-[var(--navy)] px-4 py-3 text-sm font-semibold text-white md:col-span-2" type="submit">
+          Proponer encuentro seguro
+        </button>
+      </form>
+    </div>
+  );
+}
+
+export default async function AccountPage({ searchParams }: AccountPageProps) {
+  const [{ user }, params] = await Promise.all([
+    getAccount(),
+    (searchParams ?? Promise.resolve({})) as Promise<{
+      success?: string;
+      error?: string;
+    }>
+  ]);
   const canCreateListing = user.status === "ACTIVE" && user.kycStatus === "APPROVED";
 
   return (
@@ -113,12 +268,24 @@ export default async function AccountPage() {
               Ver market
             </Link>
             <LogoutButton />
-            <Link href="/account/listings/new" className="rounded-full bg-white px-5 py-3 font-semibold text-[var(--navy)]">
+            <Link href="/account/listings/new" className="rounded-full border border-white bg-white px-5 py-3 font-semibold text-[#082247] shadow-sm">
               Publicar producto
             </Link>
           </div>
         </div>
       </section>
+
+      {params.success ? (
+        <div className="mt-6 rounded-[1.5rem] border border-[rgba(5,150,105,0.18)] bg-[rgba(5,150,105,0.08)] px-5 py-4 text-sm font-medium text-[#065f46]">
+          {params.success}
+        </div>
+      ) : null}
+
+      {params.error ? (
+        <div className="mt-6 rounded-[1.5rem] border border-[rgba(220,38,38,0.18)] bg-[rgba(220,38,38,0.08)] px-5 py-4 text-sm font-medium text-[#991b1b]">
+          {params.error}
+        </div>
+      ) : null}
 
       <section className="mt-8 grid gap-6 lg:grid-cols-[0.85fr_1.15fr]">
         <aside className="space-y-6">
@@ -211,6 +378,13 @@ export default async function AccountPage() {
                       <p className="mt-2 font-semibold text-[var(--navy)]">{formatCurrency(escrow.amount)}</p>
                     </div>
                   </div>
+                  <MeetingPlanner
+                    currentUserId={user.id}
+                    defaultCity={user.city}
+                    defaultProvince={user.province}
+                    escrowId={escrow.id}
+                    proposals={escrow.meetingProposals}
+                  />
                 </article>
               ))}
               {user.buyerEscrows.length === 0 ? (
@@ -236,6 +410,13 @@ export default async function AccountPage() {
                       <p className="mt-2 font-semibold text-[var(--navy)]">{formatCurrency(escrow.amount)}</p>
                     </div>
                   </div>
+                  <MeetingPlanner
+                    currentUserId={user.id}
+                    defaultCity={user.city}
+                    defaultProvince={user.province}
+                    escrowId={escrow.id}
+                    proposals={escrow.meetingProposals}
+                  />
                 </article>
               ))}
               {user.sellerEscrows.length === 0 ? (

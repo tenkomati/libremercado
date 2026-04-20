@@ -78,6 +78,19 @@ enum EscrowEventType {
   REFUNDED
 }
 
+enum FuelStationBrand {
+  YPF
+  SHELL
+  AXION
+}
+
+enum MeetingProposalStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+  CANCELLED
+}
+
 model User {
   id               String              @id @default(cuid())
   email            String              @unique
@@ -98,6 +111,7 @@ model User {
   listings         Listing[]
   buyerEscrows     EscrowTransaction[] @relation("EscrowBuyer")
   sellerEscrows    EscrowTransaction[] @relation("EscrowSeller")
+  meetingProposals EscrowMeetingProposal[]
   adminAuditLogs   AdminAuditLog[]
 
   @@index([status])
@@ -205,10 +219,34 @@ model EscrowTransaction {
   buyer               User            @relation("EscrowBuyer", fields: [buyerId], references: [id], onDelete: Restrict)
   seller              User            @relation("EscrowSeller", fields: [sellerId], references: [id], onDelete: Restrict)
   events              EscrowEvent[]
+  meetingProposals    EscrowMeetingProposal[]
 
   @@index([buyerId, status])
   @@index([sellerId, status])
   @@index([listingId, status])
+}
+
+model EscrowMeetingProposal {
+  id              String                @id @default(cuid())
+  escrowId        String
+  createdByUserId String
+  brand           FuelStationBrand
+  stationName     String
+  address         String
+  city            String
+  province        String
+  proposedAt      DateTime
+  status          MeetingProposalStatus @default(PENDING)
+  responseNote    String?
+  respondedAt     DateTime?
+  createdAt       DateTime              @default(now())
+  updatedAt       DateTime              @updatedAt
+  escrow          EscrowTransaction     @relation(fields: [escrowId], references: [id], onDelete: Cascade)
+  createdBy       User                  @relation(fields: [createdByUserId], references: [id], onDelete: Restrict)
+
+  @@index([escrowId, status])
+  @@index([createdByUserId, createdAt])
+  @@index([brand, city, province])
 }
 
 model EscrowEvent {

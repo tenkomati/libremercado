@@ -174,3 +174,68 @@ export async function updateOwnListingStatusAction(formData: FormData) {
   revalidatePath(`/market/${listingId}`);
   redirectWithMessage(returnTo, "success", `Publicación movida a ${status}.`);
 }
+
+export async function createMeetingProposalAction(formData: FormData) {
+  const { token } = await getSessionToken();
+  const escrowId = String(formData.get("escrowId"));
+  const returnTo = "/account";
+
+  const response = await fetch(`${API_URL}/escrows/${escrowId}/meeting-proposals`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      brand: formData.get("brand"),
+      stationName: formData.get("stationName"),
+      address: formData.get("address"),
+      city: formData.get("city"),
+      province: formData.get("province"),
+      proposedAt: formData.get("proposedAt")
+    }),
+    cache: "no-store"
+  });
+
+  if (!response.ok) {
+    redirectWithMessage(returnTo, "error", await getApiError(response));
+  }
+
+  revalidatePath("/account");
+  redirectWithMessage(returnTo, "success", "Encuentro seguro propuesto.");
+}
+
+export async function respondMeetingProposalAction(formData: FormData) {
+  const { token } = await getSessionToken();
+  const escrowId = String(formData.get("escrowId"));
+  const proposalId = String(formData.get("proposalId"));
+  const status = String(formData.get("status"));
+  const returnTo = "/account";
+
+  const response = await fetch(
+    `${API_URL}/escrows/${escrowId}/meeting-proposals/${proposalId}/respond`,
+    {
+      method: "PATCH",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        status,
+        responseNote: formData.get("responseNote") || undefined
+      }),
+      cache: "no-store"
+    }
+  );
+
+  if (!response.ok) {
+    redirectWithMessage(returnTo, "error", await getApiError(response));
+  }
+
+  revalidatePath("/account");
+  redirectWithMessage(
+    returnTo,
+    "success",
+    status === "ACCEPTED" ? "Encuentro seguro aceptado." : "Encuentro seguro rechazado."
+  );
+}

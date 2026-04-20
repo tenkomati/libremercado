@@ -127,6 +127,20 @@ export class UsersService {
                 firstName: true,
                 lastName: true
               }
+            },
+            meetingProposals: {
+              include: {
+                createdBy: {
+                  select: {
+                    id: true,
+                    firstName: true,
+                    lastName: true
+                  }
+                }
+              },
+              orderBy: {
+                proposedAt: "asc"
+              }
             }
           },
           orderBy: {
@@ -151,6 +165,20 @@ export class UsersService {
                 id: true,
                 firstName: true,
                 lastName: true
+              }
+            },
+            meetingProposals: {
+              include: {
+                createdBy: {
+                  select: {
+                    id: true,
+                    firstName: true,
+                    lastName: true
+                  }
+                }
+              },
+              orderBy: {
+                proposedAt: "asc"
               }
             }
           },

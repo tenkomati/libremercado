@@ -18,9 +18,11 @@ import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
 import { RolesGuard } from "../auth/guards/roles.guard";
 
 import { CreateEscrowDto } from "./dto/create-escrow.dto";
+import { CreateMeetingProposalDto } from "./dto/create-meeting-proposal.dto";
 import { ListEscrowsQueryDto } from "./dto/list-escrows-query.dto";
 import { MarkEscrowShippedDto } from "./dto/mark-escrow-shipped.dto";
 import { OpenDisputeDto } from "./dto/open-dispute.dto";
+import { RespondMeetingProposalDto } from "./dto/respond-meeting-proposal.dto";
 import { EscrowService } from "./escrow.service";
 
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -67,6 +69,56 @@ export class EscrowController {
   @Get(":id")
   getEscrow(@Param("id") id: string) {
     return this.escrowService.getEscrowById(id);
+  }
+
+  @Post(":id/meeting-proposals")
+  createMeetingProposal(
+    @Param("id") id: string,
+    @Body() dto: CreateMeetingProposalDto,
+    @CurrentUser() user: { sub: string; role: UserRole }
+  ) {
+    return this.escrowService.createMeetingProposal(id, dto, user).then(async (proposal) => {
+      await this.auditService.logAction({
+        actorUserId: user.sub,
+        actorRole: user.role,
+        action: "ESCROW_MEETING_PROPOSED",
+        resourceType: "escrow",
+        resourceId: id,
+        metadata: {
+          proposalId: proposal.id,
+          brand: proposal.brand,
+          proposedAt: proposal.proposedAt.toISOString()
+        }
+      });
+
+      return proposal;
+    });
+  }
+
+  @Patch(":id/meeting-proposals/:proposalId/respond")
+  respondMeetingProposal(
+    @Param("id") id: string,
+    @Param("proposalId") proposalId: string,
+    @Body() dto: RespondMeetingProposalDto,
+    @CurrentUser() user: { sub: string; role: UserRole }
+  ) {
+    return this.escrowService
+      .respondMeetingProposal(id, proposalId, dto, user)
+      .then(async (proposal) => {
+        await this.auditService.logAction({
+          actorUserId: user.sub,
+          actorRole: user.role,
+          action: "ESCROW_MEETING_RESPONDED",
+          resourceType: "escrow",
+          resourceId: id,
+          metadata: {
+            proposalId,
+            status: proposal.status
+          }
+        });
+
+        return proposal;
+      });
   }
 
   @Roles(UserRole.ADMIN, UserRole.OPS)

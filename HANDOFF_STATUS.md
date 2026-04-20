@@ -252,6 +252,7 @@ Implementado con:
 - historial de publicaciones propias
 - historial de compras protegidas
 - historial de ventas protegidas
+- propuestas de encuentro seguro por operación protegida
 - creación de publicación desde frontend
 - edición de publicación propia
 - pausa/reactivación de publicación propia
@@ -276,6 +277,8 @@ Notas:
 - si un HEIC/HEIF puntual no puede decodificarse, el usuario recibe error amigable para exportarlo como JPG.
 - antes de producción, migrar imágenes a storage externo/CDN con límites de ancho de banda.
 - antes de producción, conectar validación documental/biométrica con proveedor real; el MVP no debe aprobar identidad solo por detección local de navegador.
+- encuentros seguros MVP: comprador/vendedor pueden proponer fecha, hora y shop de estación `YPF`, `SHELL` o `AXION`; la contraparte puede aceptar o rechazar.
+- antes de producción, reemplazar carga manual de sucursal por catálogo/geocoding verificado de estaciones y reglas de ventana horaria.
 
 ### Admin
 
@@ -356,6 +359,8 @@ Cada uno muestra:
 - `apps/web/app/market/page.tsx`
 - `apps/web/app/market/[id]/page.tsx`
 - `apps/web/app/market/[id]/actions.ts`
+- `apps/api/src/modules/escrow/dto/create-meeting-proposal.dto.ts`
+- `apps/api/src/modules/escrow/dto/respond-meeting-proposal.dto.ts`
 - `apps/web/app/admin/page.tsx`
 - `apps/web/app/admin/actions.ts`
 - `apps/web/app/admin/form-controls.tsx`

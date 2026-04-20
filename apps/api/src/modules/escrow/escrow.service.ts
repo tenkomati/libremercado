@@ -8,6 +8,7 @@ import {
   EscrowStatus,
   KycStatus,
   ListingStatus,
+  MeetingProposalStatus,
   Prisma
 } from "@prisma/client";
 
@@ -22,9 +23,11 @@ import { PrismaService } from "../prisma/prisma.service";
 import { UsersService } from "../users/users.service";
 
 import { CreateEscrowDto } from "./dto/create-escrow.dto";
+import { CreateMeetingProposalDto } from "./dto/create-meeting-proposal.dto";
 import { ListEscrowsQueryDto } from "./dto/list-escrows-query.dto";
 import { MarkEscrowShippedDto } from "./dto/mark-escrow-shipped.dto";
 import { OpenDisputeDto } from "./dto/open-dispute.dto";
+import { RespondMeetingProposalDto } from "./dto/respond-meeting-proposal.dto";
 
 @Injectable()
 export class EscrowService {
@@ -177,6 +180,20 @@ export class EscrowService {
             orderBy: {
               createdAt: "asc"
             }
+          },
+          meetingProposals: {
+            include: {
+              createdBy: {
+                select: {
+                  id: true,
+                  firstName: true,
+                  lastName: true
+                }
+              }
+            },
+            orderBy: {
+              proposedAt: "asc"
+            }
           }
         },
         orderBy: {
@@ -209,7 +226,21 @@ export class EscrowService {
         },
         listing: true,
         buyer: true,
-        seller: true
+        seller: true,
+        meetingProposals: {
+          include: {
+            createdBy: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true
+              }
+            }
+          },
+          orderBy: {
+            proposedAt: "asc"
+          }
+        }
       }
     });
 
@@ -218,6 +249,115 @@ export class EscrowService {
     }
 
     return escrow;
+  }
+
+  async createMeetingProposal(
+    escrowId: string,
+    dto: CreateMeetingProposalDto,
+    user: { sub: string; role: string }
+  ) {
+    const escrow = await this.getEscrowById(escrowId);
+    this.ensureCanOperateEscrow(escrow, user);
+
+    if (
+      escrow.status !== EscrowStatus.FUNDS_HELD &&
+      escrow.status !== EscrowStatus.SHIPPED &&
+      escrow.status !== EscrowStatus.DELIVERED
+    ) {
+      throw new BadRequestException("Meeting can only be proposed for active escrows");
+    }
+
+    const proposedAt = new Date(dto.proposedAt);
+
+    if (Number.isNaN(proposedAt.getTime()) || proposedAt <= new Date()) {
+      throw new BadRequestException("Meeting date must be in the future");
+    }
+
+    return this.prisma.escrowMeetingProposal.create({
+      data: {
+        escrowId,
+        createdByUserId: user.sub,
+        brand: dto.brand,
+        stationName: dto.stationName,
+        address: dto.address,
+        city: dto.city,
+        province: dto.province,
+        proposedAt
+      },
+      include: {
+        createdBy: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true
+          }
+        }
+      }
+    });
+  }
+
+  async respondMeetingProposal(
+    escrowId: string,
+    proposalId: string,
+    dto: RespondMeetingProposalDto,
+    user: { sub: string; role: string }
+  ) {
+    const escrow = await this.getEscrowById(escrowId);
+    this.ensureCanOperateEscrow(escrow, user);
+
+    if (
+      dto.status !== MeetingProposalStatus.ACCEPTED &&
+      dto.status !== MeetingProposalStatus.DECLINED
+    ) {
+      throw new BadRequestException("Meeting proposal can only be accepted or declined");
+    }
+
+    const proposal = await this.prisma.escrowMeetingProposal.findUnique({
+      where: { id: proposalId }
+    });
+
+    if (!proposal || proposal.escrowId !== escrowId) {
+      throw new NotFoundException(`Meeting proposal ${proposalId} not found`);
+    }
+
+    if (proposal.createdByUserId === user.sub && user.role === "USER") {
+      throw new BadRequestException("Users cannot respond to their own meeting proposal");
+    }
+
+    if (proposal.status !== MeetingProposalStatus.PENDING) {
+      throw new BadRequestException("Meeting proposal is not pending");
+    }
+
+    return this.prisma.escrowMeetingProposal.update({
+      where: { id: proposalId },
+      data: {
+        status: dto.status,
+        responseNote: dto.responseNote,
+        respondedAt: new Date()
+      },
+      include: {
+        createdBy: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true
+          }
+        }
+      }
+    });
+  }
+
+  private ensureCanOperateEscrow(
+    escrow: { buyerId: string; sellerId: string },
+    user: { sub: string; role: string }
+  ) {
+    if (user.role === "ADMIN" || user.role === "OPS") {
+      return;
+    }
+
+    if (escrow.buyerId !== user.sub && escrow.sellerId !== user.sub) {
+      throw new BadRequestException("Users can only operate their own escrow");
+    }
   }
 
   async markShipped(id: string, dto: MarkEscrowShippedDto) {
