@@ -29,6 +29,7 @@ export default async function SignupPage({ searchParams }: SignupPageProps) {
             <p className="max-w-2xl text-lg leading-8 text-[var(--muted)]">
               Esta cuenta te permite entrar al flujo público. Para operar con
               pago protegido, la identidad debe quedar aprobada por el equipo de riesgo.
+              El alta incluye datos personales, fotos del DNI y selfie.
             </p>
           </div>
           <div className="flex flex-wrap gap-3">

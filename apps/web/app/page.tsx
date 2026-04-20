@@ -109,6 +109,12 @@ export default function Home() {
             <a href="#arquitectura">Arquitectura</a>
             <a href="#categorias">Categorias</a>
             <a href="#roadmap">Roadmap</a>
+            <Link
+              href="/signup"
+              className="rounded-full bg-[var(--navy)] px-5 py-2.5 font-semibold text-white"
+            >
+              Crear cuenta
+            </Link>
           </nav>
         </header>
 
@@ -133,17 +139,23 @@ export default function Home() {
             </div>
 
             <div className="flex flex-wrap gap-3">
-              <a
-                href="#trust"
+              <Link
+                href="/signup"
                 className="rounded-full bg-[var(--brand)] px-6 py-3.5 font-semibold text-white shadow-[0_14px_40px_rgba(18,107,255,0.25)] transition hover:bg-[var(--brand-strong)]"
               >
-                Ver propuesta de confianza
-              </a>
+                Crear cuenta segura
+              </Link>
               <Link
                 href="/market"
                 className="rounded-full border border-[var(--surface-border)] bg-white/85 px-6 py-3.5 font-semibold text-[var(--foreground)] backdrop-blur"
               >
                 Explorar market live
+              </Link>
+              <Link
+                href="/login"
+                className="rounded-full border border-[var(--surface-border)] bg-white/85 px-6 py-3.5 font-semibold text-[var(--foreground)] backdrop-blur"
+              >
+                Iniciar sesión
               </Link>
               <Link
                 href="/admin"

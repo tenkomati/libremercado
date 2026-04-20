@@ -84,6 +84,12 @@ export default async function MarketPage() {
               Ver consola admin
             </Link>
             <Link
+              href="/signup?next=/market"
+              className="rounded-full bg-[var(--navy)] px-5 py-3 font-semibold text-white"
+            >
+              Crear cuenta
+            </Link>
+            <Link
               href="/account"
               className="rounded-full border border-[var(--surface-border)] bg-white px-5 py-3 font-semibold"
             >

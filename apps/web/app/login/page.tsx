@@ -58,6 +58,12 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
             >
               Ver market
             </Link>
+            <Link
+              href={`/signup?next=${encodeURIComponent(nextPath)}`}
+              className="rounded-full bg-[var(--brand)] px-5 py-3 font-semibold text-white"
+            >
+              Crear cuenta
+            </Link>
           </div>
         </div>
 

@@ -226,6 +226,7 @@ Implementado con:
 - logout via route handler Next
 - soporte de usuarios comunes y admins/ops con `next`
 - botón visible de cerrar sesión en `/account`
+- CTAs visibles hacia `/signup` desde home, market y login
 
 ### DX local
 
