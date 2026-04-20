@@ -226,6 +226,14 @@ Implementado con:
 - logout via route handler Next
 - soporte de usuarios comunes y admins/ops con `next`
 
+### DX local
+
+Implementado con:
+
+- `npm run dev` limpia primero puertos locales `3000`, `3001` y `3002` para evitar procesos colgados.
+- `npm run dev:stop` permite liberar esos puertos manualmente.
+- `concurrently` corre web/API con `--kill-others-on-fail` para que si Nest o Next fallan, no quede el otro proceso vivo.
+
 ### Account
 
 Rutas:

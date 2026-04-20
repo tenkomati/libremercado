@@ -8,7 +8,8 @@
     "packages/*"
   ],
   "scripts": {
-    "dev": "concurrently \"npm run dev:web\" \"npm run dev:api\"",
+    "dev": "npm run dev:stop && concurrently --kill-others-on-fail --names web,api --prefix-colors blue,green \"npm run dev:web\" \"npm run dev:api\"",
+    "dev:stop": "sh scripts/stop-dev-ports.sh",
     "dev:web": "npm run dev --workspace @libremercado/web",
     "dev:api": "npm run start:dev --workspace @libremercado/api",
     "build": "npm run build --workspaces --if-present",
