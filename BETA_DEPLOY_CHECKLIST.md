@@ -1,0 +1,172 @@
+# LibreMercado - Checklist Pre-Beta Deploy
+
+Este documento ordena los pasos necesarios para llevar LibreMercado a una beta seria, operable y segura. La idea es mantenerlo vivo: cada vez que se cierre un frente, se marca como completado y se actualiza el estado.
+
+## Estado Actual
+
+- [ ] App lista para beta cerrada
+- [ ] App lista para beta publica limitada
+- [ ] App lista para produccion inicial
+
+## 1. Flujo Usuario Completo
+
+- [ ] Registro y login funcionando de punta a punta en frontend.
+- [ ] Recuperacion o cambio de contrasena.
+- [ ] Perfil de usuario editable con datos basicos, direccion y contacto.
+- [ ] Onboarding KYC publico completo.
+- [ ] Carga de DNI frente y dorso.
+- [ ] Carga de selfie o prueba de vida.
+- [ ] Estado KYC visible para el usuario.
+- [ ] Publicacion de producto desde frontend.
+- [ ] Carga, previsualizacion y gestion de imagenes de publicaciones.
+- [ ] Edicion basica de publicaciones.
+- [ ] Estados claros de publicacion: borrador, activa, pausada, vendida, rechazada.
+- [ ] Flujo comprador inicia compra protegida.
+- [ ] Flujo vendedor acepta o gestiona la operacion.
+- [ ] Coordinacion de entrega por mensajeria, correo, retiro o encuentro seguro.
+- [ ] Confirmacion de entrega.
+- [ ] Liberacion de fondos.
+- [ ] Apertura y seguimiento de disputa.
+- [ ] Mis compras con acciones pendientes claras.
+- [ ] Mis ventas con acciones pendientes claras.
+- [ ] Notificaciones visibles dentro de la cuenta.
+
+## 2. Pagos y Escrow Real
+
+- [ ] Definir proveedor de pago para Argentina.
+- [ ] Validar si el proveedor permite retencion real de fondos o si requiere flujo alternativo.
+- [ ] Implementar pago sandbox.
+- [ ] Implementar webhooks firmados.
+- [ ] Persistir estados financieros auditables.
+- [ ] Estado: pago iniciado.
+- [ ] Estado: pago aprobado.
+- [ ] Estado: pago retenido o protegido.
+- [ ] Estado: pago liberado.
+- [ ] Estado: pago reembolsado.
+- [ ] Estado: pago en disputa.
+- [ ] Comisiones parametrizables por ambiente.
+- [ ] Calculo de comision visible para comprador y vendedor.
+- [ ] Registro interno de eventos financieros.
+- [ ] Pruebas de pago aprobado, rechazado, expirado y reembolsado.
+
+## 3. Seguridad y Anti-Abuso
+
+- [ ] Rate limiting por IP en auth.
+- [ ] Rate limiting por usuario en acciones sensibles.
+- [ ] Rate limiting en mensajes.
+- [ ] Rate limiting en publicaciones.
+- [ ] Rate limiting en KYC.
+- [ ] Proteccion DoW antes del deploy.
+- [ ] Limites de acciones costosas por usuario no verificado.
+- [ ] Cuotas por usuario, IP y dispositivo.
+- [ ] Validacion fuerte de archivos subidos.
+- [ ] Limite de tamano por archivo.
+- [ ] Limite de cantidad de archivos por entidad.
+- [ ] Validacion MIME real.
+- [ ] Conversion HEIC a JPG soportada.
+- [ ] Escaneo basico de archivos o integracion antivirus.
+- [ ] Revision de roles y guards.
+- [ ] Separacion de roles: usuario, admin, reviewer, soporte.
+- [ ] Sesiones con expiracion razonable.
+- [ ] Refresh token o renovacion controlada.
+- [ ] Secrets fuera del repo.
+- [ ] Variables separadas por ambiente.
+- [ ] Headers de seguridad basicos.
+- [ ] CORS restringido por ambiente.
+
+## 4. Operacion y Admin
+
+- [ ] Panel admin protegido con login real.
+- [ ] Revision KYC desde admin.
+- [ ] Aprobar, rechazar o pedir correccion de KYC.
+- [ ] Ver operaciones escrow desde admin.
+- [ ] Ver historial de eventos de una operacion.
+- [ ] Intervenir disputas desde admin.
+- [ ] Bloquear o suspender usuario.
+- [ ] Pausar o rechazar publicacion.
+- [ ] Cancelar operacion con motivo auditado.
+- [ ] Audit logs utiles.
+- [ ] Filtros admin por usuario, estado, fecha y riesgo.
+- [ ] Vista de metricas basicas: usuarios, publicaciones, operaciones, disputas.
+- [ ] Herramientas de soporte para responder casos.
+
+## 5. Confianza y Experiencia Beta
+
+- [ ] Textos amigables para compra protegida.
+- [ ] Textos amigables para verificacion de identidad.
+- [ ] Textos amigables para encuentro seguro.
+- [ ] Terminos claros de cancelacion.
+- [ ] Terminos claros de disputa.
+- [ ] Terminos claros de liberacion de fondos.
+- [ ] Landing/home con CTA real para comprar y vender.
+- [ ] Estados vacios profesionales.
+- [ ] Mensajes de error entendibles para usuarios comunes.
+- [ ] Onboarding breve para comprador.
+- [ ] Onboarding breve para vendedor.
+- [ ] Emails transaccionales minimos.
+- [ ] Notificacion de nueva operacion.
+- [ ] Notificacion de cambio de entrega.
+- [ ] Notificacion de mensaje.
+- [ ] Notificacion de disputa.
+- [ ] Notificacion de KYC aprobado/rechazado.
+
+## 6. Infraestructura y Deploy
+
+- [ ] Separar ambientes: local, staging/beta y produccion.
+- [ ] Base de datos gestionada para beta.
+- [ ] Storage real de imagenes.
+- [ ] Buckets separados por ambiente.
+- [ ] CDN o entrega optimizada de imagenes.
+- [ ] CI/CD minimo.
+- [ ] Pipeline ejecuta lint.
+- [ ] Pipeline ejecuta typecheck.
+- [ ] Pipeline ejecuta build.
+- [ ] Pipeline ejecuta migraciones de forma controlada.
+- [ ] Logs centralizados.
+- [ ] Healthcheck real de API.
+- [ ] Monitoreo basico de uptime.
+- [ ] Backups automaticos de base de datos.
+- [ ] Plan de rollback.
+- [ ] Dominio beta.
+- [ ] HTTPS configurado.
+- [ ] Politica de deploy documentada.
+
+## 7. QA Pre-Beta
+
+- [ ] Seed demo estable.
+- [ ] Checklist manual de flujo comprador.
+- [ ] Checklist manual de flujo vendedor.
+- [ ] Checklist manual de flujo admin.
+- [ ] Pruebas de API para auth.
+- [ ] Pruebas de API para KYC.
+- [ ] Pruebas de API para listings.
+- [ ] Pruebas de API para escrow.
+- [ ] Pruebas de API para mensajes.
+- [ ] Pruebas de API para propuestas de entrega.
+- [ ] Prueba de imagen invalida.
+- [ ] Prueba de token vencido.
+- [ ] Prueba de usuario sin KYC.
+- [ ] Prueba de vendedor que no responde.
+- [ ] Prueba de comprador que cancela.
+- [ ] Prueba de disputa abierta.
+- [ ] Prueba de pago rechazado.
+- [ ] Prueba responsive mobile.
+- [ ] Prueba con usuarios reales internos.
+
+## Orden Recomendado Inmediato
+
+- [ ] 1. Storage real de imagenes y archivos KYC.
+- [ ] 2. KYC admin funcional con revision.
+- [ ] 3. Integracion de pagos en modo sandbox.
+- [ ] 4. Notificaciones por email.
+- [ ] 5. Hardening de seguridad, rate limits y DoW.
+- [ ] 6. Deploy staging/beta con DB y storage reales.
+- [ ] 7. QA completo comprador-vendedor-admin.
+
+## Notas de Decision
+
+- El foco antes de beta debe ser confianza operativa, no cantidad de features.
+- Sin storage real no conviene abrir beta, porque publicaciones y KYC dependen de archivos persistentes.
+- Sin pagos sandbox y webhooks no conviene validar escrow con usuarios externos.
+- Sin herramientas admin, cualquier disputa o KYC queda bloqueado manualmente.
+
