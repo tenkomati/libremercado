@@ -115,7 +115,7 @@ type AccountUser = {
     status: string;
     createdAt: string;
     listing: { id: string; title: string };
-    seller: { firstName: string; lastName: string };
+    seller: { id: string; firstName: string; lastName: string };
     meetingProposals: MeetingProposal[];
     availabilitySlots: AvailabilitySlot[];
     messages: EscrowMessage[];
@@ -126,7 +126,7 @@ type AccountUser = {
     status: string;
     createdAt: string;
     listing: { id: string; title: string };
-    buyer: { firstName: string; lastName: string };
+    buyer: { id: string; firstName: string; lastName: string };
     meetingProposals: MeetingProposal[];
     availabilitySlots: AvailabilitySlot[];
     messages: EscrowMessage[];
@@ -181,6 +181,62 @@ function StatusPill({ label }: { label: string }) {
   );
 }
 
+function getPaymentStatusLabel(status: string) {
+  const labels: Record<string, string> = {
+    CANCELLED: "Pago cancelado",
+    DELIVERED: "Pago recibido",
+    DISPUTED: "Pago retenido",
+    FUNDS_HELD: "Pago recibido",
+    FUNDS_PENDING: "Pago pendiente",
+    REFUNDED: "Pago reembolsado",
+    RELEASED: "Pago liberado",
+    SHIPPED: "Pago recibido"
+  };
+
+  return labels[status] ?? status;
+}
+
+function getShippingStatusLabel(status: string) {
+  const labels: Record<string, string> = {
+    CANCELLED: "Envío cancelado",
+    DELIVERED: "Entregado",
+    DISPUTED: "Entrega en revisión",
+    FUNDS_HELD: "Pendiente de envío",
+    FUNDS_PENDING: "Pendiente de pago",
+    REFUNDED: "Sin envío activo",
+    RELEASED: "Entregado",
+    SHIPPED: "En camino"
+  };
+
+  return labels[status] ?? status;
+}
+
+function getDeliveryTypeLabel(status: string) {
+  if (status === "FUNDS_HELD") {
+    return "A coordinar";
+  }
+
+  if (status === "SHIPPED" || status === "DELIVERED" || status === "RELEASED") {
+    return "Mensajería / correo";
+  }
+
+  if (status === "DISPUTED") {
+    return "En revisión";
+  }
+
+  return "Pendiente";
+}
+
+function hasPendingProposalForUser(proposals: MeetingProposal[], currentUserId: string) {
+  return proposals.some(
+    (proposal) => proposal.status === "PENDING" && proposal.createdBy.id !== currentUserId
+  );
+}
+
+function getOpenSlots(slots: AvailabilitySlot[]) {
+  return slots.filter((slot) => slot.status === "OPEN");
+}
+
 function MeetingPlanner({
   escrowId,
   currentUserId,
@@ -188,7 +244,6 @@ function MeetingPlanner({
   proposals,
   suggestions,
   availabilitySlots,
-  messages,
   defaultCity,
   defaultProvince
 }: {
@@ -198,11 +253,11 @@ function MeetingPlanner({
   proposals: MeetingProposal[];
   suggestions: MeetingSuggestion[];
   availabilitySlots: AvailabilitySlot[];
-  messages: EscrowMessage[];
   defaultCity: string;
   defaultProvince: string;
 }) {
-  const openSlots = availabilitySlots.filter((slot) => slot.status === "OPEN");
+  const openSlots = getOpenSlots(availabilitySlots);
+  const canSuggestMeetingPlace = role === "seller";
 
   return (
     <div className="mt-4 rounded-[1.25rem] border border-[rgba(18,107,255,0.12)] bg-white p-4">
@@ -214,7 +269,7 @@ function MeetingPlanner({
         </p>
       </div>
 
-      {suggestions.length > 0 ? (
+      {canSuggestMeetingPlace && suggestions.length > 0 ? (
         <div className="mt-4 rounded-2xl bg-[#f8fbff] p-3">
           <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--brand-strong)]">
             Puntos sugeridos
@@ -380,75 +435,88 @@ function MeetingPlanner({
         </div>
       ) : null}
 
-      <form action={createMeetingProposalAction} className="mt-4 grid gap-3 md:grid-cols-2">
-        <input name="escrowId" type="hidden" value={escrowId} />
-        <label className="grid gap-1 text-xs font-semibold text-[var(--navy)]">
-          Estación
-          <select className="rounded-2xl border border-[var(--surface-border)] bg-[#f8fbff] px-3 py-2" name="brand" required>
-            <option value="YPF">YPF</option>
-            <option value="SHELL">Shell</option>
-            <option value="AXION">Axion</option>
-          </select>
-        </label>
-        <label className="grid gap-1 text-xs font-semibold text-[var(--navy)]">
-          Fecha y hora
-          <input className="rounded-2xl border border-[var(--surface-border)] bg-[#f8fbff] px-3 py-2" name="proposedAt" required type="datetime-local" />
-        </label>
-        <label className="grid gap-1 text-xs font-semibold text-[var(--navy)]">
-          Shop / sucursal
-          <input className="rounded-2xl border border-[var(--surface-border)] bg-[#f8fbff] px-3 py-2" name="stationName" placeholder="Ej: YPF Panamericana km 32" required />
-        </label>
-        <label className="grid gap-1 text-xs font-semibold text-[var(--navy)]">
-          Dirección
-          <input className="rounded-2xl border border-[var(--surface-border)] bg-[#f8fbff] px-3 py-2" name="address" placeholder="Av. / calle y altura" required />
-        </label>
-        <label className="grid gap-1 text-xs font-semibold text-[var(--navy)]">
-          Ciudad
-          <input className="rounded-2xl border border-[var(--surface-border)] bg-[#f8fbff] px-3 py-2" defaultValue={defaultCity} name="city" required />
-        </label>
-        <label className="grid gap-1 text-xs font-semibold text-[var(--navy)]">
-          Provincia
-          <input className="rounded-2xl border border-[var(--surface-border)] bg-[#f8fbff] px-3 py-2" defaultValue={defaultProvince} name="province" required />
-        </label>
-        <button className="rounded-full bg-[var(--navy)] px-4 py-3 text-sm font-semibold text-white md:col-span-2" type="submit">
-          Proponer encuentro seguro
-        </button>
-      </form>
-
-      <div className="mt-4 rounded-2xl bg-[#f8fbff] p-3">
-        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--brand-strong)]">
-          Mensajes de coordinación
-        </p>
-        {messages.length > 0 ? (
-          <div className="mt-3 grid gap-2">
-            {messages.map((message) => (
-              <article className="rounded-2xl bg-white p-3 text-xs" key={message.id}>
-                <p className="font-semibold text-[var(--navy)]">
-                  {message.sender.firstName} {message.sender.lastName}
-                </p>
-                <p className="mt-1 leading-5 text-[var(--muted)]">{message.body}</p>
-                <p className="mt-2 text-[0.65rem] uppercase tracking-[0.12em] text-[var(--muted)]">
-                  {formatDateTime(message.createdAt)}
-                </p>
-              </article>
-            ))}
-          </div>
-        ) : (
-          <p className="mt-3 text-xs text-[var(--muted)]">Aún no hay mensajes.</p>
-        )}
-        <form action={sendEscrowMessageAction} className="mt-3 flex flex-wrap gap-2">
+      {role === "seller" ? (
+        <form action={createMeetingProposalAction} className="mt-4 grid gap-3 md:grid-cols-2">
           <input name="escrowId" type="hidden" value={escrowId} />
-          <input
-            className="min-w-52 flex-1 rounded-full border border-[var(--surface-border)] bg-white px-3 py-2 text-xs"
-            name="body"
-            placeholder="Ej: No llego a ese horario, puedo 30 minutos después."
-            required
-          />
-          <button className="rounded-full bg-[var(--navy)] px-3 py-2 text-xs font-semibold text-white" type="submit">
-            Enviar
+          <label className="grid gap-1 text-xs font-semibold text-[var(--navy)]">
+            Estación
+            <select className="rounded-2xl border border-[var(--surface-border)] bg-[#f8fbff] px-3 py-2" name="brand" required>
+              <option value="YPF">YPF</option>
+              <option value="SHELL">Shell</option>
+              <option value="AXION">Axion</option>
+            </select>
+          </label>
+          <label className="grid gap-1 text-xs font-semibold text-[var(--navy)]">
+            Fecha y hora
+            <input className="rounded-2xl border border-[var(--surface-border)] bg-[#f8fbff] px-3 py-2" name="proposedAt" required type="datetime-local" />
+          </label>
+          <label className="grid gap-1 text-xs font-semibold text-[var(--navy)]">
+            Shop / sucursal
+            <input className="rounded-2xl border border-[var(--surface-border)] bg-[#f8fbff] px-3 py-2" name="stationName" placeholder="Ej: YPF Panamericana km 32" required />
+          </label>
+          <label className="grid gap-1 text-xs font-semibold text-[var(--navy)]">
+            Dirección
+            <input className="rounded-2xl border border-[var(--surface-border)] bg-[#f8fbff] px-3 py-2" name="address" placeholder="Av. / calle y altura" required />
+          </label>
+          <label className="grid gap-1 text-xs font-semibold text-[var(--navy)]">
+            Ciudad
+            <input className="rounded-2xl border border-[var(--surface-border)] bg-[#f8fbff] px-3 py-2" defaultValue={defaultCity} name="city" required />
+          </label>
+          <label className="grid gap-1 text-xs font-semibold text-[var(--navy)]">
+            Provincia
+            <input className="rounded-2xl border border-[var(--surface-border)] bg-[#f8fbff] px-3 py-2" defaultValue={defaultProvince} name="province" required />
+          </label>
+          <button className="rounded-full bg-[var(--navy)] px-4 py-3 text-sm font-semibold text-white md:col-span-2" type="submit">
+            Proponer encuentro seguro
           </button>
         </form>
-      </div>
+      ) : null}
+
+    </div>
+  );
+}
+
+function MessagesPanel({
+  escrowId,
+  messages
+}: {
+  escrowId: string;
+  messages: EscrowMessage[];
+}) {
+  return (
+    <div className="rounded-2xl bg-[#f8fbff] p-4">
+      <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--brand-strong)]">
+        Mensajes de coordinación
+      </p>
+      {messages.length > 0 ? (
+        <div className="mt-3 grid gap-2">
+          {messages.map((message) => (
+            <article className="rounded-2xl bg-white p-3 text-xs" key={message.id}>
+              <p className="font-semibold text-[var(--navy)]">
+                {message.sender.firstName} {message.sender.lastName}
+              </p>
+              <p className="mt-1 leading-5 text-[var(--muted)]">{message.body}</p>
+              <p className="mt-2 text-[0.65rem] uppercase tracking-[0.12em] text-[var(--muted)]">
+                {formatDateTime(message.createdAt)}
+              </p>
+            </article>
+          ))}
+        </div>
+      ) : (
+        <p className="mt-3 text-xs text-[var(--muted)]">Aún no hay mensajes.</p>
+      )}
+      <form action={sendEscrowMessageAction} className="mt-3 flex flex-wrap gap-2">
+        <input name="escrowId" type="hidden" value={escrowId} />
+        <input
+          className="min-w-52 flex-1 rounded-full border border-[var(--surface-border)] bg-white px-3 py-2 text-xs"
+          name="body"
+          placeholder="Ej: No llego a ese horario, puedo 30 minutos después."
+          required
+        />
+        <button className="rounded-full bg-[var(--navy)] px-3 py-2 text-xs font-semibold text-white" type="submit">
+          Enviar
+        </button>
+      </form>
     </div>
   );
 }
@@ -461,8 +529,64 @@ export default async function AccountPage({ searchParams }: AccountPageProps) {
       error?: string;
     }>
   ]);
-  const canCreateListing = user.status === "ACTIVE" && user.kycStatus === "APPROVED";
-  const escrowIds = [...user.buyerEscrows, ...user.sellerEscrows].map((escrow) => escrow.id);
+  const activeMeetingStatuses = ["FUNDS_HELD", "SHIPPED", "DELIVERED"];
+  const pendingActions = [
+    ...(user.kycStatus === "APPROVED"
+      ? []
+      : [
+          {
+            href: "/account/kyc",
+            label: "Completar verificación de identidad",
+            detail: "Necesaria para publicar y operar con compra protegida."
+          }
+        ]),
+    ...user.buyerEscrows.flatMap((escrow) => {
+      const actions = [];
+
+      if (getOpenSlots(escrow.availabilitySlots).length > 0) {
+        actions.push({
+          href: `#purchase-${escrow.id}`,
+          label: `Elegir horario para ${escrow.listing.title}`,
+          detail: "El vendedor publicó franjas disponibles."
+        });
+      }
+
+      if (hasPendingProposalForUser(escrow.meetingProposals, user.id)) {
+        actions.push({
+          href: `#purchase-${escrow.id}`,
+          label: `Responder propuesta de encuentro para ${escrow.listing.title}`,
+          detail: "Hay una propuesta esperando tu respuesta."
+        });
+      }
+
+      return actions;
+    }),
+    ...user.sellerEscrows.flatMap((escrow) => {
+      const actions = [];
+
+      if (
+        activeMeetingStatuses.includes(escrow.status) &&
+        getOpenSlots(escrow.availabilitySlots).length === 0
+      ) {
+        actions.push({
+          href: `#sale-${escrow.id}`,
+          label: `Publicar horarios para ${escrow.listing.title}`,
+          detail: "El comprador necesita opciones para coordinar entrega."
+        });
+      }
+
+      if (hasPendingProposalForUser(escrow.meetingProposals, user.id)) {
+        actions.push({
+          href: `#sale-${escrow.id}`,
+          label: `Responder propuesta de encuentro para ${escrow.listing.title}`,
+          detail: "Hay una propuesta esperando tu respuesta."
+        });
+      }
+
+      return actions;
+    })
+  ];
+  const escrowIds = user.sellerEscrows.map((escrow) => escrow.id);
   const suggestionEntries = await Promise.all(
     escrowIds.map(async (escrowId) => [
       escrowId,
@@ -535,22 +659,21 @@ export default async function AccountPage({ searchParams }: AccountPageProps) {
           <div className="rounded-[1.75rem] border border-[var(--surface-border)] bg-[linear-gradient(180deg,#f8fbff,#eaf2ff)] p-6">
             <h2 className="text-2xl font-semibold text-[var(--navy)]">Próximas acciones</h2>
             <div className="mt-5 grid gap-3">
-              <Link
-                href="/account/kyc"
-                className="rounded-[1.25rem] bg-white px-4 py-3 text-sm font-semibold text-[var(--navy)]"
-              >
-                Completar o revisar identidad
-              </Link>
-              <Link
-                href="/account/listings/new"
-                className="rounded-[1.25rem] bg-white px-4 py-3 text-sm font-semibold text-[var(--navy)]"
-              >
-                Crear publicación
-              </Link>
-              {!canCreateListing ? (
-                <p className="rounded-[1.25rem] bg-[#fff7ed] px-4 py-3 text-sm leading-6 text-[#92400e]">
-                  Para publicar o comprar con pago protegido necesitás cuenta
-                  activa e identidad aprobada.
+              {pendingActions.map((action) => (
+                <Link
+                  href={action.href}
+                  className="rounded-[1.25rem] bg-white px-4 py-3 text-sm font-semibold text-[var(--navy)] transition hover:shadow-[0_12px_30px_rgba(8,34,71,0.08)]"
+                  key={`${action.href}-${action.label}`}
+                >
+                  {action.label}
+                  <span className="mt-1 block text-xs font-normal leading-5 text-[var(--muted)]">
+                    {action.detail}
+                  </span>
+                </Link>
+              ))}
+              {pendingActions.length === 0 ? (
+                <p className="rounded-[1.25rem] bg-white px-4 py-3 text-sm leading-6 text-[var(--muted)]">
+                  No tenés acciones pendientes ahora.
                 </p>
               ) : null}
             </div>
@@ -620,31 +743,104 @@ export default async function AccountPage({ searchParams }: AccountPageProps) {
             <h2 className="text-2xl font-semibold text-[var(--navy)]">Mis compras</h2>
             <div className="mt-5 grid gap-3">
               {user.buyerEscrows.map((escrow) => (
-                <article className="rounded-[1.25rem] border border-[var(--surface-border)] bg-[#f8fbff] p-4" key={escrow.id}>
-                  <div className="flex flex-wrap items-start justify-between gap-3">
+                <details
+                  className="group rounded-[1.25rem] border border-[var(--surface-border)] bg-[#f8fbff] p-4"
+                  id={`purchase-${escrow.id}`}
+                  key={escrow.id}
+                >
+                  <summary className="flex cursor-pointer list-none flex-wrap items-center justify-between gap-3">
                     <div>
                       <p className="font-semibold text-[var(--navy)]">{escrow.listing.title}</p>
-                      <p className="text-sm text-[var(--muted)]">
-                        Vendedor: {escrow.seller.firstName} {escrow.seller.lastName}
+                      <p className="mt-1 text-xs text-[var(--muted)]">
+                        Tocá para ver detalle de producto, envío y mensajes.
                       </p>
                     </div>
-                    <div className="text-right">
-                      <StatusPill label={escrow.status} />
-                      <p className="mt-2 font-semibold text-[var(--navy)]">{formatCurrency(escrow.amount)}</p>
+                    <div className="flex flex-wrap gap-2 text-right">
+                      <StatusPill label={getPaymentStatusLabel(escrow.status)} />
+                      <StatusPill label={getShippingStatusLabel(escrow.status)} />
                     </div>
+                  </summary>
+
+                  <div className="mt-4 grid gap-4">
+                    <section className="rounded-2xl bg-white p-4">
+                      <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--brand-strong)]">
+                        Información del producto
+                      </p>
+                      <div className="mt-3 grid gap-2 text-sm text-[var(--muted)] md:grid-cols-2">
+                        <p>
+                          <span className="font-semibold text-[var(--navy)]">Producto:</span>{" "}
+                          {escrow.listing.title}
+                        </p>
+                        <p>
+                          <span className="font-semibold text-[var(--navy)]">ID vendedor:</span>{" "}
+                          {escrow.seller.id}
+                        </p>
+                        <p>
+                          <span className="font-semibold text-[var(--navy)]">Vendedor:</span>{" "}
+                          {escrow.seller.firstName} {escrow.seller.lastName}
+                        </p>
+                        <p>
+                          <span className="font-semibold text-[var(--navy)]">Precio:</span>{" "}
+                          {formatCurrency(escrow.amount)}
+                        </p>
+                        <p>
+                          <span className="font-semibold text-[var(--navy)]">Forma de pago:</span>{" "}
+                          Compra protegida
+                        </p>
+                        <p>
+                          <span className="font-semibold text-[var(--navy)]">Estado del pago:</span>{" "}
+                          {getPaymentStatusLabel(escrow.status)}
+                        </p>
+                      </div>
+                    </section>
+
+                    <section className="rounded-2xl bg-white p-4">
+                      <div className="flex flex-wrap items-start justify-between gap-3">
+                        <div>
+                          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--brand-strong)]">
+                            Información del envío
+                          </p>
+                          <div className="mt-3 grid gap-2 text-sm text-[var(--muted)]">
+                            <p>
+                              <span className="font-semibold text-[var(--navy)]">Tipo pactado:</span>{" "}
+                              {getDeliveryTypeLabel(escrow.status)}
+                            </p>
+                            <p>
+                              <span className="font-semibold text-[var(--navy)]">Estado:</span>{" "}
+                              {getShippingStatusLabel(escrow.status)}
+                            </p>
+                          </div>
+                        </div>
+                        <form action={sendEscrowMessageAction}>
+                          <input name="escrowId" type="hidden" value={escrow.id} />
+                          <input
+                            name="body"
+                            type="hidden"
+                            value="Solicito cambiar el tipo de envío o recoordinar la entrega."
+                          />
+                          <button className="rounded-full border border-[var(--surface-border)] bg-[#f8fbff] px-4 py-2 text-xs font-semibold text-[var(--navy)]" type="submit">
+                            Solicitar cambio
+                          </button>
+                        </form>
+                      </div>
+
+                      <MeetingPlanner
+                        currentUserId={user.id}
+                        defaultCity={user.city}
+                        defaultProvince={user.province}
+                        escrowId={escrow.id}
+                        role="buyer"
+                        proposals={escrow.meetingProposals}
+                        suggestions={[]}
+                        availabilitySlots={escrow.availabilitySlots}
+                      />
+                    </section>
+
+                    <section className="rounded-2xl bg-white p-4">
+                      <MessagesPanel escrowId={escrow.id} messages={escrow.messages} />
+                    </section>
                   </div>
-                  <MeetingPlanner
-                    currentUserId={user.id}
-                    defaultCity={user.city}
-                    defaultProvince={user.province}
-                    escrowId={escrow.id}
-                    role="buyer"
-                    proposals={escrow.meetingProposals}
-                    suggestions={suggestionsByEscrowId[escrow.id] ?? []}
-                    availabilitySlots={escrow.availabilitySlots}
-                    messages={escrow.messages}
-                  />
-                </article>
+                </details>
               ))}
               {user.buyerEscrows.length === 0 ? (
                 <p className="text-sm text-[var(--muted)]">Todavía no tenés compras protegidas.</p>
@@ -656,7 +852,11 @@ export default async function AccountPage({ searchParams }: AccountPageProps) {
             <h2 className="text-2xl font-semibold text-[var(--navy)]">Mis ventas</h2>
             <div className="mt-5 grid gap-3">
               {user.sellerEscrows.map((escrow) => (
-                <article className="rounded-[1.25rem] border border-[var(--surface-border)] bg-[#f8fbff] p-4" key={escrow.id}>
+                <article
+                  className="rounded-[1.25rem] border border-[var(--surface-border)] bg-[#f8fbff] p-4"
+                  id={`sale-${escrow.id}`}
+                  key={escrow.id}
+                >
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div>
                       <p className="font-semibold text-[var(--navy)]">{escrow.listing.title}</p>
@@ -678,8 +878,10 @@ export default async function AccountPage({ searchParams }: AccountPageProps) {
                     proposals={escrow.meetingProposals}
                     suggestions={suggestionsByEscrowId[escrow.id] ?? []}
                     availabilitySlots={escrow.availabilitySlots}
-                    messages={escrow.messages}
                   />
+                  <div className="mt-4 rounded-[1.25rem] border border-[rgba(18,107,255,0.12)] bg-white p-4">
+                    <MessagesPanel escrowId={escrow.id} messages={escrow.messages} />
+                  </div>
                 </article>
               ))}
               {user.sellerEscrows.length === 0 ? (

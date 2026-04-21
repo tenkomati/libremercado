@@ -262,6 +262,9 @@ Implementado con:
 - historial de publicaciones propias
 - historial de compras protegidas
 - historial de ventas protegidas
+- bloque "Próximas acciones" dinámico: no muestra KYC si la identidad ya está aprobada, lista acciones pendientes de compras/ventas y no incluye crear publicación
+- compras protegidas compactas con acordeón por operación
+- detalle de compra ordenado en tres bloques: producto/pago, envío/encuentro seguro y mensajes
 - propuestas de encuentro seguro por operación protegida
 - sugerencias de puntos intermedios en estaciones YPF/Shell/Axion con Google Maps si hay `GOOGLE_MAPS_API_KEY`
 - fallback local de puntos sugeridos cuando no hay API key o Google Maps falla
