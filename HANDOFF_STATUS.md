@@ -25,10 +25,12 @@ Validaciones que estaban pasando al cierre:
 - `npm run lint --workspace @libremercado/web`
 - `npm run build --workspace @libremercado/api`
 - `npm run build --workspace @libremercado/web`
+- `npm audit --workspaces --audit-level=moderate`
 
 Nota:
 
 - Sigue apareciendo una advertencia no bloqueante de Next sobre detección del plugin de ESLint en build.
+- Al 2026-04-21, `npm audit --workspaces --audit-level=moderate` queda en `0 vulnerabilities`.
 
 ## Backend implementado
 
@@ -197,6 +199,17 @@ Implementado:
   - `POST /escrows/:id/messages`
   - `POST /payments/checkout`
   - `POST /payments/:id/sandbox/approve`
+
+Uploads web protegidos:
+
+- helper compartido `apps/web/lib/rate-limit.ts`
+- usa Redis con `REDIS_URL` cuando está disponible
+- fallback en memoria si Redis no está disponible
+- runtime Node explícito para evitar Edge runtime accidental
+- rutas protegidas:
+  - `POST /api/uploads/listing-image`
+  - `POST /api/uploads/kyc-image`
+- además corta requests con `content-length` excesivo antes de parsear `formData`
 
 ### Auditoría
 
@@ -501,18 +514,22 @@ Prioridad alta antes de producción:
 - Poner Cloudflare delante del frontend/API con WAF, reglas anti-bot y rate limiting por IP.
 - Configurar budget alerts y cuotas duras en el proveedor cloud.
 - Definir máximos de autoscaling para API/web/base, aunque eso degrade servicio bajo ataque.
-- Mover rate limiting de login desde memoria a Redis para que funcione con múltiples instancias.
-- Agregar rate limiting Redis por endpoint sensible: `/auth/login`, `/auth/register`, `/listings`, `/escrows`, `/kyc/verifications`.
 - Agregar protección anti-bot en registro y login con Cloudflare Turnstile o equivalente.
 - Cachear lecturas públicas de alto tráfico: `/listings`, `/listings/:id`, `/admin/overview` según rol/contexto.
 - Configurar timeouts estrictos en API y base de datos.
 - Revisar índices de Postgres para búsquedas/filtros públicos y admin.
 - Usar connection pooling para PostgreSQL en producción, idealmente PgBouncer o pool administrado del proveedor.
 
+Cerrado en código:
+
+- Rate limiting de login y registro movido a Redis con fallback en memoria.
+- Rate limiting Redis/fallback agregado para endpoints sensibles: auth, KYC, listings, escrows, mensajes, coordinación de entrega y pagos sandbox.
+- Rate limiting Redis/fallback agregado para uploads web de publicaciones y KYC.
+- Corte temprano por tamaño de payload en uploads de imágenes antes de parsear `formData`.
+
 Prioridad media:
 
-- Limitar tamaño de payloads y cantidad de imágenes por publicación.
-- Limitar frecuencia de creación de listings, KYC y escrows por usuario.
+- Limitar cantidad de imágenes por publicación.
 - Agregar verificación de email para cuentas nuevas.
 - Evaluar SMS/WhatsApp solo para acciones de mayor riesgo, porque también puede generar costos explotables.
 - Separar cuotas por usuario autenticado además de IP.

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { checkRateLimit } from "../../../../lib/rate-limit";
 import { storeMediaFile } from "../../../../lib/media-storage";
 import {
   getNormalizedContentType,
@@ -9,7 +10,31 @@ import {
 
 const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
 
+export const runtime = "nodejs";
+
 export async function POST(request: Request) {
+  const rateLimit = await checkRateLimit(request, {
+    keyPrefix: "upload-listing-image",
+    limit: 20,
+    windowSeconds: 3600
+  });
+
+  if (!rateLimit.allowed) {
+    return NextResponse.json(
+      {
+        message: `Demasiados intentos de carga. Probá de nuevo en ${rateLimit.resetSeconds} segundos.`
+      },
+      { status: 429 }
+    );
+  }
+
+  if (isPayloadTooLarge(request, MAX_IMAGE_BYTES)) {
+    return NextResponse.json(
+      { message: "La imagen no puede superar 5 MB." },
+      { status: 413 }
+    );
+  }
+
   const formData = await request.formData();
   const file = formData.get("file");
 
@@ -71,4 +96,10 @@ export async function POST(request: Request) {
       { status: 500 }
     );
   }
+}
+
+function isPayloadTooLarge(request: Request, maxBytes: number) {
+  const contentLength = Number(request.headers.get("content-length"));
+
+  return Number.isFinite(contentLength) && contentLength > maxBytes + 512_000;
 }

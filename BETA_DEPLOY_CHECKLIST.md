@@ -58,6 +58,7 @@ Este documento ordena los pasos necesarios para llevar LibreMercado a una beta s
 - [x] Rate limiting en mensajes.
 - [x] Rate limiting en publicaciones.
 - [x] Rate limiting en KYC.
+- [x] Rate limiting en uploads de publicaciones y KYC.
 - [ ] Proteccion DoW antes del deploy.
 - [ ] Limites de acciones costosas por usuario no verificado.
 - [ ] Cuotas por usuario, IP y dispositivo.
@@ -75,6 +76,7 @@ Este documento ordena los pasos necesarios para llevar LibreMercado a una beta s
 - [ ] Variables separadas por ambiente.
 - [ ] Headers de seguridad basicos.
 - [ ] CORS restringido por ambiente.
+- [x] `npm audit --workspaces --audit-level=moderate` sin vulnerabilidades reportadas.
 
 ## 4. Operacion y Admin
 
@@ -181,3 +183,5 @@ Este documento ordena los pasos necesarios para llevar LibreMercado a una beta s
 - 2026-04-21: se completo el ciclo financiero posterior: entrega confirmada mueve pagos a `READY_TO_RELEASE`, liberacion mueve pagos a `RELEASED` y disputa mueve pagos a `DISPUTED`, todo con eventos financieros auditables.
 - 2026-04-21: se agrego cancelacion controlada desde admin con reembolso sandbox: escrows cancelables pasan a `REFUNDED`, pagos asociados a `REFUNDED`, la publicacion vuelve a `PUBLISHED` y quedan eventos/auditoria.
 - 2026-04-21: se agrego rate limiting distribuible con Redis y fallback en memoria para auth, KYC, publicaciones, mensajes, coordinacion de escrow y checkout/pagos sandbox.
+- 2026-04-21: se agrego rate limiting Redis/fallback en memoria para uploads web de imagenes de publicaciones y KYC, con corte temprano por `content-length`.
+- 2026-04-21: se reviso `npm audit --workspaces --audit-level=moderate`; se actualizaron parches de Nest, Next, Prisma y tooling hasta quedar en `0 vulnerabilities`.

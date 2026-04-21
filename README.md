@@ -88,7 +88,7 @@ memoria para desarrollo local. Redis se configura con:
 REDIS_URL=redis://localhost:6379
 ```
 
-Rutas protegidas:
+Rutas API protegidas:
 
 - `POST /auth/register`
 - `POST /auth/login`
@@ -98,3 +98,19 @@ Rutas protegidas:
 - `POST /escrows`
 - `POST /escrows/:id/messages`
 - `POST /payments/checkout`
+
+Uploads web protegidos:
+
+- `POST /api/uploads/listing-image`
+- `POST /api/uploads/kyc-image`
+
+## Seguridad de dependencias
+
+Se revisa con:
+
+```bash
+npm audit --workspaces --audit-level=moderate
+```
+
+Al 2026-04-21 el audit queda en `0 vulnerabilities` despues de aplicar parches
+de Nest, Next, Prisma y tooling de desarrollo.

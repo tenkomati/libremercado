@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { checkRateLimit } from "../../../../lib/rate-limit";
 import { storeMediaFile } from "../../../../lib/media-storage";
 import {
   getNormalizedContentType,
@@ -10,7 +11,31 @@ import {
 const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
 const ALLOWED_PURPOSES = new Set(["dni-front", "dni-back", "selfie"]);
 
+export const runtime = "nodejs";
+
 export async function POST(request: Request) {
+  const rateLimit = await checkRateLimit(request, {
+    keyPrefix: "upload-kyc-image",
+    limit: 12,
+    windowSeconds: 3600
+  });
+
+  if (!rateLimit.allowed) {
+    return NextResponse.json(
+      {
+        message: `Demasiados intentos de carga. Probá de nuevo en ${rateLimit.resetSeconds} segundos.`
+      },
+      { status: 429 }
+    );
+  }
+
+  if (isPayloadTooLarge(request, MAX_IMAGE_BYTES)) {
+    return NextResponse.json(
+      { message: "La imagen no puede superar 8 MB." },
+      { status: 413 }
+    );
+  }
+
   const formData = await request.formData();
   const file = formData.get("file");
   const purpose = String(formData.get("purpose") ?? "");
@@ -89,4 +114,10 @@ export async function POST(request: Request) {
       { status: 500 }
     );
   }
+}
+
+function isPayloadTooLarge(request: Request, maxBytes: number) {
+  const contentLength = Number(request.headers.get("content-length"));
+
+  return Number.isFinite(contentLength) && contentLength > maxBytes + 512_000;
 }
