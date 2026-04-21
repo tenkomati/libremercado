@@ -8,10 +8,12 @@ import { formatCurrency, formatDate, formatDateTime } from "../../lib/format";
 
 import { LogoutButton } from "../admin/logout-button";
 
+import { AvailabilitySlotForm } from "./availability-slot-form";
 import {
-  createAvailabilitySlotAction,
   createMeetingProposalAction,
+  createDeliveryProposalAction,
   respondMeetingProposalAction,
+  respondDeliveryProposalAction,
   selectAvailabilitySlotAction,
   sendEscrowMessageAction
 } from "./actions";
@@ -49,6 +51,20 @@ type MeetingSuggestion = {
   city: string;
   province: string;
   source: "google_maps" | "fallback";
+};
+
+type DeliveryProposal = {
+  id: string;
+  method: "MESSAGING" | "COURIER" | "SAFE_MEETING" | "PICKUP";
+  details: string | null;
+  status: string;
+  responseNote: string | null;
+  createdAt: string;
+  createdBy: {
+    id: string;
+    firstName: string;
+    lastName: string;
+  };
 };
 
 type AvailabilitySlot = {
@@ -117,6 +133,7 @@ type AccountUser = {
     listing: { id: string; title: string };
     seller: { id: string; firstName: string; lastName: string };
     meetingProposals: MeetingProposal[];
+    deliveryProposals: DeliveryProposal[];
     availabilitySlots: AvailabilitySlot[];
     messages: EscrowMessage[];
   }>;
@@ -128,6 +145,7 @@ type AccountUser = {
     listing: { id: string; title: string };
     buyer: { id: string; firstName: string; lastName: string };
     meetingProposals: MeetingProposal[];
+    deliveryProposals: DeliveryProposal[];
     availabilitySlots: AvailabilitySlot[];
     messages: EscrowMessage[];
   }>;
@@ -227,7 +245,31 @@ function getDeliveryTypeLabel(status: string) {
   return "Pendiente";
 }
 
+function getDeliveryMethodLabel(method: DeliveryProposal["method"]) {
+  const labels: Record<DeliveryProposal["method"], string> = {
+    COURIER: "Correo / operador logístico",
+    MESSAGING: "Mensajería privada",
+    PICKUP: "Retiro acordado",
+    SAFE_MEETING: "Encuentro seguro"
+  };
+
+  return labels[method];
+}
+
+function getAcceptedDeliveryProposal(proposals: DeliveryProposal[]) {
+  return proposals.find((proposal) => proposal.status === "ACCEPTED");
+}
+
 function hasPendingProposalForUser(proposals: MeetingProposal[], currentUserId: string) {
+  return proposals.some(
+    (proposal) => proposal.status === "PENDING" && proposal.createdBy.id !== currentUserId
+  );
+}
+
+function hasPendingDeliveryProposalForUser(
+  proposals: DeliveryProposal[],
+  currentUserId: string
+) {
   return proposals.some(
     (proposal) => proposal.status === "PENDING" && proposal.createdBy.id !== currentUserId
   );
@@ -276,17 +318,10 @@ function MeetingPlanner({
           </p>
           <div className="mt-3 grid gap-2 md:grid-cols-3">
             {suggestions.map((suggestion, index) => (
-              <form
-                action={createMeetingProposalAction}
+              <article
                 className="rounded-2xl border border-[var(--surface-border)] bg-white p-3"
                 key={`${suggestion.brand}-${suggestion.stationName}-${index}`}
               >
-                <input name="escrowId" type="hidden" value={escrowId} />
-                <input name="brand" type="hidden" value={suggestion.brand} />
-                <input name="stationName" type="hidden" value={suggestion.stationName} />
-                <input name="address" type="hidden" value={suggestion.address} />
-                <input name="city" type="hidden" value={suggestion.city} />
-                <input name="province" type="hidden" value={suggestion.province} />
                 <p className="text-sm font-semibold text-[var(--navy)]">
                   {suggestion.brand} · {suggestion.stationName}
                 </p>
@@ -296,19 +331,7 @@ function MeetingPlanner({
                 <p className="mt-1 text-[0.65rem] uppercase tracking-[0.12em] text-[var(--muted)]">
                   {suggestion.source === "google_maps" ? "Google Maps" : "Fallback local"}
                 </p>
-                <label className="mt-3 grid gap-1 text-xs font-semibold text-[var(--navy)]">
-                  Fecha y hora
-                  <input
-                    className="rounded-2xl border border-[var(--surface-border)] bg-[#f8fbff] px-3 py-2"
-                    name="proposedAt"
-                    required
-                    type="datetime-local"
-                  />
-                </label>
-                <button className="mt-3 w-full rounded-full bg-[var(--navy)] px-3 py-2 text-xs font-semibold text-white" type="submit">
-                  Proponer este punto
-                </button>
-              </form>
+              </article>
             ))}
           </div>
         </div>
@@ -357,20 +380,7 @@ function MeetingPlanner({
       ) : null}
 
       {role === "seller" ? (
-        <form action={createAvailabilitySlotAction} className="mt-4 grid gap-3 rounded-2xl bg-[#f8fbff] p-3 md:grid-cols-2">
-          <input name="escrowId" type="hidden" value={escrowId} />
-          <label className="grid gap-1 text-xs font-semibold text-[var(--navy)]">
-            Disponible desde
-            <input className="rounded-2xl border border-[var(--surface-border)] bg-white px-3 py-2" name="startsAt" required type="datetime-local" />
-          </label>
-          <label className="grid gap-1 text-xs font-semibold text-[var(--navy)]">
-            Disponible hasta
-            <input className="rounded-2xl border border-[var(--surface-border)] bg-white px-3 py-2" name="endsAt" required type="datetime-local" />
-          </label>
-          <button className="rounded-full bg-[var(--brand-strong)] px-4 py-3 text-sm font-semibold text-white md:col-span-2" type="submit">
-            Pintar franja disponible
-          </button>
-        </form>
+        <AvailabilitySlotForm escrowId={escrowId} />
       ) : openSlots.length === 0 ? (
         <p className="mt-4 rounded-2xl bg-[#fff7ed] p-3 text-xs leading-5 text-[#92400e]">
           Todavía no hay franjas abiertas del vendedor. Podés escribirle para pedir
@@ -521,6 +531,110 @@ function MessagesPanel({
   );
 }
 
+function DeliveryProposalPanel({
+  escrowId,
+  currentUserId,
+  role,
+  proposals
+}: {
+  escrowId: string;
+  currentUserId: string;
+  role: "buyer" | "seller";
+  proposals: DeliveryProposal[];
+}) {
+  return (
+    <div className="mt-4 rounded-2xl bg-[#f8fbff] p-4">
+      <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--brand-strong)]">
+        Método de envío
+      </p>
+
+      {proposals.length > 0 ? (
+        <div className="mt-3 grid gap-2">
+          {proposals.map((proposal) => {
+            const canRespond =
+              proposal.status === "PENDING" && proposal.createdBy.id !== currentUserId;
+
+            return (
+              <article className="rounded-2xl bg-white p-3 text-sm" key={proposal.id}>
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <p className="font-semibold text-[var(--navy)]">
+                      {getDeliveryMethodLabel(proposal.method)}
+                    </p>
+                    <p className="mt-1 text-xs leading-5 text-[var(--muted)]">
+                      {proposal.details ?? "Sin detalle adicional."} · propuesto por{" "}
+                      {proposal.createdBy.firstName} {proposal.createdBy.lastName}
+                    </p>
+                  </div>
+                  <StatusPill label={proposal.status} />
+                </div>
+
+                {canRespond ? (
+                  <form action={respondDeliveryProposalAction} className="mt-3 flex flex-wrap gap-2">
+                    <input name="escrowId" type="hidden" value={escrowId} />
+                    <input name="proposalId" type="hidden" value={proposal.id} />
+                    <input
+                      className="min-w-44 flex-1 rounded-full border border-[var(--surface-border)] bg-white px-3 py-2 text-xs"
+                      name="responseNote"
+                      placeholder="Nota opcional"
+                    />
+                    <button
+                      className="rounded-full bg-[#059669] px-3 py-2 text-xs font-semibold text-white"
+                      name="status"
+                      type="submit"
+                      value="ACCEPTED"
+                    >
+                      Aceptar
+                    </button>
+                    <button
+                      className="rounded-full bg-[#dc2626] px-3 py-2 text-xs font-semibold text-white"
+                      name="status"
+                      type="submit"
+                      value="DECLINED"
+                    >
+                      Rechazar
+                    </button>
+                  </form>
+                ) : null}
+              </article>
+            );
+          })}
+        </div>
+      ) : (
+        <p className="mt-3 text-xs text-[var(--muted)]">
+          Todavía no hay método de envío propuesto.
+        </p>
+      )}
+
+      {role === "seller" ? (
+        <form action={createDeliveryProposalAction} className="mt-4 grid gap-3 rounded-2xl bg-white p-3 md:grid-cols-2">
+          <input name="escrowId" type="hidden" value={escrowId} />
+          <label className="grid gap-1 text-xs font-semibold text-[var(--navy)]">
+            Proponer método
+            <select className="rounded-2xl border border-[var(--surface-border)] bg-[#f8fbff] px-3 py-2" name="method" required>
+              <option value="SAFE_MEETING">Encuentro seguro</option>
+              <option value="MESSAGING">Mensajería privada</option>
+              <option value="COURIER">Correo / operador logístico</option>
+              <option value="PICKUP">Retiro acordado</option>
+            </select>
+          </label>
+          <label className="grid gap-1 text-xs font-semibold text-[var(--navy)]">
+            Detalle
+            <input
+              className="rounded-2xl border border-[var(--surface-border)] bg-[#f8fbff] px-3 py-2"
+              name="details"
+              placeholder="Ej: Correo Argentino a sucursal o YPF Full de la zona"
+            />
+          </label>
+          <button className="rounded-full bg-[var(--navy)] px-4 py-3 text-sm font-semibold text-white md:col-span-2" type="submit">
+            Proponer método de envío
+          </button>
+        </form>
+      ) : null}
+    </div>
+  );
+}
+
 export default async function AccountPage({ searchParams }: AccountPageProps) {
   const [{ token, user }, params] = await Promise.all([
     getAccount(),
@@ -559,6 +673,14 @@ export default async function AccountPage({ searchParams }: AccountPageProps) {
         });
       }
 
+      if (hasPendingDeliveryProposalForUser(escrow.deliveryProposals, user.id)) {
+        actions.push({
+          href: `#purchase-${escrow.id}`,
+          label: `Responder método de envío para ${escrow.listing.title}`,
+          detail: "El vendedor propuso una forma de entrega."
+        });
+      }
+
       return actions;
     }),
     ...user.sellerEscrows.flatMap((escrow) => {
@@ -580,6 +702,14 @@ export default async function AccountPage({ searchParams }: AccountPageProps) {
           href: `#sale-${escrow.id}`,
           label: `Responder propuesta de encuentro para ${escrow.listing.title}`,
           detail: "Hay una propuesta esperando tu respuesta."
+        });
+      }
+
+      if (hasPendingDeliveryProposalForUser(escrow.deliveryProposals, user.id)) {
+        actions.push({
+          href: `#sale-${escrow.id}`,
+          label: `Responder método de envío para ${escrow.listing.title}`,
+          detail: "Hay una forma de entrega esperando tu respuesta."
         });
       }
 
@@ -742,7 +872,10 @@ export default async function AccountPage({ searchParams }: AccountPageProps) {
           <section className="rounded-[1.75rem] border border-[var(--surface-border)] bg-white/85 p-6">
             <h2 className="text-2xl font-semibold text-[var(--navy)]">Mis compras</h2>
             <div className="mt-5 grid gap-3">
-              {user.buyerEscrows.map((escrow) => (
+              {user.buyerEscrows.map((escrow) => {
+                const acceptedDelivery = getAcceptedDeliveryProposal(escrow.deliveryProposals);
+
+                return (
                 <details
                   className="group rounded-[1.25rem] border border-[var(--surface-border)] bg-[#f8fbff] p-4"
                   id={`purchase-${escrow.id}`}
@@ -803,7 +936,9 @@ export default async function AccountPage({ searchParams }: AccountPageProps) {
                           <div className="mt-3 grid gap-2 text-sm text-[var(--muted)]">
                             <p>
                               <span className="font-semibold text-[var(--navy)]">Tipo pactado:</span>{" "}
-                              {getDeliveryTypeLabel(escrow.status)}
+                              {acceptedDelivery
+                                ? getDeliveryMethodLabel(acceptedDelivery.method)
+                                : getDeliveryTypeLabel(escrow.status)}
                             </p>
                             <p>
                               <span className="font-semibold text-[var(--navy)]">Estado:</span>{" "}
@@ -824,6 +959,13 @@ export default async function AccountPage({ searchParams }: AccountPageProps) {
                         </form>
                       </div>
 
+                      <DeliveryProposalPanel
+                        currentUserId={user.id}
+                        escrowId={escrow.id}
+                        proposals={escrow.deliveryProposals}
+                        role="buyer"
+                      />
+
                       <MeetingPlanner
                         currentUserId={user.id}
                         defaultCity={user.city}
@@ -841,7 +983,8 @@ export default async function AccountPage({ searchParams }: AccountPageProps) {
                     </section>
                   </div>
                 </details>
-              ))}
+                );
+              })}
               {user.buyerEscrows.length === 0 ? (
                 <p className="text-sm text-[var(--muted)]">Todavía no tenés compras protegidas.</p>
               ) : null}
@@ -851,39 +994,104 @@ export default async function AccountPage({ searchParams }: AccountPageProps) {
           <section className="rounded-[1.75rem] border border-[var(--surface-border)] bg-white/85 p-6">
             <h2 className="text-2xl font-semibold text-[var(--navy)]">Mis ventas</h2>
             <div className="mt-5 grid gap-3">
-              {user.sellerEscrows.map((escrow) => (
-                <article
-                  className="rounded-[1.25rem] border border-[var(--surface-border)] bg-[#f8fbff] p-4"
-                  id={`sale-${escrow.id}`}
-                  key={escrow.id}
-                >
-                  <div className="flex flex-wrap items-start justify-between gap-3">
-                    <div>
-                      <p className="font-semibold text-[var(--navy)]">{escrow.listing.title}</p>
-                      <p className="text-sm text-[var(--muted)]">
-                        Comprador: {escrow.buyer.firstName} {escrow.buyer.lastName}
-                      </p>
+              {user.sellerEscrows.map((escrow) => {
+                const acceptedDelivery = getAcceptedDeliveryProposal(escrow.deliveryProposals);
+
+                return (
+                  <details
+                    className="group rounded-[1.25rem] border border-[var(--surface-border)] bg-[#f8fbff] p-4"
+                    id={`sale-${escrow.id}`}
+                    key={escrow.id}
+                  >
+                    <summary className="flex cursor-pointer list-none flex-wrap items-center justify-between gap-3">
+                      <div>
+                        <p className="font-semibold text-[var(--navy)]">{escrow.listing.title}</p>
+                        <p className="mt-1 text-xs text-[var(--muted)]">
+                          Tocá para ver detalle de producto, envío y mensajes.
+                        </p>
+                      </div>
+                      <div className="flex flex-wrap gap-2 text-right">
+                        <StatusPill label={getPaymentStatusLabel(escrow.status)} />
+                        <StatusPill label={getShippingStatusLabel(escrow.status)} />
+                      </div>
+                    </summary>
+
+                    <div className="mt-4 grid gap-4">
+                      <section className="rounded-2xl bg-white p-4">
+                        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--brand-strong)]">
+                          Información del producto
+                        </p>
+                        <div className="mt-3 grid gap-2 text-sm text-[var(--muted)] md:grid-cols-2">
+                          <p>
+                            <span className="font-semibold text-[var(--navy)]">Producto:</span>{" "}
+                            {escrow.listing.title}
+                          </p>
+                          <p>
+                            <span className="font-semibold text-[var(--navy)]">ID comprador:</span>{" "}
+                            {escrow.buyer.id}
+                          </p>
+                          <p>
+                            <span className="font-semibold text-[var(--navy)]">Comprador:</span>{" "}
+                            {escrow.buyer.firstName} {escrow.buyer.lastName}
+                          </p>
+                          <p>
+                            <span className="font-semibold text-[var(--navy)]">Precio:</span>{" "}
+                            {formatCurrency(escrow.amount)}
+                          </p>
+                          <p>
+                            <span className="font-semibold text-[var(--navy)]">Forma de cobro:</span>{" "}
+                            Compra protegida
+                          </p>
+                          <p>
+                            <span className="font-semibold text-[var(--navy)]">Estado del pago:</span>{" "}
+                            {getPaymentStatusLabel(escrow.status)}
+                          </p>
+                        </div>
+                      </section>
+
+                      <section className="rounded-2xl bg-white p-4">
+                        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--brand-strong)]">
+                          Información del envío
+                        </p>
+                        <div className="mt-3 grid gap-2 text-sm text-[var(--muted)]">
+                          <p>
+                            <span className="font-semibold text-[var(--navy)]">Tipo pactado:</span>{" "}
+                            {acceptedDelivery
+                              ? getDeliveryMethodLabel(acceptedDelivery.method)
+                              : getDeliveryTypeLabel(escrow.status)}
+                          </p>
+                          <p>
+                            <span className="font-semibold text-[var(--navy)]">Estado:</span>{" "}
+                            {getShippingStatusLabel(escrow.status)}
+                          </p>
+                        </div>
+
+                        <DeliveryProposalPanel
+                          currentUserId={user.id}
+                          escrowId={escrow.id}
+                          proposals={escrow.deliveryProposals}
+                          role="seller"
+                        />
+
+                        <MeetingPlanner
+                          currentUserId={user.id}
+                          defaultCity={user.city}
+                          defaultProvince={user.province}
+                          escrowId={escrow.id}
+                          role="seller"
+                          proposals={escrow.meetingProposals}
+                          suggestions={suggestionsByEscrowId[escrow.id] ?? []}
+                          availabilitySlots={escrow.availabilitySlots}
+                        />
+                      </section>
+
+                      <section className="rounded-2xl bg-white p-4">
+                        <MessagesPanel escrowId={escrow.id} messages={escrow.messages} />
+                      </section>
                     </div>
-                    <div className="text-right">
-                      <StatusPill label={escrow.status} />
-                      <p className="mt-2 font-semibold text-[var(--navy)]">{formatCurrency(escrow.amount)}</p>
-                    </div>
-                  </div>
-                  <MeetingPlanner
-                    currentUserId={user.id}
-                    defaultCity={user.city}
-                    defaultProvince={user.province}
-                    escrowId={escrow.id}
-                    role="seller"
-                    proposals={escrow.meetingProposals}
-                    suggestions={suggestionsByEscrowId[escrow.id] ?? []}
-                    availabilitySlots={escrow.availabilitySlots}
-                  />
-                  <div className="mt-4 rounded-[1.25rem] border border-[rgba(18,107,255,0.12)] bg-white p-4">
-                    <MessagesPanel escrowId={escrow.id} messages={escrow.messages} />
-                  </div>
-                </article>
-              ))}
+                  </details>
+                );
+              })}
               {user.sellerEscrows.length === 0 ? (
                 <p className="text-sm text-[var(--muted)]">Todavía no tenés ventas protegidas.</p>
               ) : null}

@@ -142,6 +142,20 @@ export class UsersService {
                 proposedAt: "asc"
               }
             },
+            deliveryProposals: {
+              include: {
+                createdBy: {
+                  select: {
+                    id: true,
+                    firstName: true,
+                    lastName: true
+                  }
+                }
+              },
+              orderBy: {
+                createdAt: "desc"
+              }
+            },
             availabilitySlots: {
               include: {
                 createdBy: {
@@ -215,6 +229,20 @@ export class UsersService {
               },
               orderBy: {
                 proposedAt: "asc"
+              }
+            },
+            deliveryProposals: {
+              include: {
+                createdBy: {
+                  select: {
+                    id: true,
+                    firstName: true,
+                    lastName: true
+                  }
+                }
+              },
+              orderBy: {
+                createdAt: "desc"
               }
             },
             availabilitySlots: {

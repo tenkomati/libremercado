@@ -48,6 +48,7 @@ Modelos relevantes:
 - `ListingImage`
 - `EscrowTransaction`
 - `EscrowAvailabilitySlot`
+- `EscrowDeliveryProposal`
 - `EscrowMeetingProposal`
 - `EscrowMessage`
 - `UserNotification`
@@ -129,6 +130,8 @@ Query params de listado:
 - `GET /escrows/:id/meeting-suggestions`
 - `POST /escrows/:id/meeting-proposals`
 - `PATCH /escrows/:id/meeting-proposals/:proposalId/respond`
+- `POST /escrows/:id/delivery-proposals`
+- `PATCH /escrows/:id/delivery-proposals/:proposalId/respond`
 - `POST /escrows/:id/availability-slots`
 - `PATCH /escrows/:id/availability-slots/:slotId/select`
 - `POST /escrows/:id/messages`
@@ -265,6 +268,8 @@ Implementado con:
 - bloque "Próximas acciones" dinámico: no muestra KYC si la identidad ya está aprobada, lista acciones pendientes de compras/ventas y no incluye crear publicación
 - compras protegidas compactas con acordeón por operación
 - detalle de compra ordenado en tres bloques: producto/pago, envío/encuentro seguro y mensajes
+- ventas protegidas compactas con acordeón por operación y los mismos tres bloques: producto/cobro, envío/encuentro seguro y mensajes
+- propuestas de método de envío por operación: vendedor propone y comprador acepta/rechaza
 - propuestas de encuentro seguro por operación protegida
 - sugerencias de puntos intermedios en estaciones YPF/Shell/Axion con Google Maps si hay `GOOGLE_MAPS_API_KEY`
 - fallback local de puntos sugeridos cuando no hay API key o Google Maps falla
@@ -298,6 +303,7 @@ Notas:
 - antes de producción, conectar validación documental/biométrica con proveedor real; el MVP no debe aprobar identidad solo por detección local de navegador.
 - encuentros seguros MVP: comprador/vendedor pueden proponer fecha, hora y shop de estación `YPF`, `SHELL` o `AXION`; la contraparte puede aceptar o rechazar con nota.
 - coordinación segura MVP: el vendedor puede "pintar" franjas horarias y el comprador puede elegir una o enviar un mensaje si no le sirve.
+- el formulario de franjas bloquea "Disponible hasta" hasta elegir "Disponible desde", preselecciona la misma fecha y el backend rechaza rangos que crucen de día.
 - las notificaciones actuales son persistentes en base de datos y visibles en `/account`; falta canal push/email/WhatsApp para cambios de último momento.
 - `GOOGLE_MAPS_API_KEY` habilita sugerencias reales por Google Maps; sin clave se usa fallback local para mantener el flujo operativo.
 - antes de producción, validar que todos los puntos sugeridos sean shops reales y seguros, guardar place IDs, horarios de atención y auditoría de cambios de último momento.

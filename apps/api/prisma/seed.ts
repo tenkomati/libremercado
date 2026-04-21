@@ -278,6 +278,7 @@ async function main() {
   await prisma.userNotification.deleteMany();
   await prisma.escrowMessage.deleteMany();
   await prisma.escrowAvailabilitySlot.deleteMany();
+  await prisma.escrowDeliveryProposal.deleteMany();
   await prisma.escrowMeetingProposal.deleteMany();
   await prisma.escrowEvent.deleteMany();
   await prisma.escrowTransaction.deleteMany();

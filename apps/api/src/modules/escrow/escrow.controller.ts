@@ -18,12 +18,14 @@ import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
 import { RolesGuard } from "../auth/guards/roles.guard";
 
 import { CreateAvailabilitySlotDto } from "./dto/create-availability-slot.dto";
+import { CreateDeliveryProposalDto } from "./dto/create-delivery-proposal.dto";
 import { CreateEscrowMessageDto } from "./dto/create-escrow-message.dto";
 import { CreateEscrowDto } from "./dto/create-escrow.dto";
 import { CreateMeetingProposalDto } from "./dto/create-meeting-proposal.dto";
 import { ListEscrowsQueryDto } from "./dto/list-escrows-query.dto";
 import { MarkEscrowShippedDto } from "./dto/mark-escrow-shipped.dto";
 import { OpenDisputeDto } from "./dto/open-dispute.dto";
+import { RespondDeliveryProposalDto } from "./dto/respond-delivery-proposal.dto";
 import { RespondMeetingProposalDto } from "./dto/respond-meeting-proposal.dto";
 import { SelectAvailabilitySlotDto } from "./dto/select-availability-slot.dto";
 import { EscrowService } from "./escrow.service";
@@ -120,6 +122,55 @@ export class EscrowController {
           actorUserId: user.sub,
           actorRole: user.role,
           action: "ESCROW_MEETING_RESPONDED",
+          resourceType: "escrow",
+          resourceId: id,
+          metadata: {
+            proposalId,
+            status: proposal.status
+          }
+        });
+
+        return proposal;
+      });
+  }
+
+  @Post(":id/delivery-proposals")
+  createDeliveryProposal(
+    @Param("id") id: string,
+    @Body() dto: CreateDeliveryProposalDto,
+    @CurrentUser() user: { sub: string; role: UserRole }
+  ) {
+    return this.escrowService.createDeliveryProposal(id, dto, user).then(async (proposal) => {
+      await this.auditService.logAction({
+        actorUserId: user.sub,
+        actorRole: user.role,
+        action: "ESCROW_DELIVERY_PROPOSED",
+        resourceType: "escrow",
+        resourceId: id,
+        metadata: {
+          proposalId: proposal.id,
+          method: proposal.method
+        }
+      });
+
+      return proposal;
+    });
+  }
+
+  @Patch(":id/delivery-proposals/:proposalId/respond")
+  respondDeliveryProposal(
+    @Param("id") id: string,
+    @Param("proposalId") proposalId: string,
+    @Body() dto: RespondDeliveryProposalDto,
+    @CurrentUser() user: { sub: string; role: UserRole }
+  ) {
+    return this.escrowService
+      .respondDeliveryProposal(id, proposalId, dto, user)
+      .then(async (proposal) => {
+        await this.auditService.logAction({
+          actorUserId: user.sub,
+          actorRole: user.role,
+          action: "ESCROW_DELIVERY_RESPONDED",
           resourceType: "escrow",
           resourceId: id,
           metadata: {

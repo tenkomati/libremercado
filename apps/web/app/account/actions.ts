@@ -319,3 +319,64 @@ export async function sendEscrowMessageAction(formData: FormData) {
   revalidatePath("/account");
   redirectWithMessage(returnTo, "success", "Mensaje enviado.");
 }
+
+export async function createDeliveryProposalAction(formData: FormData) {
+  const { token } = await getSessionToken();
+  const escrowId = String(formData.get("escrowId"));
+  const returnTo = "/account";
+
+  const response = await fetch(`${API_URL}/escrows/${escrowId}/delivery-proposals`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      method: formData.get("method"),
+      details: formData.get("details") || undefined
+    }),
+    cache: "no-store"
+  });
+
+  if (!response.ok) {
+    redirectWithMessage(returnTo, "error", await getApiError(response));
+  }
+
+  revalidatePath("/account");
+  redirectWithMessage(returnTo, "success", "Método de envío propuesto.");
+}
+
+export async function respondDeliveryProposalAction(formData: FormData) {
+  const { token } = await getSessionToken();
+  const escrowId = String(formData.get("escrowId"));
+  const proposalId = String(formData.get("proposalId"));
+  const status = String(formData.get("status"));
+  const returnTo = "/account";
+
+  const response = await fetch(
+    `${API_URL}/escrows/${escrowId}/delivery-proposals/${proposalId}/respond`,
+    {
+      method: "PATCH",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        status,
+        responseNote: formData.get("responseNote") || undefined
+      }),
+      cache: "no-store"
+    }
+  );
+
+  if (!response.ok) {
+    redirectWithMessage(returnTo, "error", await getApiError(response));
+  }
+
+  revalidatePath("/account");
+  redirectWithMessage(
+    returnTo,
+    "success",
+    status === "ACCEPTED" ? "Método de envío aceptado." : "Método de envío rechazado."
+  );
+}

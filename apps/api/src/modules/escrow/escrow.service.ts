@@ -5,6 +5,8 @@ import {
 } from "@nestjs/common";
 import {
   AvailabilitySlotStatus,
+  DeliveryMethod,
+  DeliveryProposalStatus,
   EscrowEventType,
   EscrowStatus,
   KycStatus,
@@ -25,12 +27,14 @@ import { PrismaService } from "../prisma/prisma.service";
 import { UsersService } from "../users/users.service";
 
 import { CreateAvailabilitySlotDto } from "./dto/create-availability-slot.dto";
+import { CreateDeliveryProposalDto } from "./dto/create-delivery-proposal.dto";
 import { CreateEscrowMessageDto } from "./dto/create-escrow-message.dto";
 import { CreateEscrowDto } from "./dto/create-escrow.dto";
 import { CreateMeetingProposalDto } from "./dto/create-meeting-proposal.dto";
 import { ListEscrowsQueryDto } from "./dto/list-escrows-query.dto";
 import { MarkEscrowShippedDto } from "./dto/mark-escrow-shipped.dto";
 import { OpenDisputeDto } from "./dto/open-dispute.dto";
+import { RespondDeliveryProposalDto } from "./dto/respond-delivery-proposal.dto";
 import { RespondMeetingProposalDto } from "./dto/respond-meeting-proposal.dto";
 import { SelectAvailabilitySlotDto } from "./dto/select-availability-slot.dto";
 import { GoogleMapsService } from "./google-maps.service";
@@ -202,6 +206,20 @@ export class EscrowService {
               proposedAt: "asc"
             }
           },
+          deliveryProposals: {
+            include: {
+              createdBy: {
+                select: {
+                  id: true,
+                  firstName: true,
+                  lastName: true
+                }
+              }
+            },
+            orderBy: {
+              createdAt: "desc"
+            }
+          },
           availabilitySlots: {
             include: {
               createdBy: {
@@ -282,6 +300,20 @@ export class EscrowService {
           },
           orderBy: {
             proposedAt: "asc"
+          }
+        },
+        deliveryProposals: {
+          include: {
+            createdBy: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true
+              }
+            }
+          },
+          orderBy: {
+            createdAt: "desc"
           }
         },
         availabilitySlots: {
@@ -470,6 +502,128 @@ export class EscrowService {
     };
   }
 
+  async createDeliveryProposal(
+    escrowId: string,
+    dto: CreateDeliveryProposalDto,
+    user: { sub: string; role: string }
+  ) {
+    const escrow = await this.getEscrowById(escrowId);
+    this.ensureCanOperateEscrow(escrow, user);
+    this.ensureActiveMeetingEscrow(escrow);
+
+    if (user.role === "USER" && escrow.sellerId !== user.sub) {
+      throw new BadRequestException("Only the seller can propose delivery method");
+    }
+
+    const proposal = await this.prisma.escrowDeliveryProposal.create({
+      data: {
+        escrowId,
+        createdByUserId: user.sub,
+        method: dto.method,
+        details: dto.details
+      },
+      include: {
+        createdBy: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true
+          }
+        }
+      }
+    });
+
+    await this.notifyCounterparty(escrow, user.sub, {
+      type: NotificationType.DELIVERY_PROPOSED,
+      title: "Nuevo método de entrega propuesto",
+      body: `${this.getDeliveryMethodLabel(dto.method)}${
+        dto.details ? `: ${dto.details}` : ""
+      }`,
+      resourceType: "escrow",
+      resourceId: escrowId
+    });
+
+    return proposal;
+  }
+
+  async respondDeliveryProposal(
+    escrowId: string,
+    proposalId: string,
+    dto: RespondDeliveryProposalDto,
+    user: { sub: string; role: string }
+  ) {
+    const escrow = await this.getEscrowById(escrowId);
+    this.ensureCanOperateEscrow(escrow, user);
+
+    if (
+      dto.status !== DeliveryProposalStatus.ACCEPTED &&
+      dto.status !== DeliveryProposalStatus.DECLINED
+    ) {
+      throw new BadRequestException("Delivery proposal can only be accepted or declined");
+    }
+
+    const proposal = await this.prisma.escrowDeliveryProposal.findUnique({
+      where: { id: proposalId }
+    });
+
+    if (!proposal || proposal.escrowId !== escrowId) {
+      throw new NotFoundException(`Delivery proposal ${proposalId} not found`);
+    }
+
+    if (proposal.createdByUserId === user.sub && user.role === "USER") {
+      throw new BadRequestException("Users cannot respond to their own delivery proposal");
+    }
+
+    if (proposal.status !== DeliveryProposalStatus.PENDING) {
+      throw new BadRequestException("Delivery proposal is not pending");
+    }
+
+    const updatedProposal = await this.prisma.$transaction(async (tx) => {
+      const updated = await tx.escrowDeliveryProposal.update({
+        where: { id: proposalId },
+        data: {
+          status: dto.status,
+          responseNote: dto.responseNote,
+          respondedAt: new Date()
+        },
+        include: {
+          createdBy: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true
+            }
+          }
+        }
+      });
+
+      if (dto.status === DeliveryProposalStatus.ACCEPTED) {
+        await tx.escrowTransaction.update({
+          where: { id: escrowId },
+          data: {
+            shippingProvider: this.getDeliveryMethodLabel(proposal.method)
+          }
+        });
+      }
+
+      return updated;
+    });
+
+    await this.createNotification({
+      userId: proposal.createdByUserId,
+      type: NotificationType.DELIVERY_RESPONDED,
+      title:
+        dto.status === DeliveryProposalStatus.ACCEPTED
+          ? "Método de entrega aceptado"
+          : "Método de entrega rechazado",
+      body: dto.responseNote ?? "La otra parte respondió tu propuesta de entrega.",
+      resourceType: "escrow",
+      resourceId: escrowId
+    });
+
+    return updatedProposal;
+  }
+
   async createAvailabilitySlot(
     escrowId: string,
     dto: CreateAvailabilitySlotDto,
@@ -493,6 +647,14 @@ export class EscrowService {
 
     if (Number.isNaN(endsAt.getTime()) || endsAt <= startsAt) {
       throw new BadRequestException("Availability end must be after start");
+    }
+
+    if (
+      startsAt.getFullYear() !== endsAt.getFullYear() ||
+      startsAt.getMonth() !== endsAt.getMonth() ||
+      startsAt.getDate() !== endsAt.getDate()
+    ) {
+      throw new BadRequestException("Availability must start and end on the same day");
     }
 
     const slot = await this.prisma.escrowAvailabilitySlot.create({
@@ -682,6 +844,17 @@ export class EscrowService {
       ...data,
       userId
     });
+  }
+
+  private getDeliveryMethodLabel(method: DeliveryMethod) {
+    const labels: Record<DeliveryMethod, string> = {
+      [DeliveryMethod.COURIER]: "Correo / operador logístico",
+      [DeliveryMethod.MESSAGING]: "Mensajería privada",
+      [DeliveryMethod.PICKUP]: "Retiro acordado",
+      [DeliveryMethod.SAFE_MEETING]: "Encuentro seguro"
+    };
+
+    return labels[method];
   }
 
   private createNotification(data: Prisma.UserNotificationUncheckedCreateInput) {
