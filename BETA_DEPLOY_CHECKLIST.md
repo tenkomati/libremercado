@@ -10,26 +10,26 @@ Este documento ordena los pasos necesarios para llevar LibreMercado a una beta s
 
 ## 1. Flujo Usuario Completo
 
-- [ ] Registro y login funcionando de punta a punta en frontend.
+- [x] Registro y login funcionando de punta a punta en frontend.
 - [ ] Recuperacion o cambio de contrasena.
 - [ ] Perfil de usuario editable con datos basicos, direccion y contacto.
-- [ ] Onboarding KYC publico completo.
-- [ ] Carga de DNI frente y dorso.
-- [ ] Carga de selfie o prueba de vida.
-- [ ] Estado KYC visible para el usuario.
-- [ ] Publicacion de producto desde frontend.
-- [ ] Carga, previsualizacion y gestion de imagenes de publicaciones.
-- [ ] Edicion basica de publicaciones.
-- [ ] Estados claros de publicacion: borrador, activa, pausada, vendida, rechazada.
-- [ ] Flujo comprador inicia compra protegida.
-- [ ] Flujo vendedor acepta o gestiona la operacion.
-- [ ] Coordinacion de entrega por mensajeria, correo, retiro o encuentro seguro.
+- [x] Onboarding KYC publico completo.
+- [x] Carga de DNI frente y dorso.
+- [x] Carga de selfie o prueba de vida.
+- [x] Estado KYC visible para el usuario.
+- [x] Publicacion de producto desde frontend.
+- [x] Carga, previsualizacion y gestion de imagenes de publicaciones.
+- [x] Edicion basica de publicaciones.
+- [x] Estados claros de publicacion: borrador, activa, pausada, vendida, rechazada.
+- [x] Flujo comprador inicia compra protegida.
+- [x] Flujo vendedor acepta o gestiona la operacion.
+- [x] Coordinacion de entrega por mensajeria, correo, retiro o encuentro seguro.
 - [ ] Confirmacion de entrega.
 - [ ] Liberacion de fondos.
 - [ ] Apertura y seguimiento de disputa.
-- [ ] Mis compras con acciones pendientes claras.
-- [ ] Mis ventas con acciones pendientes claras.
-- [ ] Notificaciones visibles dentro de la cuenta.
+- [x] Mis compras con acciones pendientes claras.
+- [x] Mis ventas con acciones pendientes claras.
+- [x] Notificaciones visibles dentro de la cuenta.
 
 ## 2. Pagos y Escrow Real
 
@@ -60,47 +60,47 @@ Este documento ordena los pasos necesarios para llevar LibreMercado a una beta s
 - [ ] Limites de acciones costosas por usuario no verificado.
 - [ ] Cuotas por usuario, IP y dispositivo.
 - [ ] Validacion fuerte de archivos subidos.
-- [ ] Limite de tamano por archivo.
-- [ ] Limite de cantidad de archivos por entidad.
+- [x] Limite de tamano por archivo.
+- [x] Limite de cantidad de archivos por entidad.
 - [ ] Validacion MIME real.
-- [ ] Conversion HEIC a JPG soportada.
+- [x] Conversion HEIC a JPG soportada.
 - [ ] Escaneo basico de archivos o integracion antivirus.
-- [ ] Revision de roles y guards.
+- [x] Revision de roles y guards.
 - [ ] Separacion de roles: usuario, admin, reviewer, soporte.
-- [ ] Sesiones con expiracion razonable.
+- [x] Sesiones con expiracion razonable.
 - [ ] Refresh token o renovacion controlada.
-- [ ] Secrets fuera del repo.
+- [x] Secrets fuera del repo.
 - [ ] Variables separadas por ambiente.
 - [ ] Headers de seguridad basicos.
 - [ ] CORS restringido por ambiente.
 
 ## 4. Operacion y Admin
 
-- [ ] Panel admin protegido con login real.
-- [ ] Revision KYC desde admin.
-- [ ] Aprobar, rechazar o pedir correccion de KYC.
-- [ ] Ver operaciones escrow desde admin.
-- [ ] Ver historial de eventos de una operacion.
-- [ ] Intervenir disputas desde admin.
-- [ ] Bloquear o suspender usuario.
-- [ ] Pausar o rechazar publicacion.
-- [ ] Cancelar operacion con motivo auditado.
-- [ ] Audit logs utiles.
-- [ ] Filtros admin por usuario, estado, fecha y riesgo.
-- [ ] Vista de metricas basicas: usuarios, publicaciones, operaciones, disputas.
+- [x] Panel admin protegido con login real.
+- [x] Revision KYC desde admin.
+- [x] Aprobar, rechazar o pedir correccion de KYC.
+- [x] Ver operaciones escrow desde admin.
+- [x] Ver historial de eventos de una operacion.
+- [x] Intervenir disputas desde admin.
+- [x] Bloquear o suspender usuario.
+- [x] Pausar o rechazar publicacion.
+- [x] Cancelar operacion con motivo auditado.
+- [x] Audit logs utiles.
+- [x] Filtros admin por usuario, estado, fecha y riesgo.
+- [x] Vista de metricas basicas: usuarios, publicaciones, operaciones, disputas.
 - [ ] Herramientas de soporte para responder casos.
 
 ## 5. Confianza y Experiencia Beta
 
-- [ ] Textos amigables para compra protegida.
-- [ ] Textos amigables para verificacion de identidad.
-- [ ] Textos amigables para encuentro seguro.
+- [x] Textos amigables para compra protegida.
+- [x] Textos amigables para verificacion de identidad.
+- [x] Textos amigables para encuentro seguro.
 - [ ] Terminos claros de cancelacion.
 - [ ] Terminos claros de disputa.
 - [ ] Terminos claros de liberacion de fondos.
-- [ ] Landing/home con CTA real para comprar y vender.
-- [ ] Estados vacios profesionales.
-- [ ] Mensajes de error entendibles para usuarios comunes.
+- [x] Landing/home con CTA real para comprar y vender.
+- [x] Estados vacios profesionales.
+- [x] Mensajes de error entendibles para usuarios comunes.
 - [ ] Onboarding breve para comprador.
 - [ ] Onboarding breve para vendedor.
 - [ ] Emails transaccionales minimos.
@@ -114,7 +114,7 @@ Este documento ordena los pasos necesarios para llevar LibreMercado a una beta s
 
 - [ ] Separar ambientes: local, staging/beta y produccion.
 - [ ] Base de datos gestionada para beta.
-- [ ] Storage real de imagenes.
+- [x] Storage real de imagenes.
 - [ ] Buckets separados por ambiente.
 - [ ] CDN o entrega optimizada de imagenes.
 - [ ] CI/CD minimo.
@@ -133,7 +133,7 @@ Este documento ordena los pasos necesarios para llevar LibreMercado a una beta s
 
 ## 7. QA Pre-Beta
 
-- [ ] Seed demo estable.
+- [x] Seed demo estable.
 - [ ] Checklist manual de flujo comprador.
 - [ ] Checklist manual de flujo vendedor.
 - [ ] Checklist manual de flujo admin.
@@ -155,7 +155,7 @@ Este documento ordena los pasos necesarios para llevar LibreMercado a una beta s
 
 ## Orden Recomendado Inmediato
 
-- [ ] 1. Storage real de imagenes y archivos KYC.
+- [x] 1. Storage real de imagenes y archivos KYC.
 - [ ] 2. KYC admin funcional con revision.
 - [ ] 3. Integracion de pagos en modo sandbox.
 - [ ] 4. Notificaciones por email.
@@ -170,3 +170,6 @@ Este documento ordena los pasos necesarios para llevar LibreMercado a una beta s
 - Sin pagos sandbox y webhooks no conviene validar escrow con usuarios externos.
 - Sin herramientas admin, cualquier disputa o KYC queda bloqueado manualmente.
 
+## Avances Registrados
+
+- 2026-04-21: se agrego storage configurable `local` / `s3` compatible para imagenes de publicaciones y archivos KYC. El codigo ya soporta buckets externos; para beta falta configurar credenciales, bucket/CDN y politica de acceso del proveedor elegido.

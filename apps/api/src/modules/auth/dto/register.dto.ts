@@ -9,6 +9,8 @@ import {
   MinLength
 } from "class-validator";
 
+const UPLOADED_KYC_IMAGE_URL_PATTERN = /^(\/uploads\/kyc\/.+|https:\/\/.+\/uploads\/kyc\/.+)/;
+
 export class RegisterDto {
   @IsEmail()
   email!: string;
@@ -43,18 +45,18 @@ export class RegisterDto {
   city!: string;
 
   @IsString()
-  @Length(1, 300)
-  @Matches(/^\/uploads\/kyc\/.+/)
+  @Length(1, 1000)
+  @Matches(UPLOADED_KYC_IMAGE_URL_PATTERN)
   documentFrontImageUrl!: string;
 
   @IsString()
-  @Length(1, 300)
-  @Matches(/^\/uploads\/kyc\/.+/)
+  @Length(1, 1000)
+  @Matches(UPLOADED_KYC_IMAGE_URL_PATTERN)
   documentBackImageUrl!: string;
 
   @IsString()
-  @Length(1, 300)
-  @Matches(/^\/uploads\/kyc\/.+/)
+  @Length(1, 1000)
+  @Matches(UPLOADED_KYC_IMAGE_URL_PATTERN)
   selfieImageUrl!: string;
 
   @IsBoolean()

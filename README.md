@@ -27,3 +27,29 @@ npm run dev
 - `NEXT_REDIRECT`: compila todas las apps.
 - `npm run lint`: ejecuta lint en workspaces.
 - `npm run typecheck`: ejecuta chequeo de tipos.
+
+## Storage de imágenes
+
+Por defecto, los uploads de publicaciones y verificación de identidad se guardan
+en `apps/web/public/uploads` para desarrollo local.
+
+Para beta/staging se puede usar cualquier storage compatible con S3, por ejemplo
+Cloudflare R2, AWS S3 o MinIO:
+
+```bash
+MEDIA_STORAGE_DRIVER=s3
+S3_ENDPOINT=https://<account-id>.r2.cloudflarestorage.com
+S3_REGION=auto
+S3_BUCKET=libremercado-beta
+S3_ACCESS_KEY_ID=...
+S3_SECRET_ACCESS_KEY=...
+S3_PUBLIC_BASE_URL=https://cdn.example.com
+S3_FORCE_PATH_STYLE=true
+```
+
+Los endpoints internos siguen siendo los mismos:
+
+- `/api/uploads/listing-image`
+- `/api/uploads/kyc-image`
+
+Ambos normalizan JPG, PNG, WEBP, HEIC y HEIF antes de persistir el archivo.

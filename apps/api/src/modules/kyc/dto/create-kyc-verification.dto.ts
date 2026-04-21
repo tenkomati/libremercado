@@ -1,6 +1,8 @@
 import { KycDocumentType } from "@prisma/client";
 import { IsDateString, IsEnum, IsOptional, IsString, Length, Matches } from "class-validator";
 
+const UPLOADED_KYC_IMAGE_URL_PATTERN = /^(\/uploads\/kyc\/.+|https:\/\/.+\/uploads\/kyc\/.+)/;
+
 export class CreateKycVerificationDto {
   @IsString()
   userId!: string;
@@ -23,20 +25,20 @@ export class CreateKycVerificationDto {
 
   @IsOptional()
   @IsString()
-  @Length(1, 300)
-  @Matches(/^\/uploads\/kyc\/.+/)
+  @Length(1, 1000)
+  @Matches(UPLOADED_KYC_IMAGE_URL_PATTERN)
   documentFrontImageUrl?: string;
 
   @IsOptional()
   @IsString()
-  @Length(1, 300)
-  @Matches(/^\/uploads\/kyc\/.+/)
+  @Length(1, 1000)
+  @Matches(UPLOADED_KYC_IMAGE_URL_PATTERN)
   documentBackImageUrl?: string;
 
   @IsOptional()
   @IsString()
-  @Length(1, 300)
-  @Matches(/^\/uploads\/kyc\/.+/)
+  @Length(1, 1000)
+  @Matches(UPLOADED_KYC_IMAGE_URL_PATTERN)
   selfieImageUrl?: string;
 
   @IsOptional()

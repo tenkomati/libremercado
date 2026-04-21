@@ -283,6 +283,9 @@ Implementado con:
 - carga local de imagen principal desde archivo
 - soporte de JPG, PNG, WEBP, HEIC y HEIF en el uploader
 - conversión automática de HEIC/HEIF a JPG con `sharp`
+- storage configurable para imágenes y archivos KYC:
+  - `MEDIA_STORAGE_DRIVER=local` guarda en `apps/web/public/uploads`
+  - `MEDIA_STORAGE_DRIVER=s3` guarda en bucket compatible S3/R2 usando `S3_*`
 - onboarding público de verificación de identidad con historial de verificaciones
 - copy público más amigable: se usa "verificación de identidad" en lugar de KYC y "pago/compra protegida" en lugar de escrow
 - registro público exige frente de DNI, dorso de DNI, selfie y consentimiento de validación de identidad
@@ -296,10 +299,10 @@ Notas:
 - `POST /listings` ya valida que un usuario común solo pueda publicar como vendedor propio.
 - crear publicación sigue exigiendo usuario `ACTIVE` e identidad `APPROVED`, por regla del backend.
 - editar publicación propia permite cambiar datos básicos e imagen principal.
-- la carga de imágenes actual es local/dev: guarda en `apps/web/public/uploads/listings`.
-- la carga de imágenes de identidad actual es local/dev: guarda en `apps/web/public/uploads/kyc`.
+- la carga de imágenes sigue usando storage local por defecto para desarrollo.
+- para beta/staging, configurar `MEDIA_STORAGE_DRIVER=s3`, `S3_BUCKET`, `S3_PUBLIC_BASE_URL`, credenciales y endpoint del proveedor.
 - si un HEIC/HEIF puntual no puede decodificarse, el usuario recibe error amigable para exportarlo como JPG.
-- antes de producción, migrar imágenes a storage externo/CDN con límites de ancho de banda.
+- antes de producción, definir política de privacidad/acceso para KYC, CDN, lifecycle rules y límites de ancho de banda.
 - antes de producción, conectar validación documental/biométrica con proveedor real; el MVP no debe aprobar identidad solo por detección local de navegador.
 - encuentros seguros MVP: comprador/vendedor pueden proponer fecha, hora y shop de estación `YPF`, `SHELL` o `AXION`; la contraparte puede aceptar o rechazar con nota.
 - coordinación segura MVP: el vendedor puede "pintar" franjas horarias y el comprador puede elegir una o enviar un mensaje si no le sirve.
@@ -356,6 +359,7 @@ Cada uno muestra:
 - `package.json`
 - `.env.example`
 - `docker-compose.yml`
+- `BETA_DEPLOY_CHECKLIST.md`
 
 ### Prisma
 
@@ -384,6 +388,8 @@ Cada uno muestra:
 - `apps/web/app/account/kyc/page.tsx`
 - `apps/web/app/api/uploads/kyc-image/route.ts`
 - `apps/web/app/api/uploads/listing-image/route.ts`
+- `apps/web/lib/media-storage.ts`
+- `apps/web/lib/upload-images.ts`
 - `apps/web/app/market/page.tsx`
 - `apps/web/app/market/[id]/page.tsx`
 - `apps/web/app/market/[id]/actions.ts`

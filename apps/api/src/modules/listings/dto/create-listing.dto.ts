@@ -14,7 +14,7 @@ import {
 
 class ListingImageDto {
   @IsString()
-  @Length(5, 500)
+  @Length(5, 1000)
   url!: string;
 }
 

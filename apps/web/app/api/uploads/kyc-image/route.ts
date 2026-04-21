@@ -1,27 +1,14 @@
-import { randomUUID } from "node:crypto";
-import { mkdir, writeFile } from "node:fs/promises";
-import path from "node:path";
-
 import { NextResponse } from "next/server";
-import sharp from "sharp";
+
+import { storeMediaFile } from "../../../../lib/media-storage";
+import {
+  getNormalizedContentType,
+  getTargetImageExtension,
+  normalizeUploadImage
+} from "../../../../lib/upload-images";
 
 const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
 const ALLOWED_PURPOSES = new Set(["dni-front", "dni-back", "selfie"]);
-const ALLOWED_IMAGE_TYPES = new Map([
-  ["image/jpeg", "jpg"],
-  ["image/png", "png"],
-  ["image/webp", "webp"],
-  ["image/heic", "jpg"],
-  ["image/heif", "jpg"]
-]);
-const ALLOWED_IMAGE_EXTENSIONS = new Map([
-  ["jpg", "jpg"],
-  ["jpeg", "jpg"],
-  ["png", "png"],
-  ["webp", "webp"],
-  ["heic", "jpg"],
-  ["heif", "jpg"]
-]);
 
 export async function POST(request: Request) {
   const formData = await request.formData();
@@ -42,7 +29,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const extension = getTargetExtension(file);
+  const extension = getTargetImageExtension(file);
 
   if (!extension) {
     return NextResponse.json(
@@ -58,15 +45,16 @@ export async function POST(request: Request) {
     );
   }
 
-  const uploadDir = path.join(process.cwd(), "public", "uploads", "kyc");
-  await mkdir(uploadDir, { recursive: true });
-
-  const filename = `${Date.now()}-${purpose}-${randomUUID()}.${extension}`;
-  const destination = path.join(uploadDir, filename);
   const sourceBuffer = Buffer.from(await file.arrayBuffer());
+  let buffer;
 
   try {
-    await writeFile(destination, await normalizeImage(sourceBuffer, file, extension));
+    buffer = await normalizeUploadImage({
+      buffer: sourceBuffer,
+      extension,
+      file,
+      maxWidth: 1600
+    });
   } catch (error) {
     return NextResponse.json(
       {
@@ -79,54 +67,26 @@ export async function POST(request: Request) {
     );
   }
 
-  return NextResponse.json({
-    url: `/uploads/kyc/${filename}`
-  });
-}
+  try {
+    const storedFile = await storeMediaFile({
+      body: buffer,
+      contentType: getNormalizedContentType(extension),
+      extension,
+      folder: "kyc",
+      namePrefix: purpose
+    });
 
-function getTargetExtension(file: File) {
-  const typeExtension = ALLOWED_IMAGE_TYPES.get(file.type);
-
-  if (typeExtension) {
-    return typeExtension;
+    return NextResponse.json({
+      key: storedFile.key,
+      url: storedFile.url
+    });
+  } catch {
+    return NextResponse.json(
+      {
+        message:
+          "No se pudo guardar la imagen de identidad. Revisá la configuración de storage."
+      },
+      { status: 500 }
+    );
   }
-
-  const fileExtension = file.name.split(".").pop()?.toLowerCase();
-  return fileExtension ? ALLOWED_IMAGE_EXTENSIONS.get(fileExtension) : undefined;
-}
-
-async function normalizeImage(buffer: Buffer, file: File, extension: string) {
-  const isHeic =
-    file.type === "image/heic" ||
-    file.type === "image/heif" ||
-    file.name.toLowerCase().endsWith(".heic") ||
-    file.name.toLowerCase().endsWith(".heif");
-
-  if (isHeic || extension === "jpg") {
-    try {
-      return await sharp(buffer)
-        .rotate()
-        .resize({ width: 1600, withoutEnlargement: true })
-        .jpeg({ quality: 88, mozjpeg: true })
-        .toBuffer();
-    } catch {
-      throw new Error(
-        "No se pudo convertir la imagen. Probá exportarla como JPG desde tu dispositivo."
-      );
-    }
-  }
-
-  if (extension === "png") {
-    return sharp(buffer)
-      .rotate()
-      .resize({ width: 1600, withoutEnlargement: true })
-      .png({ compressionLevel: 9 })
-      .toBuffer();
-  }
-
-  return sharp(buffer)
-    .rotate()
-    .resize({ width: 1600, withoutEnlargement: true })
-    .webp({ quality: 88 })
-    .toBuffer();
 }
