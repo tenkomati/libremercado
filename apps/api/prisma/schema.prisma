@@ -119,6 +119,7 @@ enum NotificationType {
   ESCROW_MESSAGE
   DELIVERY_PROPOSED
   DELIVERY_RESPONDED
+  KYC_REVIEWED
 }
 
 model User {

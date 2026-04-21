@@ -106,6 +106,12 @@ Query params de listado:
 
 - `q`, `userId`, `status`, `page`, `pageSize`, `sortBy`, `sortOrder`
 
+Notas:
+
+- una revisión KYC crea notificación interna `KYC_REVIEWED` para el usuario
+- `REQUIRES_REVIEW` y `REJECTED` quedan visibles en `/account/kyc` con notas del revisor
+- el usuario puede reenviar documentación completa desde `/account/kyc`
+
 ### Listings
 
 - `POST /listings` -> autenticado
@@ -288,6 +294,7 @@ Implementado con:
   - `MEDIA_STORAGE_DRIVER=local` guarda en `apps/web/public/uploads`
   - `MEDIA_STORAGE_DRIVER=s3` guarda en bucket compatible S3/R2 usando `S3_*`
 - onboarding público de verificación de identidad con historial de verificaciones
+- corrección pública de verificación de identidad con reenvío de frente DNI, dorso DNI y selfie desde `/account/kyc`
 - copy público más amigable: se usa "verificación de identidad" en lugar de KYC y "pago/compra protegida" en lugar de escrow
 - registro público exige frente de DNI, dorso de DNI, selfie y consentimiento de validación de identidad
 - alta pública crea automáticamente una verificación de identidad `PENDING` asociada al usuario
@@ -393,6 +400,7 @@ Detalle KYC implementado:
 - `apps/web/app/signup/signup-form.tsx`
 - `apps/web/app/account/page.tsx`
 - `apps/web/app/account/actions.ts`
+- `apps/web/app/account/kyc-correction-form.tsx`
 - `apps/web/app/account/listing-image-upload.tsx`
 - `apps/web/app/account/listings/[id]/page.tsx`
 - `apps/web/app/account/listings/new/page.tsx`

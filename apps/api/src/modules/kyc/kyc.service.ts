@@ -3,7 +3,7 @@ import {
   Injectable,
   NotFoundException
 } from "@nestjs/common";
-import { KycStatus, Prisma } from "@prisma/client";
+import { KycStatus, NotificationType, Prisma } from "@prisma/client";
 
 import {
   getPagination,
@@ -190,6 +190,30 @@ export class KycService {
       }
     });
 
+    await this.prisma.userNotification.create({
+      data: {
+        userId: verification.userId,
+        type: NotificationType.KYC_REVIEWED,
+        title: this.getKycNotificationTitle(dto.status),
+        body:
+          dto.reviewerNotes ??
+          "Tu verificación de identidad fue revisada por nuestro equipo.",
+        resourceType: "kyc_verification",
+        resourceId: id
+      }
+    });
+
     return updatedVerification;
+  }
+
+  private getKycNotificationTitle(status: KycStatus) {
+    const titles: Record<KycStatus, string> = {
+      [KycStatus.APPROVED]: "Identidad aprobada",
+      [KycStatus.PENDING]: "Identidad pendiente",
+      [KycStatus.REJECTED]: "Identidad rechazada",
+      [KycStatus.REQUIRES_REVIEW]: "Necesitamos que corrijas tu identidad"
+    };
+
+    return titles[status];
   }
 }

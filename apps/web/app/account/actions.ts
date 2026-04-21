@@ -88,6 +88,11 @@ export async function createListingAction(formData: FormData) {
 export async function createKycVerificationAction(formData: FormData) {
   const { token, session } = await getSessionToken();
   const returnTo = "/account/kyc";
+  const documentFrontImageUrl = String(formData.get("documentFrontImageUrl") ?? "").trim();
+  const documentBackImageUrl = String(formData.get("documentBackImageUrl") ?? "").trim();
+  const selfieImageUrl = String(formData.get("selfieImageUrl") ?? "").trim();
+  const biometricConsentAt = String(formData.get("biometricConsentAt") ?? "").trim();
+  const reviewerNotes = String(formData.get("reviewerNotes") ?? "").trim();
 
   const response = await fetch(`${API_URL}/kyc/verifications`, {
     method: "POST",
@@ -100,7 +105,11 @@ export async function createKycVerificationAction(formData: FormData) {
       provider: "frontoffice",
       documentType: formData.get("documentType"),
       documentNumber: formData.get("documentNumber"),
-      reviewerNotes: formData.get("reviewerNotes")
+      reviewerNotes: reviewerNotes || "Documentación enviada desde el área de usuario.",
+      ...(documentFrontImageUrl ? { documentFrontImageUrl } : {}),
+      ...(documentBackImageUrl ? { documentBackImageUrl } : {}),
+      ...(selfieImageUrl ? { selfieImageUrl } : {}),
+      ...(biometricConsentAt ? { biometricConsentAt } : {})
     }),
     cache: "no-store"
   });
@@ -110,6 +119,7 @@ export async function createKycVerificationAction(formData: FormData) {
   }
 
   revalidatePath("/account");
+  revalidatePath("/account/kyc");
   redirectWithMessage(returnTo, "success", "Verificación de identidad enviada a revisión.");
 }
 

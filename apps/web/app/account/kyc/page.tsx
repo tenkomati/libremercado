@@ -6,7 +6,7 @@ import { apiFetchWithToken } from "../../../lib/api";
 import { AUTH_COOKIE_NAME, verifySessionToken } from "../../../lib/auth";
 import { formatDate } from "../../../lib/format";
 
-import { createKycVerificationAction } from "../actions";
+import { KycCorrectionForm } from "../kyc-correction-form";
 
 type KycPageProps = {
   searchParams?: Promise<{
@@ -28,6 +28,10 @@ type AccountUser = {
     documentNumber: string;
     status: string;
     reviewerNotes: string | null;
+    documentFrontImageUrl: string | null;
+    documentBackImageUrl: string | null;
+    selfieImageUrl: string | null;
+    biometricConsentAt: string | null;
     createdAt: string;
     reviewedAt: string | null;
   }>;
@@ -59,6 +63,11 @@ export default async function KycPage({ searchParams }: KycPageProps) {
       error?: string;
     }>
   ]);
+  const latestVerification = user.kycVerifications[0];
+  const requiresCorrection =
+    user.kycStatus === "REQUIRES_REVIEW" || user.kycStatus === "REJECTED";
+  const isApproved = user.kycStatus === "APPROVED";
+  const isPending = user.kycStatus === "PENDING";
 
   return (
     <main className="mx-auto w-full max-w-6xl px-6 py-8 sm:px-10 lg:px-12">
@@ -93,10 +102,12 @@ export default async function KycPage({ searchParams }: KycPageProps) {
         </div>
 
         <div className="rounded-[2rem] border border-[var(--surface-border)] bg-white/88 p-8 shadow-[0_24px_80px_rgba(8,34,71,0.08)]">
-          <h2 className="text-2xl font-semibold text-[var(--navy)]">Enviar documentación</h2>
+          <h2 className="text-2xl font-semibold text-[var(--navy)]">
+            {requiresCorrection ? "Corregir documentación" : "Enviar documentación"}
+          </h2>
           <p className="mt-2 text-sm leading-6 text-[var(--muted)]">
-            Esta versión inicial registra la solicitud para revisión manual en
-            admin. Más adelante se conectará proveedor biométrico real.
+            Subí frente del DNI, dorso y selfie actual. Si operación pidió una
+            corrección, usá fotos nuevas, bien iluminadas y legibles.
           </p>
 
           {params.success ? (
@@ -111,28 +122,27 @@ export default async function KycPage({ searchParams }: KycPageProps) {
             </div>
           ) : null}
 
-          <form action={createKycVerificationAction} className="mt-6 grid gap-4">
-            <label className="grid gap-2 text-sm font-medium text-[var(--navy)]">
-              Tipo de documento
-              <select className="rounded-2xl border border-[var(--surface-border)] bg-[#f8fbff] px-4 py-3 outline-none focus:border-[var(--brand)]" name="documentType" required>
-                <option value="DNI">DNI</option>
-                <option value="CUIL">CUIL</option>
-                <option value="CUIT">CUIT</option>
-                <option value="PASSPORT">Pasaporte</option>
-              </select>
-            </label>
-            <label className="grid gap-2 text-sm font-medium text-[var(--navy)]">
-              Número
-              <input className="rounded-2xl border border-[var(--surface-border)] bg-[#f8fbff] px-4 py-3 outline-none focus:border-[var(--brand)]" defaultValue={user.dni} name="documentNumber" required />
-            </label>
-            <label className="grid gap-2 text-sm font-medium text-[var(--navy)]">
-              Observaciones
-              <textarea className="min-h-28 rounded-2xl border border-[var(--surface-border)] bg-[#f8fbff] px-4 py-3 outline-none focus:border-[var(--brand)]" name="reviewerNotes" placeholder="Ej: documento vigente, foto clara, solicitud enviada desde onboarding público." />
-            </label>
-            <button className="rounded-full bg-[var(--brand)] px-5 py-4 font-semibold text-white transition hover:bg-[var(--brand-strong)]" type="submit">
-              Enviar a revisión
-            </button>
-          </form>
+          {isApproved ? (
+            <div className="mt-6 rounded-[1.5rem] border border-[rgba(5,150,105,0.18)] bg-[rgba(5,150,105,0.08)] px-5 py-4 text-sm leading-6 text-[#065f46]">
+              Tu identidad ya está aprobada. No hace falta reenviar documentación
+              salvo que soporte te lo solicite.
+            </div>
+          ) : null}
+
+          {isPending && !requiresCorrection ? (
+            <div className="mt-6 rounded-[1.5rem] border border-[rgba(217,119,6,0.18)] bg-[rgba(217,119,6,0.08)] px-5 py-4 text-sm leading-6 text-[#92400e]">
+              Tu documentación está pendiente de revisión. Si subiste una imagen
+              incorrecta, podés reenviar el set completo desde este formulario.
+            </div>
+          ) : null}
+
+          {!isApproved ? (
+            <KycCorrectionForm
+              defaultDocumentNumber={user.dni}
+              latestReviewerNotes={latestVerification?.reviewerNotes}
+              requiresCorrection={requiresCorrection}
+            />
+          ) : null}
         </div>
       </section>
 
@@ -155,6 +165,28 @@ export default async function KycPage({ searchParams }: KycPageProps) {
                   {verification.reviewerNotes ? (
                     <p className="mt-2 text-sm text-[var(--muted)]">{verification.reviewerNotes}</p>
                   ) : null}
+                  <div className="mt-3 flex flex-wrap gap-2 text-xs font-semibold">
+                    {verification.documentFrontImageUrl ? (
+                      <a className="rounded-full bg-white px-3 py-1 text-[var(--brand-strong)]" href={verification.documentFrontImageUrl} target="_blank" rel="noreferrer">
+                        Frente DNI
+                      </a>
+                    ) : null}
+                    {verification.documentBackImageUrl ? (
+                      <a className="rounded-full bg-white px-3 py-1 text-[var(--brand-strong)]" href={verification.documentBackImageUrl} target="_blank" rel="noreferrer">
+                        Dorso DNI
+                      </a>
+                    ) : null}
+                    {verification.selfieImageUrl ? (
+                      <a className="rounded-full bg-white px-3 py-1 text-[var(--brand-strong)]" href={verification.selfieImageUrl} target="_blank" rel="noreferrer">
+                        Selfie
+                      </a>
+                    ) : null}
+                    {verification.biometricConsentAt ? (
+                      <span className="rounded-full bg-[#ecfdf5] px-3 py-1 text-[#047857]">
+                        Consentimiento registrado
+                      </span>
+                    ) : null}
+                  </div>
                 </div>
                 <span className="rounded-full bg-[#eef4ff] px-3 py-1 text-xs font-semibold text-[var(--brand-strong)]">
                   {verification.status}

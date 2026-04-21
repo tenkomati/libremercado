@@ -17,6 +17,8 @@ Este documento ordena los pasos necesarios para llevar LibreMercado a una beta s
 - [x] Carga de DNI frente y dorso.
 - [x] Carga de selfie o prueba de vida.
 - [x] Estado KYC visible para el usuario.
+- [x] Correccion KYC visible para el usuario cuando admin pide revision.
+- [x] Reenvio de DNI frente, dorso y selfie desde `/account/kyc`.
 - [x] Publicacion de producto desde frontend.
 - [x] Carga, previsualizacion y gestion de imagenes de publicaciones.
 - [x] Edicion basica de publicaciones.
@@ -108,7 +110,7 @@ Este documento ordena los pasos necesarios para llevar LibreMercado a una beta s
 - [ ] Notificacion de cambio de entrega.
 - [ ] Notificacion de mensaje.
 - [ ] Notificacion de disputa.
-- [ ] Notificacion de KYC aprobado/rechazado.
+- [x] Notificacion de KYC aprobado/rechazado.
 
 ## 6. Infraestructura y Deploy
 
@@ -156,7 +158,7 @@ Este documento ordena los pasos necesarios para llevar LibreMercado a una beta s
 ## Orden Recomendado Inmediato
 
 - [x] 1. Storage real de imagenes y archivos KYC.
-- [ ] 2. KYC admin funcional con revision.
+- [x] 2. KYC admin funcional con revision.
 - [ ] 3. Integracion de pagos en modo sandbox.
 - [ ] 4. Notificaciones por email.
 - [ ] 5. Hardening de seguridad, rate limits y DoW.
@@ -174,3 +176,4 @@ Este documento ordena los pasos necesarios para llevar LibreMercado a una beta s
 
 - 2026-04-21: se agrego storage configurable `local` / `s3` compatible para imagenes de publicaciones y archivos KYC. El codigo ya soporta buckets externos; para beta falta configurar credenciales, bucket/CDN y politica de acceso del proveedor elegido.
 - 2026-04-21: se agrego ficha admin dedicada para revisar identidad con DNI frente/dorso, selfie, decision operativa, notas, auditoria y bloqueo de aprobacion cuando falta evidencia.
+- 2026-04-21: se agrego correccion KYC para usuario: si admin pide revision o rechaza, `/account/kyc` muestra el motivo, permite reenviar DNI frente/dorso/selfie y genera notificacion interna de revision KYC.
