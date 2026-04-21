@@ -17,6 +17,7 @@ import { Roles } from "../auth/decorators/roles.decorator";
 import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
 import { RolesGuard } from "../auth/guards/roles.guard";
 
+import { CancelEscrowDto } from "./dto/cancel-escrow.dto";
 import { CreateAvailabilitySlotDto } from "./dto/create-availability-slot.dto";
 import { CreateDeliveryProposalDto } from "./dto/create-delivery-proposal.dto";
 import { CreateEscrowMessageDto } from "./dto/create-escrow-message.dto";
@@ -310,6 +311,29 @@ export class EscrowController {
         action: "ESCROW_FUNDS_RELEASED",
         resourceType: "escrow",
         resourceId: id
+      });
+
+      return escrow;
+    });
+  }
+
+  @Roles(UserRole.ADMIN, UserRole.OPS)
+  @Patch(":id/cancel")
+  cancelEscrow(
+    @Param("id") id: string,
+    @Body() dto: CancelEscrowDto,
+    @CurrentUser() user: { sub: string; role: UserRole }
+  ) {
+    return this.escrowService.cancelEscrow(id, dto).then(async (escrow) => {
+      await this.auditService.logAction({
+        actorUserId: user.sub,
+        actorRole: user.role,
+        action: "ESCROW_CANCELLED",
+        resourceType: "escrow",
+        resourceId: id,
+        metadata: {
+          reason: dto.reason
+        }
       });
 
       return escrow;

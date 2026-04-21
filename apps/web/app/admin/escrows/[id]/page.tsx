@@ -443,7 +443,10 @@ export default async function EscrowDetailPage({
                   Liberar fondos
                 </SubmitButton>
               ) : null}
-              {escrow.status !== "DISPUTED" && escrow.status !== "RELEASED" ? (
+              {escrow.status !== "DISPUTED" &&
+              escrow.status !== "RELEASED" &&
+              escrow.status !== "REFUNDED" &&
+              escrow.status !== "CANCELLED" ? (
                 <>
                   <input
                     className="min-w-56 flex-1 rounded-full border border-[var(--surface-border)] bg-white px-3 py-2 text-xs"
@@ -458,6 +461,24 @@ export default async function EscrowDetailPage({
                     value="dispute"
                   >
                     Abrir disputa
+                  </SubmitButton>
+                </>
+              ) : null}
+              {["FUNDS_PENDING", "FUNDS_HELD", "DISPUTED"].includes(escrow.status) ? (
+                <>
+                  <input
+                    className="min-w-56 flex-1 rounded-full border border-[var(--surface-border)] bg-white px-3 py-2 text-xs"
+                    defaultValue="Cancelación operativa con reembolso controlado."
+                    name="reason"
+                  />
+                  <SubmitButton
+                    className="rounded-full bg-[#7f1d1d] px-3 py-2 text-xs font-semibold text-white"
+                    confirmMessage="¿Cancelar esta operación y registrar reembolso si corresponde?"
+                    name="action"
+                    pendingLabel="Cancelando..."
+                    value="cancel"
+                  >
+                    Cancelar y reembolsar
                   </SubmitButton>
                 </>
               ) : null}

@@ -27,6 +27,7 @@ import { ListingsService } from "../listings/listings.service";
 import { PrismaService } from "../prisma/prisma.service";
 import { UsersService } from "../users/users.service";
 
+import { CancelEscrowDto } from "./dto/cancel-escrow.dto";
 import { CreateAvailabilitySlotDto } from "./dto/create-availability-slot.dto";
 import { CreateDeliveryProposalDto } from "./dto/create-delivery-proposal.dto";
 import { CreateEscrowMessageDto } from "./dto/create-escrow-message.dto";
@@ -1095,6 +1096,72 @@ export class EscrowService {
     return updatedEscrow;
   }
 
+  async cancelEscrow(id: string, dto: CancelEscrowDto) {
+    const escrow = await this.getEscrowById(id);
+
+    if (
+      escrow.status !== EscrowStatus.FUNDS_PENDING &&
+      escrow.status !== EscrowStatus.FUNDS_HELD &&
+      escrow.status !== EscrowStatus.DISPUTED
+    ) {
+      throw new BadRequestException("Escrow cannot be cancelled in current status");
+    }
+
+    const reason =
+      dto.reason ?? "Operación cancelada desde consola admin con reembolso controlado.";
+    const updatedEscrow = await this.prisma.$transaction(async (tx) => {
+      const updated = await tx.escrowTransaction.update({
+        where: { id },
+        data: {
+          status: EscrowStatus.REFUNDED,
+          disputeReason: reason,
+          events: {
+            create: [
+              {
+                type: EscrowEventType.CANCELLED,
+                payload: {
+                  reason
+                }
+              },
+              {
+                type: EscrowEventType.REFUNDED,
+                payload: {
+                  reason,
+                  amount: escrow.amount.toString()
+                }
+              }
+            ]
+          }
+        },
+        include: {
+          events: {
+            orderBy: {
+              createdAt: "asc"
+            }
+          }
+        }
+      });
+
+      await tx.listing.update({
+        where: { id: escrow.listingId },
+        data: {
+          status: ListingStatus.PUBLISHED
+        }
+      });
+
+      await this.markPaymentsRefunded(tx, id, reason);
+
+      return updated;
+    });
+
+    await this.notifyPaymentParties(escrow, id, {
+      title: "Operación cancelada y reembolsada",
+      body: "La operación fue cancelada. Si había un pago aprobado, queda registrado como reembolsado."
+    });
+
+    return updatedEscrow;
+  }
+
   private async markPaymentsReadyToRelease(
     tx: Prisma.TransactionClient,
     escrowId: string,
@@ -1203,6 +1270,54 @@ export class EscrowService {
                 action: "disputed",
                 escrowId,
                 reason
+              }
+            }
+          }
+        }
+      });
+    }
+  }
+
+  private async markPaymentsRefunded(
+    tx: Prisma.TransactionClient,
+    escrowId: string,
+    reason: string
+  ) {
+    const paymentIntents = await tx.paymentIntent.findMany({
+      where: {
+        escrowId,
+        status: {
+          in: [
+            PaymentStatus.PAYMENT_PENDING,
+            PaymentStatus.PAYMENT_APPROVED,
+            PaymentStatus.FUNDS_HELD,
+            PaymentStatus.READY_TO_RELEASE,
+            PaymentStatus.DISPUTED
+          ]
+        }
+      }
+    });
+
+    const refundedAt = new Date();
+
+    for (const paymentIntent of paymentIntents) {
+      await tx.paymentIntent.update({
+        where: { id: paymentIntent.id },
+        data: {
+          status: PaymentStatus.REFUNDED,
+          refundedAt,
+          providerStatus: "refunded",
+          events: {
+            create: {
+              provider: paymentIntent.provider,
+              status: PaymentStatus.REFUNDED,
+              providerEventId: `${paymentIntent.provider.toLowerCase()}_${paymentIntent.id}_refunded`,
+              rawPayload: {
+                action: "refunded",
+                escrowId,
+                reason,
+                refundedAt: refundedAt.toISOString(),
+                amount: paymentIntent.amount.toString()
               }
             }
           }

@@ -162,6 +162,17 @@ export async function runEscrowAction(formData: FormData) {
       redirectWithMessage("success", "Disputa abierta correctamente.", returnTo);
     }
 
+    if (action === "cancel") {
+      const reason =
+        String(formData.get("reason")) ||
+        "Operación cancelada desde consola admin con reembolso controlado.";
+
+      await callAdminApi(`/escrows/${escrowId}/cancel`, "PATCH", {
+        reason
+      });
+      redirectWithMessage("success", "Operación cancelada y reembolso registrado.", returnTo);
+    }
+
     redirectWithMessage("error", "Acción de escrow no reconocida.", returnTo);
   } catch (error) {
     if (isRedirectError(error)) throw error;

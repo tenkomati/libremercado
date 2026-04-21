@@ -147,6 +147,7 @@ Query params de listado:
 - `PATCH /escrows/:id/ship`
 - `PATCH /escrows/:id/confirm-delivery`
 - `PATCH /escrows/:id/release`
+- `PATCH /escrows/:id/cancel`
 - `PATCH /escrows/:id/dispute`
 
 Query params de listado:
@@ -174,6 +175,7 @@ Implementado:
 - entrega confirmada mueve pagos asociados de `FUNDS_HELD` a `READY_TO_RELEASE`
 - liberación de fondos mueve pagos asociados a `RELEASED`
 - disputa mueve pagos asociados a `DISPUTED`
+- cancelación operativa mueve escrow a `REFUNDED`, pagos asociados a `REFUNDED` y vuelve la publicación a `PUBLISHED`
 - cada transición financiera crea eventos en `PaymentEvent`
 
 ### Auditoría
@@ -400,6 +402,7 @@ Detalle escrow implementado:
 - vista de intentos de pago asociados
 - eventos financieros por intento de pago
 - acción admin para simular aprobación sandbox
+- acción admin para cancelar operación y registrar reembolso
 
 ## Archivos clave
 
