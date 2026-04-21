@@ -53,3 +53,28 @@ Los endpoints internos siguen siendo los mismos:
 - `/api/uploads/kyc-image`
 
 Ambos normalizan JPG, PNG, WEBP, HEIC y HEIF antes de persistir el archivo.
+
+## Pagos
+
+El core de pagos está desacoplado del proveedor final. Para desarrollo y beta
+interna existe un adapter `SANDBOX` que permite probar la compra protegida sin
+Mercado Pago ni Mobbex todavía.
+
+Flujo actual:
+
+1. El comprador inicia checkout con `POST /payments/checkout`.
+2. La API crea un escrow en `FUNDS_PENDING`.
+3. La API crea un `PaymentIntent` en `PAYMENT_PENDING`.
+4. Admin/ops simula aprobación desde `/admin/escrows/[id]`.
+5. El pago pasa a `FUNDS_HELD` y el escrow queda con fondos protegidos.
+
+Modelos principales:
+
+- `PaymentIntent`
+- `PaymentEvent`
+
+Adapters previstos:
+
+- `SANDBOX`
+- `MERCADO_PAGO`
+- `MOBBEX`

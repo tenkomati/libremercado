@@ -6,6 +6,7 @@ import { AuthModule } from "../auth/auth.module";
 import { EscrowModule } from "../escrow/escrow.module";
 import { KycModule } from "../kyc/kyc.module";
 import { ListingsModule } from "../listings/listings.module";
+import { PaymentsModule } from "../payments/payments.module";
 import { PrismaModule } from "../prisma/prisma.module";
 import { UsersModule } from "../users/users.module";
 
@@ -23,6 +24,7 @@ import { AppController } from "./app.controller";
     UsersModule,
     KycModule,
     ListingsModule,
+    PaymentsModule,
     EscrowModule
   ],
   controllers: [AppController]

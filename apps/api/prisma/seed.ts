@@ -280,6 +280,8 @@ async function main() {
   await prisma.escrowAvailabilitySlot.deleteMany();
   await prisma.escrowDeliveryProposal.deleteMany();
   await prisma.escrowMeetingProposal.deleteMany();
+  await prisma.paymentEvent.deleteMany();
+  await prisma.paymentIntent.deleteMany();
   await prisma.escrowEvent.deleteMany();
   await prisma.escrowTransaction.deleteMany();
   await prisma.listingImage.deleteMany();

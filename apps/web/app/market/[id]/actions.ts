@@ -34,15 +34,13 @@ export async function createProtectedPurchaseAction(formData: FormData) {
     redirect(`/login?next=${encodeURIComponent(returnTo)}`);
   }
 
-  let session;
-
   try {
-    session = await verifySessionToken(token);
+    await verifySessionToken(token);
   } catch {
     redirect(`/login?next=${encodeURIComponent(returnTo)}`);
   }
 
-  const response = await fetch(`${API_URL}/escrows`, {
+  const response = await fetch(`${API_URL}/payments/checkout`, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${token}`,
@@ -50,7 +48,6 @@ export async function createProtectedPurchaseAction(formData: FormData) {
     },
     body: JSON.stringify({
       listingId,
-      buyerId: session.sub,
       shippingProvider: "Entrega protegida libremercado"
     }),
     cache: "no-store"
@@ -63,5 +60,5 @@ export async function createProtectedPurchaseAction(formData: FormData) {
 
   revalidatePath("/market");
   revalidatePath(returnTo);
-  redirect(`${returnTo}?success=${encodeURIComponent("Compra protegida iniciada. Los fondos quedaron retenidos de forma segura.")}`);
+  redirect(`${returnTo}?success=${encodeURIComponent("Checkout protegido iniciado. En sandbox, un admin puede simular la aprobación del pago para retener los fondos.")}`);
 }

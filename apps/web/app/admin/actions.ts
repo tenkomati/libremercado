@@ -173,6 +173,23 @@ export async function runEscrowAction(formData: FormData) {
   }
 }
 
+export async function approveSandboxPaymentAction(formData: FormData) {
+  try {
+    const paymentIntentId = String(formData.get("paymentIntentId"));
+    const returnTo = String(formData.get("returnTo") ?? "/admin");
+
+    await callAdminApi(`/payments/${paymentIntentId}/sandbox/approve`, "POST");
+    redirectWithMessage("success", "Pago sandbox aprobado y fondos protegidos.", returnTo);
+  } catch (error) {
+    if (isRedirectError(error)) throw error;
+    redirectWithMessage(
+      "error",
+      error instanceof Error ? error.message : "No se pudo aprobar el pago sandbox.",
+      String(formData.get("returnTo") ?? "/admin")
+    );
+  }
+}
+
 export async function updateUserStatusAction(formData: FormData) {
   try {
     const userId = String(formData.get("userId"));

@@ -51,6 +51,8 @@ Modelos relevantes:
 - `EscrowDeliveryProposal`
 - `EscrowMeetingProposal`
 - `EscrowMessage`
+- `PaymentIntent`
+- `PaymentEvent`
 - `UserNotification`
 - `EscrowEvent`
 - `AdminAuditLog`
@@ -150,6 +152,25 @@ Query params de listado:
 Query params de listado:
 
 - `q`, `buyerId`, `sellerId`, `status`, `page`, `pageSize`, `sortBy`, `sortOrder`
+
+Notas:
+
+- la creación de compra protegida vía checkout ahora deja escrow en `FUNDS_PENDING`
+- cuando el pago sandbox se aprueba, el escrow pasa a `FUNDS_HELD`
+
+### Payments
+
+- `POST /payments/checkout`
+- `GET /payments/:id`
+- `POST /payments/:id/sandbox/approve` -> `ADMIN` / `OPS`
+
+Implementado:
+
+- capa neutral de pagos para soportar adapters `SANDBOX`, `MERCADO_PAGO` y `MOBBEX`
+- `PaymentIntent` con estado financiero y referencias del proveedor
+- `PaymentEvent` para eventos/webhooks auditables
+- adapter sandbox inicial
+- aprobación sandbox desde admin que mueve fondos a protegidos y notifica comprador/vendedor
 
 ### Auditoría
 
@@ -370,6 +391,12 @@ Detalle KYC implementado:
 - notas operativas y acciones aprobar, pedir corrección/revisión o rechazar
 - snapshot del usuario y auditoría específica de la verificación
 
+Detalle escrow implementado:
+
+- vista de intentos de pago asociados
+- eventos financieros por intento de pago
+- acción admin para simular aprobación sandbox
+
 ## Archivos clave
 
 ### Infra
@@ -418,6 +445,7 @@ Detalle KYC implementado:
 - `apps/api/src/modules/escrow/dto/select-availability-slot.dto.ts`
 - `apps/api/src/modules/escrow/dto/create-escrow-message.dto.ts`
 - `apps/api/src/modules/escrow/google-maps.service.ts`
+- `apps/api/src/modules/payments/*`
 - `apps/web/app/admin/page.tsx`
 - `apps/web/app/admin/actions.ts`
 - `apps/web/app/admin/form-controls.tsx`

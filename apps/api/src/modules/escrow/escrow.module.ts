@@ -11,6 +11,7 @@ import { GoogleMapsService } from "./google-maps.service";
 @Module({
   imports: [AuditModule, UsersModule, ListingsModule],
   controllers: [EscrowController],
-  providers: [EscrowService, GoogleMapsService]
+  providers: [EscrowService, GoogleMapsService],
+  exports: [EscrowService]
 })
 export class EscrowModule {}

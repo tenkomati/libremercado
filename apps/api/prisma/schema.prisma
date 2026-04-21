@@ -120,6 +120,24 @@ enum NotificationType {
   DELIVERY_PROPOSED
   DELIVERY_RESPONDED
   KYC_REVIEWED
+  PAYMENT_UPDATED
+}
+
+enum PaymentProvider {
+  SANDBOX
+  MERCADO_PAGO
+  MOBBEX
+}
+
+enum PaymentStatus {
+  PAYMENT_PENDING
+  PAYMENT_APPROVED
+  FUNDS_HELD
+  READY_TO_RELEASE
+  RELEASED
+  REFUNDED
+  DISPUTED
+  FAILED
 }
 
 model User {
@@ -147,6 +165,8 @@ model User {
   availabilitySlots EscrowAvailabilitySlot[] @relation("AvailabilityCreatedBy")
   selectedAvailabilitySlots EscrowAvailabilitySlot[] @relation("AvailabilitySelectedBy")
   escrowMessages    EscrowMessage[]
+  buyerPaymentIntents PaymentIntent[] @relation("PaymentBuyer")
+  sellerPaymentIntents PaymentIntent[] @relation("PaymentSeller")
   notifications     UserNotification[]
   adminAuditLogs   AdminAuditLog[]
 
@@ -259,10 +279,61 @@ model EscrowTransaction {
   deliveryProposals   EscrowDeliveryProposal[]
   availabilitySlots   EscrowAvailabilitySlot[]
   messages            EscrowMessage[]
+  paymentIntents      PaymentIntent[]
 
   @@index([buyerId, status])
   @@index([sellerId, status])
   @@index([listingId, status])
+}
+
+model PaymentIntent {
+  id                   String          @id @default(cuid())
+  escrowId             String
+  buyerId              String
+  sellerId             String
+  provider             PaymentProvider
+  status               PaymentStatus   @default(PAYMENT_PENDING)
+  amount               Decimal         @db.Decimal(12, 2)
+  feeAmount            Decimal         @db.Decimal(12, 2)
+  netAmount            Decimal         @db.Decimal(12, 2)
+  currency             CurrencyCode    @default(ARS)
+  checkoutUrl          String?
+  providerPaymentId    String?
+  providerPreferenceId String?
+  providerStatus       String?
+  providerRawPayload   Json?
+  approvedAt           DateTime?
+  fundsHeldAt          DateTime?
+  readyToReleaseAt     DateTime?
+  releasedAt           DateTime?
+  refundedAt           DateTime?
+  failedAt             DateTime?
+  createdAt            DateTime        @default(now())
+  updatedAt            DateTime        @updatedAt
+  escrow               EscrowTransaction @relation(fields: [escrowId], references: [id], onDelete: Cascade)
+  buyer                User            @relation("PaymentBuyer", fields: [buyerId], references: [id], onDelete: Restrict)
+  seller               User            @relation("PaymentSeller", fields: [sellerId], references: [id], onDelete: Restrict)
+  events               PaymentEvent[]
+
+  @@index([escrowId, status])
+  @@index([buyerId, status, createdAt])
+  @@index([sellerId, status, createdAt])
+  @@index([provider, providerPaymentId])
+  @@index([provider, providerPreferenceId])
+}
+
+model PaymentEvent {
+  id              String        @id @default(cuid())
+  paymentIntentId String
+  provider        PaymentProvider
+  status          PaymentStatus
+  providerEventId String?
+  rawPayload      Json?
+  createdAt       DateTime      @default(now())
+  paymentIntent   PaymentIntent @relation(fields: [paymentIntentId], references: [id], onDelete: Cascade)
+
+  @@index([paymentIntentId, createdAt])
+  @@index([provider, providerEventId])
 }
 
 model EscrowDeliveryProposal {

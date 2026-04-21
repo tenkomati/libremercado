@@ -89,7 +89,7 @@ export class EscrowService {
           feeAmount,
           netAmount,
           currency: listing.currency,
-          status: EscrowStatus.FUNDS_HELD,
+          status: EscrowStatus.FUNDS_PENDING,
           shippingProvider: dto.shippingProvider,
           shippingTrackingCode: dto.shippingTrackingCode,
           events: {
@@ -101,12 +101,6 @@ export class EscrowService {
                   buyerId: dto.buyerId
                 }
               },
-              {
-                type: EscrowEventType.FUNDS_HELD,
-                payload: {
-                  amount: amount.toString()
-                }
-              }
             ]
           }
         },
@@ -127,6 +121,29 @@ export class EscrowService {
       });
 
       return escrow;
+    });
+  }
+
+  async markFundsHeld(id: string, payload?: Prisma.InputJsonValue) {
+    const escrow = await this.getEscrowById(id);
+
+    if (escrow.status !== EscrowStatus.FUNDS_PENDING) {
+      throw new BadRequestException("Only pending escrows can move to funds held");
+    }
+
+    return this.prisma.escrowTransaction.update({
+      where: { id },
+      data: {
+        status: EscrowStatus.FUNDS_HELD,
+        events: {
+          create: {
+            type: EscrowEventType.FUNDS_HELD,
+            payload: payload ?? {
+              source: "payment"
+            }
+          }
+        }
+      }
     });
   }
 
@@ -255,6 +272,18 @@ export class EscrowService {
               createdAt: "asc"
             },
             take: 30
+          },
+          paymentIntents: {
+            orderBy: {
+              createdAt: "desc"
+            },
+            include: {
+              events: {
+                orderBy: {
+                  createdAt: "asc"
+                }
+              }
+            }
           }
         },
         orderBy: {
@@ -349,6 +378,18 @@ export class EscrowService {
           },
           orderBy: {
             createdAt: "asc"
+          }
+        },
+        paymentIntents: {
+          orderBy: {
+            createdAt: "desc"
+          },
+          include: {
+            events: {
+              orderBy: {
+                createdAt: "asc"
+              }
+            }
           }
         }
       }

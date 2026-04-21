@@ -37,18 +37,18 @@ Este documento ordena los pasos necesarios para llevar LibreMercado a una beta s
 
 - [ ] Definir proveedor de pago para Argentina.
 - [ ] Validar si el proveedor permite retencion real de fondos o si requiere flujo alternativo.
-- [ ] Implementar pago sandbox.
+- [x] Implementar pago sandbox.
 - [ ] Implementar webhooks firmados.
-- [ ] Persistir estados financieros auditables.
-- [ ] Estado: pago iniciado.
-- [ ] Estado: pago aprobado.
-- [ ] Estado: pago retenido o protegido.
+- [x] Persistir estados financieros auditables.
+- [x] Estado: pago iniciado.
+- [x] Estado: pago aprobado.
+- [x] Estado: pago retenido o protegido.
 - [ ] Estado: pago liberado.
 - [ ] Estado: pago reembolsado.
 - [ ] Estado: pago en disputa.
 - [ ] Comisiones parametrizables por ambiente.
 - [ ] Calculo de comision visible para comprador y vendedor.
-- [ ] Registro interno de eventos financieros.
+- [x] Registro interno de eventos financieros.
 - [ ] Pruebas de pago aprobado, rechazado, expirado y reembolsado.
 
 ## 3. Seguridad y Anti-Abuso
@@ -159,7 +159,7 @@ Este documento ordena los pasos necesarios para llevar LibreMercado a una beta s
 
 - [x] 1. Storage real de imagenes y archivos KYC.
 - [x] 2. KYC admin funcional con revision.
-- [ ] 3. Integracion de pagos en modo sandbox.
+- [x] 3. Integracion de pagos en modo sandbox.
 - [ ] 4. Notificaciones por email.
 - [ ] 5. Hardening de seguridad, rate limits y DoW.
 - [ ] 6. Deploy staging/beta con DB y storage reales.
@@ -177,3 +177,4 @@ Este documento ordena los pasos necesarios para llevar LibreMercado a una beta s
 - 2026-04-21: se agrego storage configurable `local` / `s3` compatible para imagenes de publicaciones y archivos KYC. El codigo ya soporta buckets externos; para beta falta configurar credenciales, bucket/CDN y politica de acceso del proveedor elegido.
 - 2026-04-21: se agrego ficha admin dedicada para revisar identidad con DNI frente/dorso, selfie, decision operativa, notas, auditoria y bloqueo de aprobacion cuando falta evidencia.
 - 2026-04-21: se agrego correccion KYC para usuario: si admin pide revision o rechaza, `/account/kyc` muestra el motivo, permite reenviar DNI frente/dorso/selfie y genera notificacion interna de revision KYC.
+- 2026-04-21: se agrego capa neutral de pagos con `PaymentIntent`, `PaymentEvent`, adapter `SANDBOX`, checkout protegido y aprobacion sandbox desde admin para mover escrows de `FUNDS_PENDING` a `FUNDS_HELD`.

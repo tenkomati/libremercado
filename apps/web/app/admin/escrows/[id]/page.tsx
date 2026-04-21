@@ -6,7 +6,7 @@ import { apiFetchWithToken } from "../../../../lib/api";
 import { canAccessAdmin, verifySessionToken } from "../../../../lib/auth";
 import { formatCurrency, formatDate } from "../../../../lib/format";
 
-import { runEscrowAction } from "../../actions";
+import { approveSandboxPaymentAction, runEscrowAction } from "../../actions";
 import { ConfirmForm, SubmitButton } from "../../form-controls";
 
 type EscrowDetailPageProps = {
@@ -65,6 +65,29 @@ type EscrowDetail = {
     kycStatus: string;
   };
   events: EscrowEvent[];
+  paymentIntents: Array<{
+    id: string;
+    provider: string;
+    status: string;
+    amount: string;
+    feeAmount: string;
+    netAmount: string;
+    checkoutUrl: string | null;
+    providerPaymentId: string | null;
+    providerPreferenceId: string | null;
+    providerStatus: string | null;
+    approvedAt: string | null;
+    fundsHeldAt: string | null;
+    releasedAt: string | null;
+    createdAt: string;
+    events: Array<{
+      id: string;
+      status: string;
+      provider: string;
+      providerEventId: string | null;
+      createdAt: string;
+    }>;
+  }>;
 };
 
 type AuditLog = {
@@ -201,6 +224,91 @@ export default async function EscrowDetailPage({
                   {formatCurrency(escrow.netAmount)}
                 </p>
               </div>
+            </div>
+          </div>
+
+          <div className="rounded-[1.75rem] border border-[var(--surface-border)] bg-white/80 p-6">
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <div>
+                <h2 className="text-2xl font-semibold text-[var(--navy)]">Pagos</h2>
+                <p className="mt-2 text-sm text-[var(--muted)]">
+                  Adapter neutral listo para sandbox, Mercado Pago o Mobbex.
+                </p>
+              </div>
+              <span className="text-sm text-[var(--muted)]">
+                {escrow.paymentIntents.length} intentos
+              </span>
+            </div>
+            <div className="mt-5 grid gap-3">
+              {escrow.paymentIntents.map((paymentIntent) => (
+                <article
+                  className="rounded-[1.25rem] border border-[var(--surface-border)] bg-[#f8fbff] p-4"
+                  key={paymentIntent.id}
+                >
+                  <div className="flex flex-wrap items-start justify-between gap-4">
+                    <div>
+                      <p className="font-semibold text-[var(--navy)]">
+                        {paymentIntent.provider} · {paymentIntent.status}
+                      </p>
+                      <p className="mt-1 text-sm text-[var(--muted)]">
+                        Preference: {paymentIntent.providerPreferenceId ?? "Sin preference"}
+                      </p>
+                      <p className="text-sm text-[var(--muted)]">
+                        Payment: {paymentIntent.providerPaymentId ?? "Pendiente"}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-semibold text-[var(--navy)]">
+                        {formatCurrency(paymentIntent.amount)}
+                      </p>
+                      <p className="text-sm text-[var(--muted)]">
+                        {formatDate(paymentIntent.createdAt)}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="mt-4 grid gap-2 text-sm text-[var(--muted)] md:grid-cols-3">
+                    <p>Fee: {formatCurrency(paymentIntent.feeAmount)}</p>
+                    <p>Neto: {formatCurrency(paymentIntent.netAmount)}</p>
+                    <p>Aprobado: {formatDate(paymentIntent.approvedAt)}</p>
+                  </div>
+
+                  {paymentIntent.provider === "SANDBOX" &&
+                  paymentIntent.status === "PAYMENT_PENDING" ? (
+                    <ConfirmForm action={approveSandboxPaymentAction} className="mt-4">
+                      <input name="paymentIntentId" type="hidden" value={paymentIntent.id} />
+                      <input name="returnTo" type="hidden" value={currentPath} />
+                      <SubmitButton
+                        className="rounded-full bg-[#059669] px-4 py-2 text-xs font-semibold text-white"
+                        confirmMessage="¿Simular aprobación del pago sandbox y mover el escrow a fondos protegidos?"
+                        pendingLabel="Aprobando..."
+                      >
+                        Simular pago aprobado
+                      </SubmitButton>
+                    </ConfirmForm>
+                  ) : null}
+
+                  {paymentIntent.events.length > 0 ? (
+                    <div className="mt-4 rounded-2xl bg-white p-3">
+                      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--muted)]">
+                        Eventos de pago
+                      </p>
+                      <div className="mt-2 grid gap-2">
+                        {paymentIntent.events.map((event) => (
+                          <p className="text-xs text-[var(--muted)]" key={event.id}>
+                            {formatDate(event.createdAt)} · {event.provider} · {event.status}
+                          </p>
+                        ))}
+                      </div>
+                    </div>
+                  ) : null}
+                </article>
+              ))}
+              {escrow.paymentIntents.length === 0 ? (
+                <p className="text-sm text-[var(--muted)]">
+                  Este escrow todavía no tiene intención de pago asociada.
+                </p>
+              ) : null}
             </div>
           </div>
 
