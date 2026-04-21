@@ -99,6 +99,7 @@ Query params de listado:
 
 - `POST /kyc/verifications`
 - `GET /kyc/verifications` -> `ADMIN` / `OPS`
+- `GET /kyc/verifications/:id` -> `ADMIN` / `OPS`
 - `PATCH /kyc/verifications/:id/review` -> `ADMIN` / `OPS`
 
 Query params de listado:
@@ -342,6 +343,7 @@ Funcionalidad actual:
 ### Detalles admin implementados
 
 - `/admin/users/[id]`
+- `/admin/kyc/[id]`
 - `/admin/escrows/[id]`
 - `/admin/listings/[id]`
 
@@ -351,6 +353,15 @@ Cada uno muestra:
 - contexto relacionado
 - auditoría específica
 - acciones operativas en contexto
+
+Detalle KYC implementado:
+
+- ficha dedicada de revisión de identidad
+- imágenes visibles de frente de DNI, dorso y selfie
+- apertura de originales en nueva pestaña
+- bloqueo visual para aprobar si falta evidencia obligatoria
+- notas operativas y acciones aprobar, pedir corrección/revisión o rechazar
+- snapshot del usuario y auditoría específica de la verificación
 
 ## Archivos clave
 
@@ -403,6 +414,7 @@ Cada uno muestra:
 - `apps/web/app/admin/actions.ts`
 - `apps/web/app/admin/form-controls.tsx`
 - `apps/web/app/admin/users/[id]/page.tsx`
+- `apps/web/app/admin/kyc/[id]/page.tsx`
 - `apps/web/app/admin/escrows/[id]/page.tsx`
 - `apps/web/app/admin/listings/[id]/page.tsx`
 - `apps/web/middleware.ts`

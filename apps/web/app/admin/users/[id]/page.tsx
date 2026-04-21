@@ -313,6 +313,9 @@ export default async function UserDetailPage({
                           </p>
                         ) : null}
                         <div className="flex flex-wrap gap-2 pt-2 text-xs font-semibold">
+                          <Link className="rounded-full border border-[var(--surface-border)] bg-white px-3 py-1 text-[var(--navy)]" href={`/admin/kyc/${kyc.id}`}>
+                            Revisar ficha completa
+                          </Link>
                           {kyc.documentFrontImageUrl ? (
                             <a className="rounded-full bg-white px-3 py-1 text-[var(--brand-strong)]" href={kyc.documentFrontImageUrl} target="_blank" rel="noreferrer">
                               Frente DNI

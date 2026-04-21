@@ -49,6 +49,12 @@ export class KycController {
   }
 
   @Roles(UserRole.ADMIN, UserRole.OPS)
+  @Get("verifications/:id")
+  getVerification(@Param("id") id: string) {
+    return this.kycService.getVerificationById(id);
+  }
+
+  @Roles(UserRole.ADMIN, UserRole.OPS)
   @Patch("verifications/:id/review")
   reviewVerification(
     @Param("id") id: string,

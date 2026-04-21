@@ -46,6 +46,7 @@ type Verification = {
   biometricConsentAt: string | null;
   reviewerNotes: string | null;
   user: {
+    id: string;
     firstName: string;
     lastName: string;
     email: string;
@@ -683,9 +684,12 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
                 >
                   <div className="flex items-start justify-between gap-4">
                     <div>
-                      <p className="font-semibold text-[var(--navy)]">
+                      <Link
+                        className="font-semibold text-[var(--navy)] transition hover:text-[var(--brand)]"
+                        href={`/admin/kyc/${verification.id}`}
+                      >
                         {verification.user.firstName} {verification.user.lastName}
-                      </p>
+                      </Link>
                       <p className="text-sm text-[var(--muted)]">
                         {verification.provider} · {verification.documentType}
                       </p>
@@ -718,6 +722,18 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
                         Consentimiento registrado
                       </span>
                     ) : null}
+                    <Link
+                      className="rounded-full border border-[var(--surface-border)] bg-white px-3 py-1 text-[var(--navy)]"
+                      href={`/admin/kyc/${verification.id}`}
+                    >
+                      Revisar ficha completa
+                    </Link>
+                    <Link
+                      className="rounded-full border border-[var(--surface-border)] bg-white px-3 py-1 text-[var(--navy)]"
+                      href={`/admin/users/${verification.user.id}`}
+                    >
+                      Ver usuario
+                    </Link>
                   </div>
                   <ConfirmForm action={reviewKycAction} className="mt-4 flex flex-wrap gap-2">
                     <input name="verificationId" type="hidden" value={verification.id} />

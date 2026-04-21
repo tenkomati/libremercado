@@ -31,6 +31,7 @@ export function ConfirmForm({ action, children, className }: ConfirmFormProps) {
 type SubmitButtonProps = {
   children: ReactNode;
   className: string;
+  disabled?: boolean;
   name?: string;
   value?: string;
   pendingLabel?: string;
@@ -40,6 +41,7 @@ type SubmitButtonProps = {
 export function SubmitButton({
   children,
   className,
+  disabled = false,
   name,
   value,
   pendingLabel = "Procesando...",
@@ -51,7 +53,7 @@ export function SubmitButton({
     <button
       className={`${className} disabled:cursor-not-allowed disabled:opacity-60`}
       data-confirm={confirmMessage}
-      disabled={pending}
+      disabled={pending || disabled}
       name={name}
       type="submit"
       value={value}

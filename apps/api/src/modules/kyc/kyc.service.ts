@@ -123,6 +123,44 @@ export class KycService {
     };
   }
 
+  async getVerificationById(id: string) {
+    const verification = await this.prisma.kycVerification.findUnique({
+      where: { id },
+      include: {
+        user: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+            dni: true,
+            phone: true,
+            city: true,
+            province: true,
+            status: true,
+            role: true,
+            kycStatus: true,
+            reputationScore: true,
+            createdAt: true,
+            _count: {
+              select: {
+                listings: true,
+                buyerEscrows: true,
+                sellerEscrows: true
+              }
+            }
+          }
+        }
+      }
+    });
+
+    if (!verification) {
+      throw new NotFoundException(`KYC verification ${id} not found`);
+    }
+
+    return verification;
+  }
+
   async reviewVerification(id: string, dto: ReviewKycVerificationDto) {
     const verification = await this.prisma.kycVerification.findUnique({
       where: { id }
