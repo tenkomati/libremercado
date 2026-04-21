@@ -171,6 +171,10 @@ Implementado:
 - `PaymentEvent` para eventos/webhooks auditables
 - adapter sandbox inicial
 - aprobación sandbox desde admin que mueve fondos a protegidos y notifica comprador/vendedor
+- entrega confirmada mueve pagos asociados de `FUNDS_HELD` a `READY_TO_RELEASE`
+- liberación de fondos mueve pagos asociados a `RELEASED`
+- disputa mueve pagos asociados a `DISPUTED`
+- cada transición financiera crea eventos en `PaymentEvent`
 
 ### Auditoría
 

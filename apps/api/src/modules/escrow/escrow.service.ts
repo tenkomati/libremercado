@@ -13,6 +13,7 @@ import {
   ListingStatus,
   MeetingProposalStatus,
   NotificationType,
+  PaymentStatus,
   Prisma
 } from "@prisma/client";
 
@@ -949,29 +950,42 @@ export class EscrowService {
     const deliveredAt = new Date();
     const releaseEligibleAt = new Date(deliveredAt.getTime() + 48 * 60 * 60 * 1000);
 
-    return this.prisma.escrowTransaction.update({
-      where: { id },
-      data: {
-        status: EscrowStatus.DELIVERED,
-        deliveredAt,
-        releaseEligibleAt,
-        events: {
-          create: {
-            type: EscrowEventType.DELIVERED,
-            payload: {
-              releaseEligibleAt: releaseEligibleAt.toISOString()
+    const updatedEscrow = await this.prisma.$transaction(async (tx) => {
+      const updated = await tx.escrowTransaction.update({
+        where: { id },
+        data: {
+          status: EscrowStatus.DELIVERED,
+          deliveredAt,
+          releaseEligibleAt,
+          events: {
+            create: {
+              type: EscrowEventType.DELIVERED,
+              payload: {
+                releaseEligibleAt: releaseEligibleAt.toISOString()
+              }
+            }
+          }
+        },
+        include: {
+          events: {
+            orderBy: {
+              createdAt: "asc"
             }
           }
         }
-      },
-      include: {
-        events: {
-          orderBy: {
-            createdAt: "asc"
-          }
-        }
-      }
+      });
+
+      await this.markPaymentsReadyToRelease(tx, id, releaseEligibleAt);
+
+      return updated;
     });
+
+    await this.notifyPaymentParties(escrow, id, {
+      title: "Entrega confirmada",
+      body: "La entrega fue confirmada. Los fondos quedan listos para liberarse según las reglas de la operación."
+    });
+
+    return updatedEscrow;
   }
 
   async releaseFunds(id: string) {
@@ -981,12 +995,13 @@ export class EscrowService {
       throw new BadRequestException("Escrow must be delivered before release");
     }
 
-    return this.prisma.$transaction(async (tx) => {
+    const updatedEscrow = await this.prisma.$transaction(async (tx) => {
+      const releasedAt = new Date();
       const updatedEscrow = await tx.escrowTransaction.update({
         where: { id },
         data: {
           status: EscrowStatus.RELEASED,
-          releasedAt: new Date(),
+          releasedAt,
           events: {
             create: {
               type: EscrowEventType.RELEASED,
@@ -1012,8 +1027,17 @@ export class EscrowService {
         }
       });
 
+      await this.markPaymentsReleased(tx, id, releasedAt);
+
       return updatedEscrow;
     });
+
+    await this.notifyPaymentParties(escrow, id, {
+      title: "Fondos liberados",
+      body: "Los fondos de la operación fueron liberados y el pago quedó registrado como finalizado."
+    });
+
+    return updatedEscrow;
   }
 
   async openDispute(id: string, dto: OpenDisputeDto) {
@@ -1027,7 +1051,7 @@ export class EscrowService {
       throw new BadRequestException("Escrow cannot be disputed in current status");
     }
 
-    return this.prisma.$transaction(async (tx) => {
+    const updatedEscrow = await this.prisma.$transaction(async (tx) => {
       const updatedEscrow = await tx.escrowTransaction.update({
         where: { id },
         data: {
@@ -1058,7 +1082,159 @@ export class EscrowService {
         }
       });
 
+      await this.markPaymentsDisputed(tx, id, dto.reason);
+
       return updatedEscrow;
+    });
+
+    await this.notifyPaymentParties(escrow, id, {
+      title: "Pago en disputa",
+      body: "La operación entró en disputa. Los fondos quedan retenidos hasta resolución operativa."
+    });
+
+    return updatedEscrow;
+  }
+
+  private async markPaymentsReadyToRelease(
+    tx: Prisma.TransactionClient,
+    escrowId: string,
+    readyToReleaseAt: Date
+  ) {
+    const paymentIntents = await tx.paymentIntent.findMany({
+      where: {
+        escrowId,
+        status: PaymentStatus.FUNDS_HELD
+      }
+    });
+
+    for (const paymentIntent of paymentIntents) {
+      await tx.paymentIntent.update({
+        where: { id: paymentIntent.id },
+        data: {
+          status: PaymentStatus.READY_TO_RELEASE,
+          readyToReleaseAt,
+          providerStatus: "ready_to_release",
+          events: {
+            create: {
+              provider: paymentIntent.provider,
+              status: PaymentStatus.READY_TO_RELEASE,
+              providerEventId: `${paymentIntent.provider.toLowerCase()}_${paymentIntent.id}_ready_to_release`,
+              rawPayload: {
+                action: "ready_to_release",
+                escrowId,
+                readyToReleaseAt: readyToReleaseAt.toISOString()
+              }
+            }
+          }
+        }
+      });
+    }
+  }
+
+  private async markPaymentsReleased(
+    tx: Prisma.TransactionClient,
+    escrowId: string,
+    releasedAt: Date
+  ) {
+    const paymentIntents = await tx.paymentIntent.findMany({
+      where: {
+        escrowId,
+        status: {
+          in: [PaymentStatus.FUNDS_HELD, PaymentStatus.READY_TO_RELEASE]
+        }
+      }
+    });
+
+    for (const paymentIntent of paymentIntents) {
+      await tx.paymentIntent.update({
+        where: { id: paymentIntent.id },
+        data: {
+          status: PaymentStatus.RELEASED,
+          releasedAt,
+          providerStatus: "released",
+          events: {
+            create: {
+              provider: paymentIntent.provider,
+              status: PaymentStatus.RELEASED,
+              providerEventId: `${paymentIntent.provider.toLowerCase()}_${paymentIntent.id}_released`,
+              rawPayload: {
+                action: "released",
+                escrowId,
+                releasedAt: releasedAt.toISOString(),
+                netAmount: paymentIntent.netAmount.toString()
+              }
+            }
+          }
+        }
+      });
+    }
+  }
+
+  private async markPaymentsDisputed(
+    tx: Prisma.TransactionClient,
+    escrowId: string,
+    reason: string
+  ) {
+    const paymentIntents = await tx.paymentIntent.findMany({
+      where: {
+        escrowId,
+        status: {
+          in: [
+            PaymentStatus.FUNDS_HELD,
+            PaymentStatus.READY_TO_RELEASE,
+            PaymentStatus.PAYMENT_APPROVED
+          ]
+        }
+      }
+    });
+
+    for (const paymentIntent of paymentIntents) {
+      await tx.paymentIntent.update({
+        where: { id: paymentIntent.id },
+        data: {
+          status: PaymentStatus.DISPUTED,
+          providerStatus: "disputed",
+          events: {
+            create: {
+              provider: paymentIntent.provider,
+              status: PaymentStatus.DISPUTED,
+              providerEventId: `${paymentIntent.provider.toLowerCase()}_${paymentIntent.id}_disputed`,
+              rawPayload: {
+                action: "disputed",
+                escrowId,
+                reason
+              }
+            }
+          }
+        }
+      });
+    }
+  }
+
+  private async notifyPaymentParties(
+    escrow: { buyerId: string; sellerId: string },
+    escrowId: string,
+    data: { title: string; body: string }
+  ) {
+    await this.prisma.userNotification.createMany({
+      data: [
+        {
+          userId: escrow.buyerId,
+          type: NotificationType.PAYMENT_UPDATED,
+          title: data.title,
+          body: data.body,
+          resourceType: "escrow",
+          resourceId: escrowId
+        },
+        {
+          userId: escrow.sellerId,
+          type: NotificationType.PAYMENT_UPDATED,
+          title: data.title,
+          body: data.body,
+          resourceType: "escrow",
+          resourceId: escrowId
+        }
+      ]
     });
   }
 }

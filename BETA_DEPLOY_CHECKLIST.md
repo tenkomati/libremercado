@@ -43,9 +43,9 @@ Este documento ordena los pasos necesarios para llevar LibreMercado a una beta s
 - [x] Estado: pago iniciado.
 - [x] Estado: pago aprobado.
 - [x] Estado: pago retenido o protegido.
-- [ ] Estado: pago liberado.
+- [x] Estado: pago liberado.
 - [ ] Estado: pago reembolsado.
-- [ ] Estado: pago en disputa.
+- [x] Estado: pago en disputa.
 - [ ] Comisiones parametrizables por ambiente.
 - [ ] Calculo de comision visible para comprador y vendedor.
 - [x] Registro interno de eventos financieros.
@@ -178,3 +178,4 @@ Este documento ordena los pasos necesarios para llevar LibreMercado a una beta s
 - 2026-04-21: se agrego ficha admin dedicada para revisar identidad con DNI frente/dorso, selfie, decision operativa, notas, auditoria y bloqueo de aprobacion cuando falta evidencia.
 - 2026-04-21: se agrego correccion KYC para usuario: si admin pide revision o rechaza, `/account/kyc` muestra el motivo, permite reenviar DNI frente/dorso/selfie y genera notificacion interna de revision KYC.
 - 2026-04-21: se agrego capa neutral de pagos con `PaymentIntent`, `PaymentEvent`, adapter `SANDBOX`, checkout protegido y aprobacion sandbox desde admin para mover escrows de `FUNDS_PENDING` a `FUNDS_HELD`.
+- 2026-04-21: se completo el ciclo financiero posterior: entrega confirmada mueve pagos a `READY_TO_RELEASE`, liberacion mueve pagos a `RELEASED` y disputa mueve pagos a `DISPUTED`, todo con eventos financieros auditables.
