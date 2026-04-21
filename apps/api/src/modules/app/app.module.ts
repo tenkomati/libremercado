@@ -8,6 +8,7 @@ import { KycModule } from "../kyc/kyc.module";
 import { ListingsModule } from "../listings/listings.module";
 import { PaymentsModule } from "../payments/payments.module";
 import { PrismaModule } from "../prisma/prisma.module";
+import { RateLimitModule } from "../rate-limit/rate-limit.module";
 import { UsersModule } from "../users/users.module";
 
 import { AppController } from "./app.controller";
@@ -19,6 +20,7 @@ import { AppController } from "./app.controller";
       envFilePath: ["../../.env", ".env"]
     }),
     PrismaModule,
+    RateLimitModule,
     AuthModule,
     AuditModule,
     UsersModule,

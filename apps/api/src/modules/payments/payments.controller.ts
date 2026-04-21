@@ -14,6 +14,7 @@ import { CurrentUser } from "../auth/decorators/current-user.decorator";
 import { Roles } from "../auth/decorators/roles.decorator";
 import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
 import { RolesGuard } from "../auth/guards/roles.guard";
+import { RateLimit } from "../rate-limit/rate-limit.decorator";
 
 import { CreateCheckoutDto } from "./dto/create-checkout.dto";
 import { PaymentsService } from "./payments.service";
@@ -27,6 +28,7 @@ export class PaymentsController {
   ) {}
 
   @Post("checkout")
+  @RateLimit({ keyPrefix: "payment-checkout", limit: 10, windowSeconds: 3600 })
   createCheckout(
     @Body() dto: CreateCheckoutDto,
     @CurrentUser() user: { sub: string; role: UserRole }
@@ -65,6 +67,7 @@ export class PaymentsController {
 
   @Roles(UserRole.ADMIN, UserRole.OPS)
   @Post(":id/sandbox/approve")
+  @RateLimit({ keyPrefix: "payment-sandbox-approve", limit: 120, windowSeconds: 3600 })
   approveSandboxPayment(
     @Param("id") id: string,
     @CurrentUser() user: { sub: string; role: UserRole }

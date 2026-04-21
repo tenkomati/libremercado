@@ -16,6 +16,7 @@ import { CurrentUser } from "../auth/decorators/current-user.decorator";
 import { Roles } from "../auth/decorators/roles.decorator";
 import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
 import { RolesGuard } from "../auth/guards/roles.guard";
+import { RateLimit } from "../rate-limit/rate-limit.decorator";
 
 import { CreateKycVerificationDto } from "./dto/create-kyc-verification.dto";
 import { ListKycVerificationsQueryDto } from "./dto/list-kyc-verifications-query.dto";
@@ -31,6 +32,7 @@ export class KycController {
   ) {}
 
   @Post("verifications")
+  @RateLimit({ keyPrefix: "kyc-create", limit: 6, windowSeconds: 3600 })
   createVerification(
     @Body() dto: CreateKycVerificationDto,
     @CurrentUser() user: { sub: string; role: UserRole }

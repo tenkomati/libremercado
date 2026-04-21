@@ -16,6 +16,7 @@ import { CurrentUser } from "../auth/decorators/current-user.decorator";
 import { Roles } from "../auth/decorators/roles.decorator";
 import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
 import { RolesGuard } from "../auth/guards/roles.guard";
+import { RateLimit } from "../rate-limit/rate-limit.decorator";
 
 import { CancelEscrowDto } from "./dto/cancel-escrow.dto";
 import { CreateAvailabilitySlotDto } from "./dto/create-availability-slot.dto";
@@ -40,6 +41,7 @@ export class EscrowController {
   ) {}
 
   @Post()
+  @RateLimit({ keyPrefix: "escrow-create", limit: 10, windowSeconds: 3600 })
   createEscrow(
     @Body() dto: CreateEscrowDto,
     @CurrentUser() user: { sub: string; role: UserRole }
@@ -86,6 +88,7 @@ export class EscrowController {
   }
 
   @Post(":id/meeting-proposals")
+  @RateLimit({ keyPrefix: "escrow-meeting-proposal", limit: 30, windowSeconds: 3600 })
   createMeetingProposal(
     @Param("id") id: string,
     @Body() dto: CreateMeetingProposalDto,
@@ -136,6 +139,7 @@ export class EscrowController {
   }
 
   @Post(":id/delivery-proposals")
+  @RateLimit({ keyPrefix: "escrow-delivery-proposal", limit: 30, windowSeconds: 3600 })
   createDeliveryProposal(
     @Param("id") id: string,
     @Body() dto: CreateDeliveryProposalDto,
@@ -185,6 +189,7 @@ export class EscrowController {
   }
 
   @Post(":id/availability-slots")
+  @RateLimit({ keyPrefix: "escrow-availability", limit: 40, windowSeconds: 3600 })
   createAvailabilitySlot(
     @Param("id") id: string,
     @Body() dto: CreateAvailabilitySlotDto,
@@ -235,6 +240,7 @@ export class EscrowController {
   }
 
   @Post(":id/messages")
+  @RateLimit({ keyPrefix: "escrow-message", limit: 120, windowSeconds: 3600 })
   sendMessage(
     @Param("id") id: string,
     @Body() dto: CreateEscrowMessageDto,

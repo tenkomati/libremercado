@@ -16,6 +16,7 @@ import { CurrentUser } from "../auth/decorators/current-user.decorator";
 import { Roles } from "../auth/decorators/roles.decorator";
 import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
 import { RolesGuard } from "../auth/guards/roles.guard";
+import { RateLimit } from "../rate-limit/rate-limit.decorator";
 
 import { CreateListingDto } from "./dto/create-listing.dto";
 import { ListListingsQueryDto } from "./dto/list-listings-query.dto";
@@ -31,6 +32,7 @@ export class ListingsController {
   ) {}
 
   @Post()
+  @RateLimit({ keyPrefix: "listing-create", limit: 20, windowSeconds: 3600 })
   @UseGuards(JwtAuthGuard, RolesGuard)
   createListing(
     @Body() dto: CreateListingDto,
@@ -54,6 +56,7 @@ export class ListingsController {
   }
 
   @Patch(":id")
+  @RateLimit({ keyPrefix: "listing-update", limit: 60, windowSeconds: 3600 })
   @UseGuards(JwtAuthGuard, RolesGuard)
   async updateListing(
     @Param("id") id: string,

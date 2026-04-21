@@ -53,11 +53,11 @@ Este documento ordena los pasos necesarios para llevar LibreMercado a una beta s
 
 ## 3. Seguridad y Anti-Abuso
 
-- [ ] Rate limiting por IP en auth.
-- [ ] Rate limiting por usuario en acciones sensibles.
-- [ ] Rate limiting en mensajes.
-- [ ] Rate limiting en publicaciones.
-- [ ] Rate limiting en KYC.
+- [x] Rate limiting por IP en auth.
+- [x] Rate limiting por usuario en acciones sensibles.
+- [x] Rate limiting en mensajes.
+- [x] Rate limiting en publicaciones.
+- [x] Rate limiting en KYC.
 - [ ] Proteccion DoW antes del deploy.
 - [ ] Limites de acciones costosas por usuario no verificado.
 - [ ] Cuotas por usuario, IP y dispositivo.
@@ -180,3 +180,4 @@ Este documento ordena los pasos necesarios para llevar LibreMercado a una beta s
 - 2026-04-21: se agrego capa neutral de pagos con `PaymentIntent`, `PaymentEvent`, adapter `SANDBOX`, checkout protegido y aprobacion sandbox desde admin para mover escrows de `FUNDS_PENDING` a `FUNDS_HELD`.
 - 2026-04-21: se completo el ciclo financiero posterior: entrega confirmada mueve pagos a `READY_TO_RELEASE`, liberacion mueve pagos a `RELEASED` y disputa mueve pagos a `DISPUTED`, todo con eventos financieros auditables.
 - 2026-04-21: se agrego cancelacion controlada desde admin con reembolso sandbox: escrows cancelables pasan a `REFUNDED`, pagos asociados a `REFUNDED`, la publicacion vuelve a `PUBLISHED` y quedan eventos/auditoria.
+- 2026-04-21: se agrego rate limiting distribuible con Redis y fallback en memoria para auth, KYC, publicaciones, mensajes, coordinacion de escrow y checkout/pagos sandbox.

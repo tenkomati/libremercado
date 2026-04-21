@@ -78,3 +78,23 @@ Adapters previstos:
 - `SANDBOX`
 - `MERCADO_PAGO`
 - `MOBBEX`
+
+## Rate limiting
+
+La API incluye rate limiting por endpoint sensible con Redis y fallback en
+memoria para desarrollo local. Redis se configura con:
+
+```bash
+REDIS_URL=redis://localhost:6379
+```
+
+Rutas protegidas:
+
+- `POST /auth/register`
+- `POST /auth/login`
+- `POST /kyc/verifications`
+- `POST /listings`
+- `PATCH /listings/:id`
+- `POST /escrows`
+- `POST /escrows/:id/messages`
+- `POST /payments/checkout`

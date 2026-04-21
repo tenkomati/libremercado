@@ -73,6 +73,7 @@ Incluye:
 - TTL configurable con `JWT_ACCESS_TOKEN_TTL_SECONDS`
 - cookie web alineada a la expiración del token emitido por API
 - rate limiting básico de login por email + IP en memoria
+- rate limiting distribuible por Redis en `/auth/login` y `/auth/register`
 - auditoría de login/logout exitosos
 - `JwtAuthGuard`
 - `RolesGuard`
@@ -177,6 +178,25 @@ Implementado:
 - disputa mueve pagos asociados a `DISPUTED`
 - cancelación operativa mueve escrow a `REFUNDED`, pagos asociados a `REFUNDED` y vuelve la publicación a `PUBLISHED`
 - cada transición financiera crea eventos en `PaymentEvent`
+
+### Rate limiting / anti-abuso
+
+- módulo `RateLimitModule` con guard global y decorador `@RateLimit`
+- usa Redis con `REDIS_URL` cuando está disponible
+- fallback en memoria si Redis no está disponible para no romper desarrollo local
+- rutas protegidas:
+  - `POST /auth/register`
+  - `POST /auth/login`
+  - `POST /kyc/verifications`
+  - `POST /listings`
+  - `PATCH /listings/:id`
+  - `POST /escrows`
+  - `POST /escrows/:id/meeting-proposals`
+  - `POST /escrows/:id/delivery-proposals`
+  - `POST /escrows/:id/availability-slots`
+  - `POST /escrows/:id/messages`
+  - `POST /payments/checkout`
+  - `POST /payments/:id/sandbox/approve`
 
 ### Auditoría
 
