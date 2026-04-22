@@ -27,9 +27,11 @@ Este documento ordena los pasos necesarios para llevar LibreMercado a una beta s
 - [x] Flujo comprador inicia compra protegida.
 - [x] Flujo vendedor acepta o gestiona la operacion.
 - [x] Coordinacion de entrega por mensajeria, correo, retiro o encuentro seguro.
-- [ ] Confirmacion de entrega.
+- [x] Vendedor marca envio desde `/account`.
+- [x] Comprador confirma entrega desde `/account`.
 - [ ] Liberacion de fondos.
-- [ ] Apertura y seguimiento de disputa.
+- [x] Apertura de disputa desde `/account`.
+- [ ] Seguimiento y resolucion de disputa desde usuario.
 - [x] Mis compras con acciones pendientes claras.
 - [x] Mis ventas con acciones pendientes claras.
 - [x] Notificaciones visibles dentro de la cuenta.
@@ -157,7 +159,7 @@ Este documento ordena los pasos necesarios para llevar LibreMercado a una beta s
 - [ ] Prueba de usuario sin KYC.
 - [ ] Prueba de vendedor que no responde.
 - [ ] Prueba de comprador que cancela.
-- [ ] Prueba de disputa abierta.
+- [ ] Prueba de disputa abierta desde usuario.
 - [ ] Prueba de pago rechazado.
 - [ ] Prueba responsive mobile.
 - [ ] Prueba con usuarios reales internos.
@@ -193,3 +195,4 @@ Este documento ordena los pasos necesarios para llevar LibreMercado a una beta s
 - 2026-04-22: se agrego `EmailModule` con provider local `log` y emails transaccionales minimos para bienvenida, identidad, compra protegida, pagos, entrega, mensajes y disputa.
 - 2026-04-22: se agrego `QA_PRE_BETA.md` con smoke test, flujos comprador/vendedor/admin, matriz de bloqueo beta y criterios de aceptacion.
 - 2026-04-22: se agrego edicion de perfil desde `/account` y cambio de contrasena autenticado con auditoria backend.
+- 2026-04-22: se agregaron acciones self-service en `/account` para marcar envio, confirmar entrega y abrir disputa con auditoria, rate limits y notificaciones.

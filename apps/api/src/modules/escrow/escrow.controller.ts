@@ -262,14 +262,14 @@ export class EscrowController {
     });
   }
 
-  @Roles(UserRole.ADMIN, UserRole.OPS)
   @Patch(":id/ship")
+  @RateLimit({ keyPrefix: "escrow-ship", limit: 30, windowSeconds: 3600 })
   markShipped(
     @Param("id") id: string,
     @Body() dto: MarkEscrowShippedDto,
     @CurrentUser() user: { sub: string; role: UserRole }
   ) {
-    return this.escrowService.markShipped(id, dto).then(async (escrow) => {
+    return this.escrowService.markShipped(id, dto, user).then(async (escrow) => {
       await this.auditService.logAction({
         actorUserId: user.sub,
         actorRole: user.role,
@@ -285,13 +285,13 @@ export class EscrowController {
     });
   }
 
-  @Roles(UserRole.ADMIN, UserRole.OPS)
   @Patch(":id/confirm-delivery")
+  @RateLimit({ keyPrefix: "escrow-confirm-delivery", limit: 30, windowSeconds: 3600 })
   confirmDelivery(
     @Param("id") id: string,
     @CurrentUser() user: { sub: string; role: UserRole }
   ) {
-    return this.escrowService.confirmDelivery(id).then(async (escrow) => {
+    return this.escrowService.confirmDelivery(id, user).then(async (escrow) => {
       await this.auditService.logAction({
         actorUserId: user.sub,
         actorRole: user.role,
@@ -346,14 +346,14 @@ export class EscrowController {
     });
   }
 
-  @Roles(UserRole.ADMIN, UserRole.OPS)
   @Patch(":id/dispute")
+  @RateLimit({ keyPrefix: "escrow-dispute", limit: 20, windowSeconds: 3600 })
   openDispute(
     @Param("id") id: string,
     @Body() dto: OpenDisputeDto,
     @CurrentUser() user: { sub: string; role: UserRole }
   ) {
-    return this.escrowService.openDispute(id, dto).then(async (escrow) => {
+    return this.escrowService.openDispute(id, dto, user).then(async (escrow) => {
       await this.auditService.logAction({
         actorUserId: user.sub,
         actorRole: user.role,

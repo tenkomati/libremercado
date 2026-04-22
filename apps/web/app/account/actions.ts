@@ -389,6 +389,79 @@ export async function sendEscrowMessageAction(formData: FormData) {
   redirectWithMessage(returnTo, "success", "Mensaje enviado.");
 }
 
+export async function markEscrowShippedAction(formData: FormData) {
+  const { token } = await getSessionToken();
+  const escrowId = String(formData.get("escrowId"));
+  const trackingCode = String(formData.get("trackingCode") ?? "").trim();
+  const returnTo = "/account";
+
+  const response = await fetch(`${API_URL}/escrows/${escrowId}/ship`, {
+    method: "PATCH",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      ...(trackingCode ? { trackingCode } : {})
+    }),
+    cache: "no-store"
+  });
+
+  if (!response.ok) {
+    redirectWithMessage(returnTo, "error", await getApiError(response));
+  }
+
+  revalidatePath("/account");
+  redirectWithMessage(returnTo, "success", "Envío marcado como en camino.");
+}
+
+export async function confirmEscrowDeliveryAction(formData: FormData) {
+  const { token } = await getSessionToken();
+  const escrowId = String(formData.get("escrowId"));
+  const returnTo = "/account";
+
+  const response = await fetch(`${API_URL}/escrows/${escrowId}/confirm-delivery`, {
+    method: "PATCH",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json"
+    },
+    cache: "no-store"
+  });
+
+  if (!response.ok) {
+    redirectWithMessage(returnTo, "error", await getApiError(response));
+  }
+
+  revalidatePath("/account");
+  redirectWithMessage(returnTo, "success", "Entrega confirmada.");
+}
+
+export async function openEscrowDisputeAction(formData: FormData) {
+  const { token } = await getSessionToken();
+  const escrowId = String(formData.get("escrowId"));
+  const returnTo = "/account";
+
+  const response = await fetch(`${API_URL}/escrows/${escrowId}/dispute`, {
+    method: "PATCH",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      reason: formData.get("reason")
+    }),
+    cache: "no-store"
+  });
+
+  if (!response.ok) {
+    redirectWithMessage(returnTo, "error", await getApiError(response));
+  }
+
+  revalidatePath("/account");
+  redirectWithMessage(returnTo, "success", "Disputa abierta. Soporte revisará la operación.");
+}
+
 export async function createDeliveryProposalAction(formData: FormData) {
   const { token } = await getSessionToken();
   const escrowId = String(formData.get("escrowId"));

@@ -14,7 +14,8 @@ import {
   MeetingProposalStatus,
   NotificationType,
   PaymentStatus,
-  Prisma
+  Prisma,
+  UserRole
 } from "@prisma/client";
 
 import {
@@ -921,8 +922,13 @@ export class EscrowService {
     return notification;
   }
 
-  async markShipped(id: string, dto: MarkEscrowShippedDto) {
+  async markShipped(
+    id: string,
+    dto: MarkEscrowShippedDto,
+    user: { sub: string; role: UserRole }
+  ) {
     const escrow = await this.getEscrowById(id);
+    this.ensureSellerOrOperator(escrow, user);
 
     if (escrow.status !== EscrowStatus.FUNDS_HELD) {
       throw new BadRequestException("Only funded escrows can be shipped");
@@ -938,7 +944,7 @@ export class EscrowService {
           create: {
             type: EscrowEventType.SHIPPED,
             payload: {
-              trackingCode: dto.trackingCode
+              trackingCode: dto.trackingCode ?? null
             }
           }
         }
@@ -962,8 +968,9 @@ export class EscrowService {
     return updatedEscrow;
   }
 
-  async confirmDelivery(id: string) {
+  async confirmDelivery(id: string, user: { sub: string; role: UserRole }) {
     const escrow = await this.getEscrowById(id);
+    this.ensureBuyerOrOperator(escrow, user);
 
     if (escrow.status !== EscrowStatus.SHIPPED) {
       throw new BadRequestException("Only shipped escrows can be delivered");
@@ -1062,8 +1069,13 @@ export class EscrowService {
     return updatedEscrow;
   }
 
-  async openDispute(id: string, dto: OpenDisputeDto) {
+  async openDispute(
+    id: string,
+    dto: OpenDisputeDto,
+    user: { sub: string; role: UserRole }
+  ) {
     const escrow = await this.getEscrowById(id);
+    this.ensureCanOperateEscrow(escrow, user);
 
     if (
       escrow.status !== EscrowStatus.FUNDS_HELD &&
@@ -1216,6 +1228,32 @@ export class EscrowService {
           }
         }
       });
+    }
+  }
+
+  private ensureSellerOrOperator(
+    escrow: { sellerId: string },
+    user: { sub: string; role: UserRole }
+  ) {
+    if (user.role === UserRole.ADMIN || user.role === UserRole.OPS) {
+      return;
+    }
+
+    if (escrow.sellerId !== user.sub) {
+      throw new BadRequestException("Only the seller can mark this escrow as shipped");
+    }
+  }
+
+  private ensureBuyerOrOperator(
+    escrow: { buyerId: string },
+    user: { sub: string; role: UserRole }
+  ) {
+    if (user.role === UserRole.ADMIN || user.role === UserRole.OPS) {
+      return;
+    }
+
+    if (escrow.buyerId !== user.sub) {
+      throw new BadRequestException("Only the buyer can confirm delivery");
     }
   }
 

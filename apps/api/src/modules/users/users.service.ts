@@ -117,6 +117,8 @@ export class UsersService {
             amount: true,
             currency: true,
             status: true,
+            shippingProvider: true,
+            shippingTrackingCode: true,
             createdAt: true,
             listing: {
               select: {
@@ -206,6 +208,8 @@ export class UsersService {
             amount: true,
             currency: true,
             status: true,
+            shippingProvider: true,
+            shippingTrackingCode: true,
             createdAt: true,
             listing: {
               select: {

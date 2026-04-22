@@ -193,7 +193,9 @@ Criterio de aceptacion:
 Criticidad: `P0`
 
 - [ ] Vendedor/admin puede marcar envio con tracking si aplica.
+- [ ] Vendedor puede marcar envio desde `/account` con tracking opcional.
 - [ ] Comprador y vendedor reciben notificacion/email de envio.
+- [ ] Comprador puede confirmar entrega desde `/account`.
 - [ ] Entrega confirmada mueve escrow a `DELIVERED`.
 - [ ] Pagos asociados pasan a `READY_TO_RELEASE`.
 - [ ] Liberacion de fondos mueve escrow a `RELEASED`.
@@ -203,7 +205,7 @@ Criticidad: `P0`
 
 Pendiente funcional conocido:
 
-- Confirmacion de entrega y liberacion desde usuario comun deben revisarse contra la UX actual. Si solo estan disponibles por admin/API, queda pendiente antes de beta publica.
+- Liberacion de fondos sigue reservada a admin/ops hasta definir reglas operativas y legales.
 
 Criterio de aceptacion:
 
@@ -214,6 +216,8 @@ Criterio de aceptacion:
 Criticidad: `P0`
 
 - [ ] Admin puede abrir disputa en operacion elegible.
+- [ ] Comprador puede abrir disputa desde `/account` con motivo obligatorio.
+- [ ] Vendedor puede abrir disputa desde `/account` con motivo obligatorio.
 - [ ] Escrow pasa a `DISPUTED`.
 - [ ] Pago pasa a `DISPUTED`.
 - [ ] Publicacion queda `UNDER_REVIEW`.
@@ -226,7 +230,7 @@ Criticidad: `P0`
 
 Pendiente funcional conocido:
 
-- Apertura y seguimiento de disputa desde usuario comun deben implementarse o definirse como proceso de soporte manual para beta cerrada.
+- Seguimiento y resolucion de disputa desde usuario aun no tienen vista dedicada; soporte/admin resuelve por panel.
 
 Criterio de aceptacion:
 
@@ -314,7 +318,7 @@ Puede abrir beta cerrada con riesgo aceptado y documentado:
 - [ ] Proveedor de email real aun no conectado, si `EMAIL_PROVIDER=log` se reemplaza antes de beta publica.
 - [ ] Google Maps sin API key, si fallback local funciona.
 - [ ] Pagos reales pendientes, si beta usa sandbox con testers internos.
-- [ ] Disputa de usuario no self-service, si soporte/admin opera manualmente.
+- [ ] Disputa self-service sin seguimiento dedicado, si soporte/admin opera la resolucion manualmente.
 
 ## Resultado de Ejecucion
 

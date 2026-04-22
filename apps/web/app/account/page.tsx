@@ -10,9 +10,12 @@ import { LogoutButton } from "../admin/logout-button";
 
 import { AvailabilitySlotForm } from "./availability-slot-form";
 import {
+  confirmEscrowDeliveryAction,
   createMeetingProposalAction,
   createDeliveryProposalAction,
   changePasswordAction,
+  markEscrowShippedAction,
+  openEscrowDisputeAction,
   respondMeetingProposalAction,
   respondDeliveryProposalAction,
   selectAvailabilitySlotAction,
@@ -132,6 +135,8 @@ type AccountUser = {
     id: string;
     amount: string;
     status: string;
+    shippingProvider: string;
+    shippingTrackingCode: string | null;
     createdAt: string;
     listing: { id: string; title: string };
     seller: { id: string; firstName: string; lastName: string };
@@ -144,6 +149,8 @@ type AccountUser = {
     id: string;
     amount: string;
     status: string;
+    shippingProvider: string;
+    shippingTrackingCode: string | null;
     createdAt: string;
     listing: { id: string; title: string };
     buyer: { id: string; firstName: string; lastName: string };
@@ -280,6 +287,10 @@ function hasPendingDeliveryProposalForUser(
 
 function getOpenSlots(slots: AvailabilitySlot[]) {
   return slots.filter((slot) => slot.status === "OPEN");
+}
+
+function canOpenDispute(status: string) {
+  return ["FUNDS_HELD", "SHIPPED", "DELIVERED"].includes(status);
 }
 
 function MeetingPlanner({
@@ -534,6 +545,93 @@ function MessagesPanel({
   );
 }
 
+function DisputePanel({ escrowId, status }: { escrowId: string; status: string }) {
+  if (!canOpenDispute(status)) {
+    return null;
+  }
+
+  return (
+    <details className="rounded-2xl border border-[rgba(220,38,38,0.18)] bg-[#fff7f7] p-4">
+      <summary className="cursor-pointer text-sm font-semibold text-[#991b1b]">
+        Tengo un problema con esta operación
+      </summary>
+      <form action={openEscrowDisputeAction} className="mt-4 grid gap-3">
+        <input name="escrowId" type="hidden" value={escrowId} />
+        <label className="grid gap-1 text-xs font-semibold text-[#7f1d1d]">
+          Motivo de la disputa
+          <textarea
+            className="min-h-24 rounded-2xl border border-[rgba(220,38,38,0.18)] bg-white px-3 py-2 text-sm text-[var(--navy)]"
+            minLength={10}
+            name="reason"
+            placeholder="Contanos qué pasó, qué se acordó y qué necesitás que revise soporte."
+            required
+          />
+        </label>
+        <button className="rounded-full bg-[#dc2626] px-4 py-3 text-sm font-semibold text-white" type="submit">
+          Abrir disputa
+        </button>
+      </form>
+    </details>
+  );
+}
+
+function BuyerDeliveryActions({
+  escrowId,
+  status
+}: {
+  escrowId: string;
+  status: string;
+}) {
+  if (status !== "SHIPPED") {
+    return null;
+  }
+
+  return (
+    <form action={confirmEscrowDeliveryAction} className="mt-4 rounded-2xl border border-[rgba(5,150,105,0.18)] bg-[#f0fdf4] p-4">
+      <input name="escrowId" type="hidden" value={escrowId} />
+      <p className="text-sm font-semibold text-[#065f46]">¿Ya recibiste el producto?</p>
+      <p className="mt-1 text-xs leading-5 text-[#047857]">
+        Confirmá solo si el producto fue entregado. Los fondos quedarán listos
+        para liberación operativa.
+      </p>
+      <button className="mt-3 rounded-full bg-[#059669] px-4 py-2 text-xs font-semibold text-white" type="submit">
+        Confirmar entrega
+      </button>
+    </form>
+  );
+}
+
+function SellerShippingActions({
+  escrowId,
+  status
+}: {
+  escrowId: string;
+  status: string;
+}) {
+  if (status !== "FUNDS_HELD") {
+    return null;
+  }
+
+  return (
+    <form action={markEscrowShippedAction} className="mt-4 rounded-2xl border border-[rgba(18,107,255,0.14)] bg-[#f8fbff] p-4">
+      <input name="escrowId" type="hidden" value={escrowId} />
+      <p className="text-sm font-semibold text-[var(--navy)]">Marcar entrega en camino</p>
+      <p className="mt-1 text-xs leading-5 text-[var(--muted)]">
+        Usalo cuando ya despachaste por correo/mensajería o cuando la entrega
+        presencial quedó efectivamente iniciada.
+      </p>
+      <input
+        className="mt-3 w-full rounded-full border border-[var(--surface-border)] bg-white px-3 py-2 text-xs"
+        name="trackingCode"
+        placeholder="Código de seguimiento opcional"
+      />
+      <button className="mt-3 rounded-full bg-[var(--navy)] px-4 py-2 text-xs font-semibold text-white" type="submit">
+        Marcar como enviado
+      </button>
+    </form>
+  );
+}
+
 function DeliveryProposalPanel({
   escrowId,
   currentUserId,
@@ -684,6 +782,14 @@ export default async function AccountPage({ searchParams }: AccountPageProps) {
         });
       }
 
+      if (escrow.status === "SHIPPED") {
+        actions.push({
+          href: `#purchase-${escrow.id}`,
+          label: `Confirmar entrega de ${escrow.listing.title}`,
+          detail: "El vendedor marcó el envío como en camino."
+        });
+      }
+
       return actions;
     }),
     ...user.sellerEscrows.flatMap((escrow) => {
@@ -697,6 +803,14 @@ export default async function AccountPage({ searchParams }: AccountPageProps) {
           href: `#sale-${escrow.id}`,
           label: `Publicar horarios para ${escrow.listing.title}`,
           detail: "El comprador necesita opciones para coordinar entrega."
+        });
+      }
+
+      if (escrow.status === "FUNDS_HELD") {
+        actions.push({
+          href: `#sale-${escrow.id}`,
+          label: `Marcar envío de ${escrow.listing.title}`,
+          detail: "Los fondos están protegidos y podés avanzar con la entrega."
         });
       }
 
@@ -1053,6 +1167,10 @@ export default async function AccountPage({ searchParams }: AccountPageProps) {
                               <span className="font-semibold text-[var(--navy)]">Estado:</span>{" "}
                               {getShippingStatusLabel(escrow.status)}
                             </p>
+                            <p>
+                              <span className="font-semibold text-[var(--navy)]">Seguimiento:</span>{" "}
+                              {escrow.shippingTrackingCode ?? "Sin código informado"}
+                            </p>
                           </div>
                         </div>
                         <form action={sendEscrowMessageAction}>
@@ -1085,11 +1203,15 @@ export default async function AccountPage({ searchParams }: AccountPageProps) {
                         suggestions={[]}
                         availabilitySlots={escrow.availabilitySlots}
                       />
+
+                      <BuyerDeliveryActions escrowId={escrow.id} status={escrow.status} />
                     </section>
 
                     <section className="rounded-2xl bg-white p-4">
                       <MessagesPanel escrowId={escrow.id} messages={escrow.messages} />
                     </section>
+
+                    <DisputePanel escrowId={escrow.id} status={escrow.status} />
                   </div>
                 </details>
                 );
@@ -1173,6 +1295,10 @@ export default async function AccountPage({ searchParams }: AccountPageProps) {
                             <span className="font-semibold text-[var(--navy)]">Estado:</span>{" "}
                             {getShippingStatusLabel(escrow.status)}
                           </p>
+                          <p>
+                            <span className="font-semibold text-[var(--navy)]">Seguimiento:</span>{" "}
+                            {escrow.shippingTrackingCode ?? "Sin código informado"}
+                          </p>
                         </div>
 
                         <DeliveryProposalPanel
@@ -1181,6 +1307,8 @@ export default async function AccountPage({ searchParams }: AccountPageProps) {
                           proposals={escrow.deliveryProposals}
                           role="seller"
                         />
+
+                        <SellerShippingActions escrowId={escrow.id} status={escrow.status} />
 
                         <MeetingPlanner
                           currentUserId={user.id}
@@ -1197,6 +1325,8 @@ export default async function AccountPage({ searchParams }: AccountPageProps) {
                       <section className="rounded-2xl bg-white p-4">
                         <MessagesPanel escrowId={escrow.id} messages={escrow.messages} />
                       </section>
+
+                      <DisputePanel escrowId={escrow.id} status={escrow.status} />
                     </div>
                   </details>
                 );

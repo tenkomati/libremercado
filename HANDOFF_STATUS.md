@@ -152,11 +152,11 @@ Query params de listado:
 - `POST /escrows/:id/availability-slots`
 - `PATCH /escrows/:id/availability-slots/:slotId/select`
 - `POST /escrows/:id/messages`
-- `PATCH /escrows/:id/ship`
-- `PATCH /escrows/:id/confirm-delivery`
+- `PATCH /escrows/:id/ship` -> vendedor o admin/ops
+- `PATCH /escrows/:id/confirm-delivery` -> comprador o admin/ops
 - `PATCH /escrows/:id/release`
 - `PATCH /escrows/:id/cancel`
-- `PATCH /escrows/:id/dispute`
+- `PATCH /escrows/:id/dispute` -> comprador/vendedor de la operacion o admin/ops
 
 Query params de listado:
 
@@ -202,6 +202,9 @@ Implementado:
   - `POST /escrows/:id/delivery-proposals`
   - `POST /escrows/:id/availability-slots`
   - `POST /escrows/:id/messages`
+  - `PATCH /escrows/:id/ship`
+  - `PATCH /escrows/:id/confirm-delivery`
+  - `PATCH /escrows/:id/dispute`
   - `POST /payments/checkout`
   - `POST /payments/:id/sandbox/approve`
   - `PATCH /users/:id/profile`
@@ -262,7 +265,8 @@ Estado:
 
 - Checklist documentado.
 - Ejecucion manual completa pendiente.
-- Los pendientes funcionales mas sensibles detectados para beta publica son confirmacion/liberacion desde usuario comun y disputa self-service.
+- Confirmacion de entrega y apertura de disputa ya son self-service desde `/account`.
+- Liberacion/cancelacion/reembolso siguen reservados a admin/ops.
 
 ### Auditoría
 
@@ -392,6 +396,9 @@ Implementado con:
 - detalle de compra ordenado en tres bloques: producto/pago, envío/encuentro seguro y mensajes
 - ventas protegidas compactas con acordeón por operación y los mismos tres bloques: producto/cobro, envío/encuentro seguro y mensajes
 - propuestas de método de envío por operación: vendedor propone y comprador acepta/rechaza
+- vendedor marca envio desde ventas con tracking opcional
+- comprador confirma entrega desde compras cuando la operacion esta en camino
+- comprador o vendedor abre disputa desde compras/ventas con motivo obligatorio
 - propuestas de encuentro seguro por operación protegida
 - sugerencias de puntos intermedios en estaciones YPF/Shell/Axion con Google Maps si hay `GOOGLE_MAPS_API_KEY`
 - fallback local de puntos sugeridos cuando no hay API key o Google Maps falla
@@ -422,6 +429,9 @@ Notas:
 - `POST /listings` ya valida que un usuario común solo pueda publicar como vendedor propio.
 - `PATCH /users/:id/profile` no permite cambiar email ni DNI desde cuenta porque forman parte de identidad/compliance.
 - `PATCH /users/:id/password` exige contraseña actual y solo permite cambiar contraseña propia.
+- `PATCH /escrows/:id/ship` exige vendedor de la operacion o admin/ops.
+- `PATCH /escrows/:id/confirm-delivery` exige comprador de la operacion o admin/ops.
+- `PATCH /escrows/:id/dispute` exige comprador/vendedor de la operacion o admin/ops.
 - crear publicación sigue exigiendo usuario `ACTIVE` e identidad `APPROVED`, por regla del backend.
 - editar publicación propia permite cambiar datos básicos e imagen principal.
 - la carga de imágenes sigue usando storage local por defecto para desarrollo.
