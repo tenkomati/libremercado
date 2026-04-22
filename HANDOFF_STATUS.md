@@ -26,6 +26,7 @@ Validaciones que estaban pasando al cierre:
 - `npm run build --workspace @libremercado/api`
 - `npm run build --workspace @libremercado/web`
 - `npm audit --workspaces --audit-level=moderate`
+- QA manual pre-beta documentado en `QA_PRE_BETA.md`; pendiente ejecutar completo sobre local/staging.
 
 Nota:
 
@@ -229,6 +230,33 @@ Eventos cubiertos:
 - cambios de entrega y encuentro seguro
 - mensajes de coordinación
 - entrega confirmada, fondos liberados, disputa y cancelación/reembolso
+
+## QA pre-beta
+
+Archivo:
+
+- `QA_PRE_BETA.md`
+
+Incluye:
+
+- smoke test tecnico
+- flujo registro/login/KYC
+- flujo revision KYC admin
+- flujo publicacion vendedor
+- flujo compra protegida y pago sandbox
+- flujo coordinacion de entrega y encuentro seguro
+- flujo envio, entrega y liberacion de fondos
+- flujo disputa, cancelacion y reembolso
+- permisos/admin/auditoria
+- seguridad y anti-abuso
+- responsive y experiencia
+- matriz de bloqueo para decidir si la beta puede abrirse
+
+Estado:
+
+- Checklist documentado.
+- Ejecucion manual completa pendiente.
+- Los pendientes funcionales mas sensibles detectados para beta publica son confirmacion/liberacion desde usuario comun y disputa self-service.
 
 ### Auditoría
 
@@ -465,6 +493,7 @@ Detalle escrow implementado:
 - `.env.example`
 - `docker-compose.yml`
 - `BETA_DEPLOY_CHECKLIST.md`
+- `QA_PRE_BETA.md`
 
 ### Prisma
 

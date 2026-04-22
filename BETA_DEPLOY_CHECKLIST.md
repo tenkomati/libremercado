@@ -138,9 +138,13 @@ Este documento ordena los pasos necesarios para llevar LibreMercado a una beta s
 ## 7. QA Pre-Beta
 
 - [x] Seed demo estable.
-- [ ] Checklist manual de flujo comprador.
-- [ ] Checklist manual de flujo vendedor.
-- [ ] Checklist manual de flujo admin.
+- [x] Checklist QA pre-beta documentado en `QA_PRE_BETA.md`.
+- [x] Checklist manual de flujo comprador documentado.
+- [x] Checklist manual de flujo vendedor documentado.
+- [x] Checklist manual de flujo admin documentado.
+- [ ] Checklist manual de flujo comprador ejecutado.
+- [ ] Checklist manual de flujo vendedor ejecutado.
+- [ ] Checklist manual de flujo admin ejecutado.
 - [ ] Pruebas de API para auth.
 - [ ] Pruebas de API para KYC.
 - [ ] Pruebas de API para listings.
@@ -162,7 +166,7 @@ Este documento ordena los pasos necesarios para llevar LibreMercado a una beta s
 - [x] 1. Storage real de imagenes y archivos KYC.
 - [x] 2. KYC admin funcional con revision.
 - [x] 3. Integracion de pagos en modo sandbox.
-- [ ] 4. Notificaciones por email.
+- [x] 4. Notificaciones por email.
 - [ ] 5. Hardening de seguridad, rate limits y DoW.
 - [ ] 6. Deploy staging/beta con DB y storage reales.
 - [ ] 7. QA completo comprador-vendedor-admin.
@@ -186,3 +190,4 @@ Este documento ordena los pasos necesarios para llevar LibreMercado a una beta s
 - 2026-04-21: se agrego rate limiting Redis/fallback en memoria para uploads web de imagenes de publicaciones y KYC, con corte temprano por `content-length`.
 - 2026-04-21: se reviso `npm audit --workspaces --audit-level=moderate`; se actualizaron parches de Nest, Next, Prisma y tooling hasta quedar en `0 vulnerabilities`.
 - 2026-04-22: se agrego `EmailModule` con provider local `log` y emails transaccionales minimos para bienvenida, identidad, compra protegida, pagos, entrega, mensajes y disputa.
+- 2026-04-22: se agrego `QA_PRE_BETA.md` con smoke test, flujos comprador/vendedor/admin, matriz de bloqueo beta y criterios de aceptacion.
