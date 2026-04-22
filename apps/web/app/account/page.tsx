@@ -12,10 +12,12 @@ import { AvailabilitySlotForm } from "./availability-slot-form";
 import {
   createMeetingProposalAction,
   createDeliveryProposalAction,
+  changePasswordAction,
   respondMeetingProposalAction,
   respondDeliveryProposalAction,
   selectAvailabilitySlotAction,
-  sendEscrowMessageAction
+  sendEscrowMessageAction,
+  updateProfileAction
 } from "./actions";
 
 export const dynamic = "force-dynamic";
@@ -108,6 +110,7 @@ type AccountUser = {
   firstName: string;
   lastName: string;
   email: string;
+  phone: string | null;
   province: string;
   city: string;
   status: string;
@@ -777,6 +780,7 @@ export default async function AccountPage({ searchParams }: AccountPageProps) {
                 {user.firstName} {user.lastName}
               </p>
               <p>{user.email}</p>
+              <p>{user.phone ?? "Sin teléfono cargado"}</p>
               <p>{user.city}, {user.province}</p>
               <div className="flex flex-wrap gap-2 pt-2">
                 <StatusPill label={user.status} />
@@ -784,6 +788,111 @@ export default async function AccountPage({ searchParams }: AccountPageProps) {
                 <StatusPill label={`score ${user.reputationScore}`} />
               </div>
             </div>
+
+            <details className="mt-5 rounded-[1.25rem] border border-[rgba(18,107,255,0.12)] bg-[#f8fbff] p-4">
+              <summary className="cursor-pointer text-sm font-semibold text-[var(--navy)]">
+                Editar datos de contacto
+              </summary>
+              <form action={updateProfileAction} className="mt-4 grid gap-3">
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <label className="grid gap-1 text-xs font-semibold text-[var(--navy)]">
+                    Nombre
+                    <input
+                      className="rounded-2xl border border-[var(--surface-border)] bg-white px-3 py-2"
+                      defaultValue={user.firstName}
+                      name="firstName"
+                      required
+                    />
+                  </label>
+                  <label className="grid gap-1 text-xs font-semibold text-[var(--navy)]">
+                    Apellido
+                    <input
+                      className="rounded-2xl border border-[var(--surface-border)] bg-white px-3 py-2"
+                      defaultValue={user.lastName}
+                      name="lastName"
+                      required
+                    />
+                  </label>
+                </div>
+                <label className="grid gap-1 text-xs font-semibold text-[var(--navy)]">
+                  Teléfono
+                  <input
+                    className="rounded-2xl border border-[var(--surface-border)] bg-white px-3 py-2"
+                    defaultValue={user.phone ?? ""}
+                    name="phone"
+                    placeholder="Ej: +54 9 11 5555 5555"
+                  />
+                </label>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <label className="grid gap-1 text-xs font-semibold text-[var(--navy)]">
+                    Ciudad
+                    <input
+                      className="rounded-2xl border border-[var(--surface-border)] bg-white px-3 py-2"
+                      defaultValue={user.city}
+                      name="city"
+                      required
+                    />
+                  </label>
+                  <label className="grid gap-1 text-xs font-semibold text-[var(--navy)]">
+                    Provincia
+                    <input
+                      className="rounded-2xl border border-[var(--surface-border)] bg-white px-3 py-2"
+                      defaultValue={user.province}
+                      name="province"
+                      required
+                    />
+                  </label>
+                </div>
+                <p className="text-xs leading-5 text-[var(--muted)]">
+                  Email y DNI no se editan desde acá porque forman parte de la identidad
+                  validada.
+                </p>
+                <button className="rounded-full bg-[var(--navy)] px-4 py-3 text-sm font-semibold text-white" type="submit">
+                  Guardar perfil
+                </button>
+              </form>
+            </details>
+
+            <details className="mt-3 rounded-[1.25rem] border border-[rgba(18,107,255,0.12)] bg-[#f8fbff] p-4">
+              <summary className="cursor-pointer text-sm font-semibold text-[var(--navy)]">
+                Cambiar contraseña
+              </summary>
+              <form action={changePasswordAction} className="mt-4 grid gap-3">
+                <label className="grid gap-1 text-xs font-semibold text-[var(--navy)]">
+                  Contraseña actual
+                  <input
+                    className="rounded-2xl border border-[var(--surface-border)] bg-white px-3 py-2"
+                    minLength={8}
+                    name="currentPassword"
+                    required
+                    type="password"
+                  />
+                </label>
+                <label className="grid gap-1 text-xs font-semibold text-[var(--navy)]">
+                  Nueva contraseña
+                  <input
+                    className="rounded-2xl border border-[var(--surface-border)] bg-white px-3 py-2"
+                    minLength={8}
+                    name="newPassword"
+                    required
+                    type="password"
+                  />
+                </label>
+                <label className="grid gap-1 text-xs font-semibold text-[var(--navy)]">
+                  Confirmar nueva contraseña
+                  <input
+                    className="rounded-2xl border border-[var(--surface-border)] bg-white px-3 py-2"
+                    minLength={8}
+                    name="confirmPassword"
+                    required
+                    type="password"
+                  />
+                </label>
+                <button className="rounded-full bg-[var(--navy)] px-4 py-3 text-sm font-semibold text-white" type="submit">
+                  Actualizar contraseña
+                </button>
+              </form>
+            </details>
           </div>
 
           <div className="rounded-[1.75rem] border border-[var(--surface-border)] bg-[linear-gradient(180deg,#f8fbff,#eaf2ff)] p-6">

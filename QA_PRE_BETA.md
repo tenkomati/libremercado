@@ -91,6 +91,11 @@ Criticidad: `P0`
 - [ ] Logout funciona.
 - [ ] Login con credenciales correctas funciona.
 - [ ] Login con password incorrecta falla sin filtrar si el email existe.
+- [ ] Usuario autenticado puede editar nombre, apellido, teléfono, ciudad y provincia.
+- [ ] Usuario autenticado no puede editar email ni DNI desde `/account`.
+- [ ] Usuario autenticado puede cambiar contraseña informando contraseña actual.
+- [ ] Cambio de contraseña falla si la contraseña actual es incorrecta.
+- [ ] Cambio de contraseña falla si confirmación y nueva contraseña no coinciden.
 - [ ] Rate limit de login responde `429` despues de intentos excesivos.
 
 Criterio de aceptacion:

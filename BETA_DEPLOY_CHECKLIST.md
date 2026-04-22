@@ -11,8 +11,9 @@ Este documento ordena los pasos necesarios para llevar LibreMercado a una beta s
 ## 1. Flujo Usuario Completo
 
 - [x] Registro y login funcionando de punta a punta en frontend.
-- [ ] Recuperacion o cambio de contrasena.
-- [ ] Perfil de usuario editable con datos basicos, direccion y contacto.
+- [x] Cambio de contrasena autenticado desde `/account`.
+- [ ] Recuperacion de contrasena por email.
+- [x] Perfil de usuario editable con datos basicos, direccion y contacto.
 - [x] Onboarding KYC publico completo.
 - [x] Carga de DNI frente y dorso.
 - [x] Carga de selfie o prueba de vida.
@@ -191,3 +192,4 @@ Este documento ordena los pasos necesarios para llevar LibreMercado a una beta s
 - 2026-04-21: se reviso `npm audit --workspaces --audit-level=moderate`; se actualizaron parches de Nest, Next, Prisma y tooling hasta quedar en `0 vulnerabilities`.
 - 2026-04-22: se agrego `EmailModule` con provider local `log` y emails transaccionales minimos para bienvenida, identidad, compra protegida, pagos, entrega, mensajes y disputa.
 - 2026-04-22: se agrego `QA_PRE_BETA.md` con smoke test, flujos comprador/vendedor/admin, matriz de bloqueo beta y criterios de aceptacion.
+- 2026-04-22: se agrego edicion de perfil desde `/account` y cambio de contrasena autenticado con auditoria backend.

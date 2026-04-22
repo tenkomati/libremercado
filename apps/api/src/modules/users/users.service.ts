@@ -1,5 +1,6 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
+import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
 import { Prisma } from "@prisma/client";
+import { compare, hash } from "bcryptjs";
 
 import {
   getPagination,
@@ -9,8 +10,10 @@ import {
 } from "../common/pagination";
 import { PrismaService } from "../prisma/prisma.service";
 
+import { ChangeUserPasswordDto } from "./dto/change-user-password.dto";
 import { CreateUserDto } from "./dto/create-user.dto";
 import { ListUsersQueryDto } from "./dto/list-users-query.dto";
+import { UpdateUserProfileDto } from "./dto/update-user-profile.dto";
 import { UpdateUserRoleDto } from "./dto/update-user-role.dto";
 import { UpdateUserStatusDto } from "./dto/update-user-status.dto";
 
@@ -322,6 +325,46 @@ export class UsersService {
         role: dto.role
       }
     });
+  }
+
+  async updateProfile(id: string, dto: UpdateUserProfileDto) {
+    await this.ensureExists(id);
+
+    const updated = await this.prisma.user.update({
+      where: { id },
+      data: {
+        ...(dto.firstName ? { firstName: dto.firstName.trim() } : {}),
+        ...(dto.lastName ? { lastName: dto.lastName.trim() } : {}),
+        ...(dto.phone !== undefined ? { phone: dto.phone.trim() || null } : {}),
+        ...(dto.province ? { province: dto.province.trim() } : {}),
+        ...(dto.city ? { city: dto.city.trim() } : {})
+      }
+    });
+
+    return this.toSafeUser(updated);
+  }
+
+  async changePassword(id: string, dto: ChangeUserPasswordDto) {
+    const user = await this.ensureExists(id);
+    const isPasswordValid = await compare(dto.currentPassword, user.passwordHash);
+
+    if (!isPasswordValid) {
+      throw new BadRequestException("Current password is incorrect");
+    }
+
+    if (dto.currentPassword === dto.newPassword) {
+      throw new BadRequestException("New password must be different");
+    }
+
+    const passwordHash = await hash(dto.newPassword, 12);
+    const updated = await this.prisma.user.update({
+      where: { id },
+      data: {
+        passwordHash
+      }
+    });
+
+    return this.toSafeUser(updated);
   }
 
   async ensureExists(id: string) {

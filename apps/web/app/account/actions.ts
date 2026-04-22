@@ -85,6 +85,65 @@ export async function createListingAction(formData: FormData) {
   redirect(`/market/${listing.id}?success=${encodeURIComponent("Publicación creada correctamente.")}`);
 }
 
+export async function updateProfileAction(formData: FormData) {
+  const { token, session } = await getSessionToken();
+  const returnTo = "/account";
+
+  const response = await fetch(`${API_URL}/users/${session.sub}/profile`, {
+    method: "PATCH",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      firstName: formData.get("firstName"),
+      lastName: formData.get("lastName"),
+      phone: formData.get("phone") || undefined,
+      province: formData.get("province"),
+      city: formData.get("city")
+    }),
+    cache: "no-store"
+  });
+
+  if (!response.ok) {
+    redirectWithMessage(returnTo, "error", await getApiError(response));
+  }
+
+  revalidatePath("/account");
+  redirectWithMessage(returnTo, "success", "Perfil actualizado.");
+}
+
+export async function changePasswordAction(formData: FormData) {
+  const { token, session } = await getSessionToken();
+  const returnTo = "/account";
+  const newPassword = String(formData.get("newPassword") ?? "");
+  const confirmPassword = String(formData.get("confirmPassword") ?? "");
+
+  if (newPassword !== confirmPassword) {
+    redirectWithMessage(returnTo, "error", "La nueva contraseña y la confirmación no coinciden.");
+  }
+
+  const response = await fetch(`${API_URL}/users/${session.sub}/password`, {
+    method: "PATCH",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      currentPassword: formData.get("currentPassword"),
+      newPassword
+    }),
+    cache: "no-store"
+  });
+
+  if (!response.ok) {
+    redirectWithMessage(returnTo, "error", await getApiError(response));
+  }
+
+  revalidatePath("/account");
+  redirectWithMessage(returnTo, "success", "Contraseña actualizada.");
+}
+
 export async function createKycVerificationAction(formData: FormData) {
   const { token, session } = await getSessionToken();
   const returnTo = "/account/kyc";

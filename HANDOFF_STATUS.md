@@ -78,6 +78,8 @@ Incluye:
 - rate limiting básico de login por email + IP en memoria
 - rate limiting distribuible por Redis en `/auth/login` y `/auth/register`
 - auditoría de login/logout exitosos
+- auditoría de actualización de perfil
+- auditoría de cambio de contraseña autenticado
 - `JwtAuthGuard`
 - `RolesGuard`
 - decorators `@Public`, `@CurrentUser`, `@Roles`
@@ -94,6 +96,8 @@ Protegido para lectura/listado operativo.
 
 - `GET /users` -> `ADMIN` / `OPS`
 - `GET /users/:id` -> self o admin/ops
+- `PATCH /users/:id/profile` -> self, admin/ops puede editar datos operativos de otro usuario
+- `PATCH /users/:id/password` -> solo contraseña propia con contraseña actual
 - `PATCH /users/:id/status` -> `ADMIN` / `OPS`
 - `PATCH /users/:id/role` -> `ADMIN`
 
@@ -200,6 +204,8 @@ Implementado:
   - `POST /escrows/:id/messages`
   - `POST /payments/checkout`
   - `POST /payments/:id/sandbox/approve`
+  - `PATCH /users/:id/profile`
+  - `PATCH /users/:id/password`
 
 Uploads web protegidos:
 
@@ -376,6 +382,8 @@ Implementado con:
 
 - middleware que exige sesión válida para `/account`
 - resumen de perfil, estado de identidad y reputación
+- edición de perfil desde `/account`: nombre, apellido, teléfono, ciudad y provincia
+- cambio de contraseña autenticado desde `/account`
 - historial de publicaciones propias
 - historial de compras protegidas
 - historial de ventas protegidas
@@ -412,6 +420,8 @@ Notas:
 - `POST /kyc/verifications` valida que un usuario común solo pueda iniciar KYC propio.
 - `POST /auth/register` ahora requiere imágenes de identidad subidas previamente a `/api/uploads/kyc-image`.
 - `POST /listings` ya valida que un usuario común solo pueda publicar como vendedor propio.
+- `PATCH /users/:id/profile` no permite cambiar email ni DNI desde cuenta porque forman parte de identidad/compliance.
+- `PATCH /users/:id/password` exige contraseña actual y solo permite cambiar contraseña propia.
 - crear publicación sigue exigiendo usuario `ACTIVE` e identidad `APPROVED`, por regla del backend.
 - editar publicación propia permite cambiar datos básicos e imagen principal.
 - la carga de imágenes sigue usando storage local por defecto para desarrollo.
@@ -617,7 +627,7 @@ Incluye:
 - modelo persistente de sesiones
 - rotación de refresh tokens
 - revocación por dispositivo
-- password reset
+- password reset por email
 
 ### 2. Frontoffice real de publicaciones avanzado
 
