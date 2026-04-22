@@ -24,9 +24,24 @@ npm run dev
 ## Scripts
 
 - `npm run dev`: levanta web y api en paralelo.
-- `NEXT_REDIRECT`: compila todas las apps.
+- `npm run build`: compila todas las apps.
 - `npm run lint`: ejecuta lint en workspaces.
 - `npm run typecheck`: ejecuta chequeo de tipos.
+
+## Staging/Beta con Supabase
+
+El repo incluye `.env.staging.example` y `STAGING_SUPABASE_RUNBOOK.md` para
+preparar una beta con Supabase Postgres sin mezclar credenciales locales.
+
+Comandos disponibles:
+
+```bash
+npm run prisma:migrate:status:staging --workspace @libremercado/api
+npm run prisma:migrate:deploy:staging --workspace @libremercado/api
+```
+
+Antes de ejecutar migraciones reales, crear `.env.staging`, usar un usuario
+dedicado `prisma` en Supabase y validar backups/rate limiting/storage externo.
 
 ## Storage de imágenes
 

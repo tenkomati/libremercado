@@ -122,6 +122,9 @@ Este documento ordena los pasos necesarios para llevar LibreMercado a una beta s
 - [ ] Separar ambientes: local, staging/beta y produccion.
 - [ ] Base de datos gestionada para beta.
 - [x] MCP Supabase disponible en Codex para preparar migracion/control de proyecto.
+- [x] Runbook staging/Supabase documentado.
+- [x] Template `.env.staging.example` creado.
+- [x] Scripts seguros de status/deploy de migraciones staging agregados.
 - [x] Storage real de imagenes.
 - [ ] Buckets separados por ambiente.
 - [ ] CDN o entrega optimizada de imagenes.
@@ -201,3 +204,5 @@ Este documento ordena los pasos necesarios para llevar LibreMercado a una beta s
 - 2026-04-22: se agregaron acciones self-service en `/account` para marcar envio, confirmar entrega y abrir disputa con auditoria, rate limits y notificaciones.
 - 2026-04-22: se agrego resolucion admin/ops de disputas: reembolso al comprador o liberacion al vendedor, con auditoria, eventos, pagos actualizados, notificaciones y seguimiento visible para usuarios.
 - 2026-04-22: se verifico MCP Supabase disponible en Codex para el proyecto `https://qjmhiagfolrlcktrnqtu.supabase.co`; falta definir migracion/variables por ambiente antes de usarlo como beta DB.
+- 2026-04-22: se podaron carpetas extra de integraciones de agentes/skills y se dejo el repo Codex-only; se agrego `STAGING_SUPABASE_RUNBOOK.md`, `.env.staging.example` y scripts de migracion staging.
+- 2026-04-22: se elimino `@aws-sdk/client-s3` por vulnerabilidades transitivas y se reemplazo el upload S3/R2 por firma AWS Signature V4 nativa; `npm audit` vuelve a `0 vulnerabilities`.

@@ -447,6 +447,9 @@ Notas:
 - las notificaciones actuales son persistentes en base de datos, visibles en `/account` y además emiten email transaccional en modo `log`.
 - `/account` muestra seguimiento de disputa con motivo y eventos relevantes cuando una operacion esta en revision o fue resuelta.
 - MCP Supabase verificado disponible en esta sesion con proyecto `https://qjmhiagfolrlcktrnqtu.supabase.co`; aun falta definir migracion, variables por ambiente y politica de ramas antes de usarlo como DB beta.
+- Staging/Supabase preparado en documentacion: `.env.staging.example`, `STAGING_SUPABASE_RUNBOOK.md` y scripts `prisma:migrate:status:staging` / `prisma:migrate:deploy:staging`.
+- Se podaron carpetas no trackeadas de integraciones multiagente/skills para dejar el workspace Codex-only; `pruebas.txt` sigue sin tocar.
+- Upload S3/R2 ya no depende de `@aws-sdk/client-s3`; usa firma AWS Signature V4 nativa en `apps/web/lib/media-storage.ts` para evitar la cadena vulnerable de `fast-xml-parser`.
 - antes de producción, conectar `EmailService` a proveedor real como Resend, SES, SendGrid o SMTP transaccional.
 - `GOOGLE_MAPS_API_KEY` habilita sugerencias reales por Google Maps; sin clave se usa fallback local para mantener el flujo operativo.
 - antes de producción, validar que todos los puntos sugeridos sean shops reales y seguros, guardar place IDs, horarios de atención y auditoría de cambios de último momento.
@@ -516,9 +519,11 @@ Detalle escrow implementado:
 
 - `package.json`
 - `.env.example`
+- `.env.staging.example`
 - `docker-compose.yml`
 - `BETA_DEPLOY_CHECKLIST.md`
 - `QA_PRE_BETA.md`
+- `STAGING_SUPABASE_RUNBOOK.md`
 
 ### Prisma
 

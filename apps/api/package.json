@@ -11,6 +11,8 @@
     "prisma:generate": "dotenv -e ../../.env -- prisma generate",
     "prisma:migrate:dev": "dotenv -e ../../.env -- prisma migrate dev",
     "prisma:migrate:deploy": "dotenv -e ../../.env -- prisma migrate deploy",
+    "prisma:migrate:status:staging": "dotenv -e ../../.env.staging -- prisma migrate status",
+    "prisma:migrate:deploy:staging": "dotenv -e ../../.env.staging -- prisma migrate deploy",
     "prisma:seed": "dotenv -e ../../.env -- node --import tsx prisma/seed.ts"
   },
   "prisma": {
