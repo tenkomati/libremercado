@@ -157,6 +157,7 @@ Query params de listado:
 - `PATCH /escrows/:id/release`
 - `PATCH /escrows/:id/cancel`
 - `PATCH /escrows/:id/dispute` -> comprador/vendedor de la operacion o admin/ops
+- `PATCH /escrows/:id/dispute/resolve` -> `ADMIN` / `OPS`
 
 Query params de listado:
 
@@ -432,6 +433,7 @@ Notas:
 - `PATCH /escrows/:id/ship` exige vendedor de la operacion o admin/ops.
 - `PATCH /escrows/:id/confirm-delivery` exige comprador de la operacion o admin/ops.
 - `PATCH /escrows/:id/dispute` exige comprador/vendedor de la operacion o admin/ops.
+- `PATCH /escrows/:id/dispute/resolve` exige admin/ops y permite resolver a favor del comprador con reembolso o a favor del vendedor con liberacion de fondos.
 - crear publicación sigue exigiendo usuario `ACTIVE` e identidad `APPROVED`, por regla del backend.
 - editar publicación propia permite cambiar datos básicos e imagen principal.
 - la carga de imágenes sigue usando storage local por defecto para desarrollo.
@@ -443,6 +445,8 @@ Notas:
 - coordinación segura MVP: el vendedor puede "pintar" franjas horarias y el comprador puede elegir una o enviar un mensaje si no le sirve.
 - el formulario de franjas bloquea "Disponible hasta" hasta elegir "Disponible desde", preselecciona la misma fecha y el backend rechaza rangos que crucen de día.
 - las notificaciones actuales son persistentes en base de datos, visibles en `/account` y además emiten email transaccional en modo `log`.
+- `/account` muestra seguimiento de disputa con motivo y eventos relevantes cuando una operacion esta en revision o fue resuelta.
+- MCP Supabase verificado disponible en esta sesion con proyecto `https://qjmhiagfolrlcktrnqtu.supabase.co`; aun falta definir migracion, variables por ambiente y politica de ramas antes de usarlo como DB beta.
 - antes de producción, conectar `EmailService` a proveedor real como Resend, SES, SendGrid o SMTP transaccional.
 - `GOOGLE_MAPS_API_KEY` habilita sugerencias reales por Google Maps; sin clave se usa fallback local para mantener el flujo operativo.
 - antes de producción, validar que todos los puntos sugeridos sean shops reales y seguros, guardar place IDs, horarios de atención y auditoría de cambios de último momento.
@@ -504,6 +508,7 @@ Detalle escrow implementado:
 - eventos financieros por intento de pago
 - acción admin para simular aprobación sandbox
 - acción admin para cancelar operación y registrar reembolso
+- acción admin para resolver disputa a favor del comprador o vendedor con motivo obligatorio
 
 ## Archivos clave
 

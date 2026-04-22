@@ -27,6 +27,7 @@ import { CreateMeetingProposalDto } from "./dto/create-meeting-proposal.dto";
 import { ListEscrowsQueryDto } from "./dto/list-escrows-query.dto";
 import { MarkEscrowShippedDto } from "./dto/mark-escrow-shipped.dto";
 import { OpenDisputeDto } from "./dto/open-dispute.dto";
+import { ResolveDisputeDto } from "./dto/resolve-dispute.dto";
 import { RespondDeliveryProposalDto } from "./dto/respond-delivery-proposal.dto";
 import { RespondMeetingProposalDto } from "./dto/respond-meeting-proposal.dto";
 import { SelectAvailabilitySlotDto } from "./dto/select-availability-slot.dto";
@@ -361,6 +362,30 @@ export class EscrowController {
         resourceType: "escrow",
         resourceId: id,
         metadata: {
+          reason: dto.reason
+        }
+      });
+
+      return escrow;
+    });
+  }
+
+  @Roles(UserRole.ADMIN, UserRole.OPS)
+  @Patch(":id/dispute/resolve")
+  resolveDispute(
+    @Param("id") id: string,
+    @Body() dto: ResolveDisputeDto,
+    @CurrentUser() user: { sub: string; role: UserRole }
+  ) {
+    return this.escrowService.resolveDispute(id, dto).then(async (escrow) => {
+      await this.auditService.logAction({
+        actorUserId: user.sub,
+        actorRole: user.role,
+        action: "ESCROW_DISPUTE_RESOLVED",
+        resourceType: "escrow",
+        resourceId: id,
+        metadata: {
+          outcome: dto.outcome,
           reason: dto.reason
         }
       });

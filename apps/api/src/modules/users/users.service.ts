@@ -119,6 +119,7 @@ export class UsersService {
             status: true,
             shippingProvider: true,
             shippingTrackingCode: true,
+            disputeReason: true,
             createdAt: true,
             listing: {
               select: {
@@ -196,6 +197,11 @@ export class UsersService {
                 createdAt: "asc"
               },
               take: 20
+            },
+            events: {
+              orderBy: {
+                createdAt: "asc"
+              }
             }
           },
           orderBy: {
@@ -210,6 +216,7 @@ export class UsersService {
             status: true,
             shippingProvider: true,
             shippingTrackingCode: true,
+            disputeReason: true,
             createdAt: true,
             listing: {
               select: {
@@ -287,6 +294,11 @@ export class UsersService {
                 createdAt: "asc"
               },
               take: 20
+            },
+            events: {
+              orderBy: {
+                createdAt: "asc"
+              }
             }
           },
           orderBy: {

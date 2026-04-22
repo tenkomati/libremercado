@@ -464,7 +464,7 @@ export default async function EscrowDetailPage({
                   </SubmitButton>
                 </>
               ) : null}
-              {["FUNDS_PENDING", "FUNDS_HELD", "DISPUTED"].includes(escrow.status) ? (
+              {["FUNDS_PENDING", "FUNDS_HELD"].includes(escrow.status) ? (
                 <>
                   <input
                     className="min-w-56 flex-1 rounded-full border border-[var(--surface-border)] bg-white px-3 py-2 text-xs"
@@ -483,6 +483,46 @@ export default async function EscrowDetailPage({
                 </>
               ) : null}
             </ConfirmForm>
+
+            {escrow.status === "DISPUTED" ? (
+              <div className="mt-5 rounded-[1.25rem] border border-[rgba(220,38,38,0.18)] bg-[rgba(220,38,38,0.06)] p-4">
+                <p className="text-sm font-semibold text-[#991b1b]">
+                  Resolución operativa de disputa
+                </p>
+                <p className="mt-2 text-sm text-[var(--muted)]">
+                  Elegí si corresponde liberar los fondos al vendedor o reembolsar al comprador.
+                  Esta acción cierra la operación y notifica a ambas partes.
+                </p>
+                <ConfirmForm action={runEscrowAction} className="mt-4 grid gap-3">
+                  <input name="escrowId" type="hidden" value={escrow.id} />
+                  <input name="returnTo" type="hidden" value={currentPath} />
+                  <select
+                    className="rounded-2xl border border-[var(--surface-border)] bg-white px-3 py-3 text-sm"
+                    name="outcome"
+                    defaultValue="BUYER_REFUND"
+                  >
+                    <option value="BUYER_REFUND">Resolver a favor del comprador: reembolsar</option>
+                    <option value="SELLER_RELEASE">
+                      Resolver a favor del vendedor: liberar fondos
+                    </option>
+                  </select>
+                  <textarea
+                    className="min-h-28 rounded-2xl border border-[var(--surface-border)] bg-white px-3 py-3 text-sm"
+                    defaultValue="Resolución operativa de soporte luego de revisar evidencia, mensajes y trazabilidad de la operación."
+                    name="resolutionReason"
+                  />
+                  <SubmitButton
+                    className="w-fit rounded-full bg-[#7f1d1d] px-4 py-2 text-xs font-semibold text-white"
+                    confirmMessage="¿Resolver definitivamente esta disputa?"
+                    name="action"
+                    pendingLabel="Resolviendo..."
+                    value="resolve-dispute"
+                  >
+                    Resolver disputa
+                  </SubmitButton>
+                </ConfirmForm>
+              </div>
+            ) : null}
           </div>
         </div>
       </section>

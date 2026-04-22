@@ -100,6 +100,13 @@ type EscrowMessage = {
   };
 };
 
+type EscrowEvent = {
+  id: string;
+  type: string;
+  payload: Record<string, unknown> | null;
+  createdAt: string;
+};
+
 type Notification = {
   id: string;
   title: string;
@@ -137,6 +144,7 @@ type AccountUser = {
     status: string;
     shippingProvider: string;
     shippingTrackingCode: string | null;
+    disputeReason: string | null;
     createdAt: string;
     listing: { id: string; title: string };
     seller: { id: string; firstName: string; lastName: string };
@@ -144,6 +152,7 @@ type AccountUser = {
     deliveryProposals: DeliveryProposal[];
     availabilitySlots: AvailabilitySlot[];
     messages: EscrowMessage[];
+    events: EscrowEvent[];
   }>;
   sellerEscrows: Array<{
     id: string;
@@ -151,6 +160,7 @@ type AccountUser = {
     status: string;
     shippingProvider: string;
     shippingTrackingCode: string | null;
+    disputeReason: string | null;
     createdAt: string;
     listing: { id: string; title: string };
     buyer: { id: string; firstName: string; lastName: string };
@@ -158,6 +168,7 @@ type AccountUser = {
     deliveryProposals: DeliveryProposal[];
     availabilitySlots: AvailabilitySlot[];
     messages: EscrowMessage[];
+    events: EscrowEvent[];
   }>;
   kycVerifications: Array<{
     id: string;
@@ -572,6 +583,67 @@ function DisputePanel({ escrowId, status }: { escrowId: string; status: string }
         </button>
       </form>
     </details>
+  );
+}
+
+function DisputeStatusPanel({
+  disputeReason,
+  events,
+  status
+}: {
+  disputeReason: string | null;
+  events: EscrowEvent[];
+  status: string;
+}) {
+  const relevantEvents = events.filter((event) =>
+    ["DISPUTED", "RELEASED", "REFUNDED", "CANCELLED"].includes(event.type)
+  );
+
+  if (status !== "DISPUTED" && !disputeReason && relevantEvents.length === 0) {
+    return null;
+  }
+
+  const title =
+    status === "DISPUTED"
+      ? "Operación en revisión"
+      : status === "RELEASED" || status === "REFUNDED"
+        ? "Disputa resuelta"
+        : "Historial de revisión";
+
+  return (
+    <section className="rounded-2xl border border-[rgba(220,38,38,0.16)] bg-[#fff7f7] p-4">
+      <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#991b1b]">
+        {title}
+      </p>
+      {disputeReason ? (
+        <p className="mt-3 text-sm leading-6 text-[#7f1d1d]">{disputeReason}</p>
+      ) : null}
+      {status === "DISPUTED" ? (
+        <p className="mt-2 text-xs leading-5 text-[var(--muted)]">
+          Soporte está revisando mensajes, evidencia y trazabilidad. Los fondos quedan retenidos
+          hasta resolución.
+        </p>
+      ) : null}
+      {relevantEvents.length > 0 ? (
+        <div className="mt-3 grid gap-2">
+          {relevantEvents.map((event) => (
+            <article className="rounded-2xl bg-white p-3 text-xs" key={event.id}>
+              <p className="font-semibold text-[var(--navy)]">{event.type}</p>
+              <p className="mt-1 text-[var(--muted)]">{formatDateTime(event.createdAt)}</p>
+              {event.payload ? (
+                <p className="mt-2 leading-5 text-[var(--muted)]">
+                  {String(
+                    event.payload.reason ??
+                      event.payload.resolution ??
+                      "Evento registrado por soporte"
+                  )}
+                </p>
+              ) : null}
+            </article>
+          ))}
+        </div>
+      ) : null}
+    </section>
   );
 }
 
@@ -1211,6 +1283,12 @@ export default async function AccountPage({ searchParams }: AccountPageProps) {
                       <MessagesPanel escrowId={escrow.id} messages={escrow.messages} />
                     </section>
 
+                    <DisputeStatusPanel
+                      disputeReason={escrow.disputeReason}
+                      events={escrow.events}
+                      status={escrow.status}
+                    />
+
                     <DisputePanel escrowId={escrow.id} status={escrow.status} />
                   </div>
                 </details>
@@ -1325,6 +1403,12 @@ export default async function AccountPage({ searchParams }: AccountPageProps) {
                       <section className="rounded-2xl bg-white p-4">
                         <MessagesPanel escrowId={escrow.id} messages={escrow.messages} />
                       </section>
+
+                      <DisputeStatusPanel
+                        disputeReason={escrow.disputeReason}
+                        events={escrow.events}
+                        status={escrow.status}
+                      />
 
                       <DisputePanel escrowId={escrow.id} status={escrow.status} />
                     </div>

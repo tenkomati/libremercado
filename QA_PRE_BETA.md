@@ -227,6 +227,9 @@ Criticidad: `P0`
 - [ ] Pago pasa a `REFUNDED`.
 - [ ] Publicacion vuelve a `PUBLISHED` si corresponde.
 - [ ] Motivo queda registrado en eventos.
+- [ ] Admin puede resolver disputa a favor del comprador con reembolso.
+- [ ] Admin puede resolver disputa a favor del vendedor con liberacion de fondos.
+- [ ] Comprador y vendedor ven el seguimiento/resolucion en `/account`.
 
 Pendiente funcional conocido:
 

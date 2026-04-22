@@ -121,6 +121,7 @@ Este documento ordena los pasos necesarios para llevar LibreMercado a una beta s
 
 - [ ] Separar ambientes: local, staging/beta y produccion.
 - [ ] Base de datos gestionada para beta.
+- [x] MCP Supabase disponible en Codex para preparar migracion/control de proyecto.
 - [x] Storage real de imagenes.
 - [ ] Buckets separados por ambiente.
 - [ ] CDN o entrega optimizada de imagenes.
@@ -160,6 +161,8 @@ Este documento ordena los pasos necesarios para llevar LibreMercado a una beta s
 - [ ] Prueba de vendedor que no responde.
 - [ ] Prueba de comprador que cancela.
 - [ ] Prueba de disputa abierta desde usuario.
+- [ ] Prueba de disputa resuelta a favor del comprador.
+- [ ] Prueba de disputa resuelta a favor del vendedor.
 - [ ] Prueba de pago rechazado.
 - [ ] Prueba responsive mobile.
 - [ ] Prueba con usuarios reales internos.
@@ -196,3 +199,5 @@ Este documento ordena los pasos necesarios para llevar LibreMercado a una beta s
 - 2026-04-22: se agrego `QA_PRE_BETA.md` con smoke test, flujos comprador/vendedor/admin, matriz de bloqueo beta y criterios de aceptacion.
 - 2026-04-22: se agrego edicion de perfil desde `/account` y cambio de contrasena autenticado con auditoria backend.
 - 2026-04-22: se agregaron acciones self-service en `/account` para marcar envio, confirmar entrega y abrir disputa con auditoria, rate limits y notificaciones.
+- 2026-04-22: se agrego resolucion admin/ops de disputas: reembolso al comprador o liberacion al vendedor, con auditoria, eventos, pagos actualizados, notificaciones y seguimiento visible para usuarios.
+- 2026-04-22: se verifico MCP Supabase disponible en Codex para el proyecto `https://qjmhiagfolrlcktrnqtu.supabase.co`; falta definir migracion/variables por ambiente antes de usarlo como beta DB.

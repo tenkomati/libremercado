@@ -162,6 +162,19 @@ export async function runEscrowAction(formData: FormData) {
       redirectWithMessage("success", "Disputa abierta correctamente.", returnTo);
     }
 
+    if (action === "resolve-dispute") {
+      const outcome = String(formData.get("outcome"));
+      const reason =
+        String(formData.get("resolutionReason")) ||
+        "Disputa resuelta desde consola admin con criterio operativo.";
+
+      await callAdminApi(`/escrows/${escrowId}/dispute/resolve`, "PATCH", {
+        outcome,
+        reason
+      });
+      redirectWithMessage("success", "Disputa resuelta correctamente.", returnTo);
+    }
+
     if (action === "cancel") {
       const reason =
         String(formData.get("reason")) ||

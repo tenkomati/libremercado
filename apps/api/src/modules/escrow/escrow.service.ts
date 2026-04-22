@@ -38,6 +38,10 @@ import { CreateMeetingProposalDto } from "./dto/create-meeting-proposal.dto";
 import { ListEscrowsQueryDto } from "./dto/list-escrows-query.dto";
 import { MarkEscrowShippedDto } from "./dto/mark-escrow-shipped.dto";
 import { OpenDisputeDto } from "./dto/open-dispute.dto";
+import {
+  DisputeResolutionOutcome,
+  ResolveDisputeDto
+} from "./dto/resolve-dispute.dto";
 import { RespondDeliveryProposalDto } from "./dto/respond-delivery-proposal.dto";
 import { RespondMeetingProposalDto } from "./dto/respond-meeting-proposal.dto";
 import { SelectAvailabilitySlotDto } from "./dto/select-availability-slot.dto";
@@ -1195,6 +1199,108 @@ export class EscrowService {
     return updatedEscrow;
   }
 
+  async resolveDispute(id: string, dto: ResolveDisputeDto) {
+    const escrow = await this.getEscrowById(id);
+
+    if (escrow.status !== EscrowStatus.DISPUTED) {
+      throw new BadRequestException("Only disputed escrows can be resolved");
+    }
+
+    if (dto.outcome === DisputeResolutionOutcome.SELLER_RELEASE) {
+      const updatedEscrow = await this.prisma.$transaction(async (tx) => {
+        const releasedAt = new Date();
+        const updated = await tx.escrowTransaction.update({
+          where: { id },
+          data: {
+            status: EscrowStatus.RELEASED,
+            releasedAt,
+            disputeReason: dto.reason,
+            events: {
+              create: {
+                type: EscrowEventType.RELEASED,
+                payload: {
+                  reason: dto.reason,
+                  resolution: dto.outcome,
+                  netAmount: escrow.netAmount.toString()
+                }
+              }
+            }
+          },
+          include: {
+            events: {
+              orderBy: {
+                createdAt: "asc"
+              }
+            }
+          }
+        });
+
+        await tx.listing.update({
+          where: { id: escrow.listingId },
+          data: {
+            status: ListingStatus.SOLD
+          }
+        });
+
+        await this.markPaymentsReleased(tx, id, releasedAt);
+
+        return updated;
+      });
+
+      await this.notifyPaymentParties(escrow, id, {
+        title: "Disputa resuelta",
+        body: "Soporte resolvió la disputa y liberó los fondos al vendedor."
+      });
+
+      return updatedEscrow;
+    }
+
+    const updatedEscrow = await this.prisma.$transaction(async (tx) => {
+      const updated = await tx.escrowTransaction.update({
+        where: { id },
+        data: {
+          status: EscrowStatus.REFUNDED,
+          disputeReason: dto.reason,
+          events: {
+            create: {
+              type: EscrowEventType.REFUNDED,
+              payload: {
+                reason: dto.reason,
+                resolution: dto.outcome,
+                amount: escrow.amount.toString()
+              }
+            }
+          }
+        },
+        include: {
+          events: {
+            orderBy: {
+              createdAt: "asc"
+            }
+          }
+        }
+      });
+
+      await tx.listing.update({
+        where: { id: escrow.listingId },
+        data: {
+          status: ListingStatus.PUBLISHED
+        }
+      });
+
+      await this.markPaymentsRefunded(tx, id, dto.reason);
+
+      return updated;
+    });
+
+    await this.notifyPaymentParties(escrow, id, {
+      title: "Disputa resuelta",
+      body: "Soporte resolvió la disputa y registró el reembolso al comprador."
+    });
+
+    return updatedEscrow;
+  }
+
   private async markPaymentsReadyToRelease(
     tx: Prisma.TransactionClient,
     escrowId: string,
@@ -1266,7 +1372,11 @@ export class EscrowService {
       where: {
         escrowId,
         status: {
-          in: [PaymentStatus.FUNDS_HELD, PaymentStatus.READY_TO_RELEASE]
+          in: [
+            PaymentStatus.FUNDS_HELD,
+            PaymentStatus.READY_TO_RELEASE,
+            PaymentStatus.DISPUTED
+          ]
         }
       }
     });
