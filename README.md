@@ -104,6 +104,25 @@ Uploads web protegidos:
 - `POST /api/uploads/listing-image`
 - `POST /api/uploads/kyc-image`
 
+## Emails transaccionales
+
+La API incluye un `EmailModule` neutral para eventos criticos. En desarrollo usa
+`EMAIL_PROVIDER=log`, por lo que los emails se registran en los logs sin enviar
+a un proveedor externo.
+
+```bash
+APP_PUBLIC_URL=http://localhost:3000
+EMAIL_PROVIDER=log
+EMAIL_FROM="LibreMercado <no-reply@libremercado.local>"
+```
+
+Eventos cubiertos:
+
+- bienvenida luego del registro
+- verificacion de identidad aprobada, rechazada o con correccion requerida
+- inicio de compra protegida y pago protegido
+- cambios de entrega, encuentro seguro, mensajes y disputa
+
 ## Seguridad de dependencias
 
 Se revisa con:

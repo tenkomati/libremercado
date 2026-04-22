@@ -23,6 +23,7 @@ import {
   getSortOrder,
   makePaginationMeta
 } from "../common/pagination";
+import { EmailService } from "../email/email.service";
 import { ListingsService } from "../listings/listings.service";
 import { PrismaService } from "../prisma/prisma.service";
 import { UsersService } from "../users/users.service";
@@ -47,7 +48,8 @@ export class EscrowService {
     private readonly prisma: PrismaService,
     private readonly usersService: UsersService,
     private readonly listingsService: ListingsService,
-    private readonly googleMapsService: GoogleMapsService
+    private readonly googleMapsService: GoogleMapsService,
+    private readonly emailService: EmailService
   ) {}
 
   async createEscrow(dto: CreateEscrowDto) {
@@ -900,13 +902,23 @@ export class EscrowService {
     return labels[method];
   }
 
-  private createNotification(data: Prisma.UserNotificationUncheckedCreateInput) {
-    return this.prisma.userNotification.create({
+  private async createNotification(data: Prisma.UserNotificationUncheckedCreateInput) {
+    const notification = await this.prisma.userNotification.create({
       data: {
         ...data,
         body: data.body.length > 220 ? `${data.body.slice(0, 217)}...` : data.body
       }
     });
+
+    await this.emailService.sendNotificationEmail({
+      userId: notification.userId,
+      title: notification.title,
+      body: notification.body,
+      resourceType: notification.resourceType,
+      resourceId: notification.resourceId
+    });
+
+    return notification;
   }
 
   async markShipped(id: string, dto: MarkEscrowShippedDto) {
@@ -916,7 +928,7 @@ export class EscrowService {
       throw new BadRequestException("Only funded escrows can be shipped");
     }
 
-    return this.prisma.escrowTransaction.update({
+    const updatedEscrow = await this.prisma.escrowTransaction.update({
       where: { id },
       data: {
         status: EscrowStatus.SHIPPED,
@@ -939,6 +951,15 @@ export class EscrowService {
         }
       }
     });
+
+    await this.notifyPaymentParties(escrow, id, {
+      title: "Entrega en camino",
+      body: dto.trackingCode
+        ? `El vendedor informó el código de seguimiento: ${dto.trackingCode}.`
+        : "El vendedor marcó la operación como enviada."
+    });
+
+    return updatedEscrow;
   }
 
   async confirmDelivery(id: string) {
@@ -1351,5 +1372,22 @@ export class EscrowService {
         }
       ]
     });
+
+    await this.emailService.sendBulkNotificationEmails([
+      {
+        userId: escrow.buyerId,
+        title: data.title,
+        body: data.body,
+        resourceType: "escrow",
+        resourceId: escrowId
+      },
+      {
+        userId: escrow.sellerId,
+        title: data.title,
+        body: data.body,
+        resourceType: "escrow",
+        resourceId: escrowId
+      }
+    ]);
   }
 }

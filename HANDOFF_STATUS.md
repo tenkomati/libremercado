@@ -211,6 +211,25 @@ Uploads web protegidos:
   - `POST /api/uploads/kyc-image`
 - además corta requests con `content-length` excesivo antes de parsear `formData`
 
+### Emails transaccionales
+
+- `EmailModule` neutral con `EmailService`
+- provider por defecto: `EMAIL_PROVIDER=log`
+- `EMAIL_PROVIDER=disabled` desactiva emisión externa
+- `EMAIL_FROM` define remitente
+- `APP_PUBLIC_URL` arma links absolutos hacia la web
+- los emails son best-effort: si fallan, no bloquean la operación principal
+
+Eventos cubiertos:
+
+- bienvenida luego de registro público
+- verificación de identidad aprobada, rechazada o con corrección requerida
+- compra protegida iniciada
+- pago protegido aprobado
+- cambios de entrega y encuentro seguro
+- mensajes de coordinación
+- entrega confirmada, fondos liberados, disputa y cancelación/reembolso
+
 ### Auditoría
 
 - `GET /admin/overview`
@@ -375,7 +394,8 @@ Notas:
 - encuentros seguros MVP: comprador/vendedor pueden proponer fecha, hora y shop de estación `YPF`, `SHELL` o `AXION`; la contraparte puede aceptar o rechazar con nota.
 - coordinación segura MVP: el vendedor puede "pintar" franjas horarias y el comprador puede elegir una o enviar un mensaje si no le sirve.
 - el formulario de franjas bloquea "Disponible hasta" hasta elegir "Disponible desde", preselecciona la misma fecha y el backend rechaza rangos que crucen de día.
-- las notificaciones actuales son persistentes en base de datos y visibles en `/account`; falta canal push/email/WhatsApp para cambios de último momento.
+- las notificaciones actuales son persistentes en base de datos, visibles en `/account` y además emiten email transaccional en modo `log`.
+- antes de producción, conectar `EmailService` a proveedor real como Resend, SES, SendGrid o SMTP transaccional.
 - `GOOGLE_MAPS_API_KEY` habilita sugerencias reales por Google Maps; sin clave se usa fallback local para mantener el flujo operativo.
 - antes de producción, validar que todos los puntos sugeridos sean shops reales y seguros, guardar place IDs, horarios de atención y auditoría de cambios de último momento.
 
@@ -459,6 +479,10 @@ Detalle escrow implementado:
 ### Audit backend
 
 - `apps/api/src/modules/audit/*`
+
+### Email backend
+
+- `apps/api/src/modules/email/*`
 
 ### Admin web
 
@@ -581,7 +605,7 @@ Incluye:
 - QR de conformidad para entrega presencial
 - storage externo/CDN para imágenes en producción
 - calendario visual para disponibilidad con drag/select real en vez de campos `datetime-local`
-- notificaciones externas para cambios de último momento: email, push web o WhatsApp/SMS transaccional
+- notificaciones externas avanzadas para cambios de último momento: push web o WhatsApp/SMS transaccional
 - reglas de reprogramación y no-show para encuentros presenciales
 - integración completa con Google Maps Places: place IDs, distancia estimada, horarios de shop y navegación
 

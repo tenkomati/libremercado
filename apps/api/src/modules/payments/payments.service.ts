@@ -8,6 +8,7 @@ import {
   Prisma
 } from "@prisma/client";
 
+import { EmailService } from "../email/email.service";
 import { EscrowService } from "../escrow/escrow.service";
 import { PrismaService } from "../prisma/prisma.service";
 
@@ -17,7 +18,8 @@ import { CreateCheckoutDto } from "./dto/create-checkout.dto";
 export class PaymentsService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly escrowService: EscrowService
+    private readonly escrowService: EscrowService,
+    private readonly emailService: EmailService
   ) {}
 
   async createSandboxCheckout(dto: CreateCheckoutDto, buyerId: string) {
@@ -83,6 +85,23 @@ export class PaymentsService {
         }
       ]
     });
+
+    await this.emailService.sendBulkNotificationEmails([
+      {
+        userId: escrow.buyerId,
+        title: "Pago protegido iniciado",
+        body: "Creamos la intención de pago. Cuando el pago se apruebe, los fondos quedarán protegidos.",
+        resourceType: "payment_intent",
+        resourceId: paymentIntent.id
+      },
+      {
+        userId: escrow.sellerId,
+        title: "Nueva operación pendiente de pago",
+        body: "Un comprador inició una compra protegida. Te avisaremos cuando los fondos estén acreditados.",
+        resourceType: "payment_intent",
+        resourceId: paymentIntent.id
+      }
+    ]);
 
     return paymentIntent;
   }
@@ -208,6 +227,23 @@ export class PaymentsService {
         }
       ]
     });
+
+    await this.emailService.sendBulkNotificationEmails([
+      {
+        userId: paymentIntent.buyerId,
+        title: "Pago recibido y protegido",
+        body: "El pago fue aprobado y los fondos quedaron protegidos hasta que la operación se concrete.",
+        resourceType: "payment_intent",
+        resourceId: id
+      },
+      {
+        userId: paymentIntent.sellerId,
+        title: "Fondos protegidos acreditados",
+        body: "La compra ya tiene fondos protegidos. Podés avanzar con la entrega acordada.",
+        resourceType: "payment_intent",
+        resourceId: id
+      }
+    ]);
 
     return updatedPaymentIntent;
   }

@@ -107,11 +107,11 @@ Este documento ordena los pasos necesarios para llevar LibreMercado a una beta s
 - [x] Mensajes de error entendibles para usuarios comunes.
 - [ ] Onboarding breve para comprador.
 - [ ] Onboarding breve para vendedor.
-- [ ] Emails transaccionales minimos.
-- [ ] Notificacion de nueva operacion.
-- [ ] Notificacion de cambio de entrega.
-- [ ] Notificacion de mensaje.
-- [ ] Notificacion de disputa.
+- [x] Emails transaccionales minimos.
+- [x] Notificacion de nueva operacion.
+- [x] Notificacion de cambio de entrega.
+- [x] Notificacion de mensaje.
+- [x] Notificacion de disputa.
 - [x] Notificacion de KYC aprobado/rechazado.
 
 ## 6. Infraestructura y Deploy
@@ -185,3 +185,4 @@ Este documento ordena los pasos necesarios para llevar LibreMercado a una beta s
 - 2026-04-21: se agrego rate limiting distribuible con Redis y fallback en memoria para auth, KYC, publicaciones, mensajes, coordinacion de escrow y checkout/pagos sandbox.
 - 2026-04-21: se agrego rate limiting Redis/fallback en memoria para uploads web de imagenes de publicaciones y KYC, con corte temprano por `content-length`.
 - 2026-04-21: se reviso `npm audit --workspaces --audit-level=moderate`; se actualizaron parches de Nest, Next, Prisma y tooling hasta quedar en `0 vulnerabilities`.
+- 2026-04-22: se agrego `EmailModule` con provider local `log` y emails transaccionales minimos para bienvenida, identidad, compra protegida, pagos, entrega, mensajes y disputa.

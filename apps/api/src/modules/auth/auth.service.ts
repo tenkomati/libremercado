@@ -11,6 +11,7 @@ import { KycDocumentType, UserRole } from "@prisma/client";
 import { compare, hash } from "bcryptjs";
 
 import { AuditService } from "../audit/audit.service";
+import { EmailService } from "../email/email.service";
 import { PrismaService } from "../prisma/prisma.service";
 import { UsersService } from "../users/users.service";
 
@@ -35,7 +36,8 @@ export class AuthService {
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
     private readonly auditService: AuditService,
-    private readonly prisma: PrismaService
+    private readonly prisma: PrismaService,
+    private readonly emailService: EmailService
   ) {
     this.accessTokenTtlSeconds = Number(
       this.configService.get<string>("JWT_ACCESS_TOKEN_TTL_SECONDS") ??
@@ -89,6 +91,8 @@ export class AuthService {
 
       return createdUser;
     });
+
+    await this.emailService.sendWelcomeEmail(user.id);
 
     return this.buildAuthResponse(user);
   }

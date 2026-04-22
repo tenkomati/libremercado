@@ -11,6 +11,7 @@ import {
   getSortOrder,
   makePaginationMeta
 } from "../common/pagination";
+import { EmailService } from "../email/email.service";
 import { PrismaService } from "../prisma/prisma.service";
 import { UsersService } from "../users/users.service";
 
@@ -22,7 +23,8 @@ import { ReviewKycVerificationDto } from "./dto/review-kyc-verification.dto";
 export class KycService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly usersService: UsersService
+    private readonly usersService: UsersService,
+    private readonly emailService: EmailService
   ) {}
 
   async createVerification(dto: CreateKycVerificationDto) {
@@ -190,7 +192,7 @@ export class KycService {
       }
     });
 
-    await this.prisma.userNotification.create({
+    const notification = await this.prisma.userNotification.create({
       data: {
         userId: verification.userId,
         type: NotificationType.KYC_REVIEWED,
@@ -201,6 +203,14 @@ export class KycService {
         resourceType: "kyc_verification",
         resourceId: id
       }
+    });
+
+    await this.emailService.sendNotificationEmail({
+      userId: notification.userId,
+      title: notification.title,
+      body: notification.body,
+      resourceType: notification.resourceType,
+      resourceId: notification.resourceId
     });
 
     return updatedVerification;

@@ -3,6 +3,7 @@ import { ConfigModule, ConfigService } from "@nestjs/config";
 import { JwtModule } from "@nestjs/jwt";
 
 import { AuditModule } from "../audit/audit.module";
+import { EmailModule } from "../email/email.module";
 import { UsersModule } from "../users/users.module";
 
 import { AuthController } from "./auth.controller";
@@ -13,6 +14,7 @@ import { JwtStrategy } from "./strategies/jwt.strategy";
   imports: [
     UsersModule,
     AuditModule,
+    EmailModule,
     ConfigModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
