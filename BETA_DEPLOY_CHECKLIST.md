@@ -102,9 +102,9 @@ Este documento ordena los pasos necesarios para llevar LibreMercado a una beta s
 - [x] Textos amigables para compra protegida.
 - [x] Textos amigables para verificacion de identidad.
 - [x] Textos amigables para encuentro seguro.
-- [ ] Terminos claros de cancelacion.
-- [ ] Terminos claros de disputa.
-- [ ] Terminos claros de liberacion de fondos.
+- [x] Terminos claros de cancelacion.
+- [x] Terminos claros de disputa.
+- [x] Terminos claros de liberacion de fondos.
 - [x] Landing/home con CTA real para comprar y vender.
 - [x] Estados vacios profesionales.
 - [x] Mensajes de error entendibles para usuarios comunes.
@@ -207,3 +207,4 @@ Este documento ordena los pasos necesarios para llevar LibreMercado a una beta s
 - 2026-04-22: se podaron carpetas extra de integraciones de agentes/skills y se dejo el repo Codex-only; se agrego `STAGING_SUPABASE_RUNBOOK.md`, `.env.staging.example` y scripts de migracion staging.
 - 2026-04-22: se elimino `@aws-sdk/client-s3` por vulnerabilidades transitivas y se reemplazo el upload S3/R2 por firma AWS Signature V4 nativa; `npm audit` vuelve a `0 vulnerabilities`.
 - 2026-04-23: se agrego recuperacion de contrasena por email con token hasheado de un solo uso, expiracion configurable, auditoria, rate limiting y pantallas `/forgot-password` / `/reset-password`.
+- 2026-04-23: se agregaron terminos visibles de compra protegida para cancelacion, disputa y liberacion de fondos en home, detalle de publicacion y `/account`.

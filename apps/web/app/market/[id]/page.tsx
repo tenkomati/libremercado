@@ -4,6 +4,8 @@ import { cookies } from "next/headers";
 import { apiFetch } from "../../../lib/api";
 import { AUTH_COOKIE_NAME, verifySessionToken } from "../../../lib/auth";
 import { formatCurrency, formatDate } from "../../../lib/format";
+import { getProtectedPurchaseSummary } from "../../../lib/protected-purchase-terms";
+import { ProtectedPurchaseTerms } from "../../components/protected-purchase-terms";
 
 import { createProtectedPurchaseAction } from "./actions";
 
@@ -245,6 +247,9 @@ export default async function ListingDetailPage({
             <h2 className="text-xl font-semibold text-[var(--navy)]">
               Cómo te protege libremercado
             </h2>
+            <p className="mt-3 text-sm leading-6 text-[var(--muted)]">
+              {getProtectedPurchaseSummary()}
+            </p>
             <div className="mt-4 grid gap-3 text-sm leading-6 text-[var(--muted)]">
               <p>1. El pago queda retenido de forma segura.</p>
               <p>2. El vendedor despacha o coordina entrega segura.</p>
@@ -252,6 +257,8 @@ export default async function ListingDetailPage({
               <p>4. Los fondos se liberan cuando la entrega queda validada.</p>
             </div>
           </section>
+
+          <ProtectedPurchaseTerms compact title="Antes de comprar, estas son las reglas" />
         </aside>
       </section>
     </main>

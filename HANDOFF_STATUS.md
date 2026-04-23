@@ -425,6 +425,7 @@ Implementado con:
 - onboarding público de verificación de identidad con historial de verificaciones
 - corrección pública de verificación de identidad con reenvío de frente DNI, dorso DNI y selfie desde `/account/kyc`
 - copy público más amigable: se usa "verificación de identidad" en lugar de KYC y "pago/compra protegida" en lugar de escrow
+- componente compartido `ProtectedPurchaseTerms` explica cancelacion, disputa y liberacion de fondos en home, detalle de publicacion y operaciones de `/account`
 - registro público exige frente de DNI, dorso de DNI, selfie y consentimiento de validación de identidad
 - alta pública crea automáticamente una verificación de identidad `PENDING` asociada al usuario
 - la selfie intenta detección local de rostro si el navegador soporta `FaceDetector`; si no, queda para revisión manual
@@ -452,6 +453,7 @@ Notas:
 - el formulario de franjas bloquea "Disponible hasta" hasta elegir "Disponible desde", preselecciona la misma fecha y el backend rechaza rangos que crucen de día.
 - las notificaciones actuales son persistentes en base de datos, visibles en `/account` y además emiten email transaccional en modo `log`.
 - `/account` muestra seguimiento de disputa con motivo y eventos relevantes cuando una operacion esta en revision o fue resuelta.
+- `/account` muestra reglas de compra/venta protegida dentro de cada operacion para bajar dudas antes de cancelar, disputar o esperar liberacion.
 - MCP Supabase verificado disponible en esta sesion con proyecto `https://qjmhiagfolrlcktrnqtu.supabase.co`; aun falta definir migracion, variables por ambiente y politica de ramas antes de usarlo como DB beta.
 - Staging/Supabase preparado en documentacion: `.env.staging.example`, `STAGING_SUPABASE_RUNBOOK.md` y scripts `prisma:migrate:status:staging` / `prisma:migrate:deploy:staging`.
 - Se podaron carpetas no trackeadas de integraciones multiagente/skills para dejar el workspace Codex-only; `pruebas.txt` sigue sin tocar.

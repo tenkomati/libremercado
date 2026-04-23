@@ -7,6 +7,7 @@ import { AUTH_COOKIE_NAME, verifySessionToken } from "../../lib/auth";
 import { formatCurrency, formatDate, formatDateTime } from "../../lib/format";
 
 import { LogoutButton } from "../admin/logout-button";
+import { ProtectedPurchaseTerms } from "../components/protected-purchase-terms";
 
 import { AvailabilitySlotForm } from "./availability-slot-form";
 import {
@@ -1283,6 +1284,8 @@ export default async function AccountPage({ searchParams }: AccountPageProps) {
                       <MessagesPanel escrowId={escrow.id} messages={escrow.messages} />
                     </section>
 
+                    <ProtectedPurchaseTerms compact title="Reglas de esta compra protegida" />
+
                     <DisputeStatusPanel
                       disputeReason={escrow.disputeReason}
                       events={escrow.events}
@@ -1403,6 +1406,8 @@ export default async function AccountPage({ searchParams }: AccountPageProps) {
                       <section className="rounded-2xl bg-white p-4">
                         <MessagesPanel escrowId={escrow.id} messages={escrow.messages} />
                       </section>
+
+                      <ProtectedPurchaseTerms compact title="Reglas de esta venta protegida" />
 
                       <DisputeStatusPanel
                         disputeReason={escrow.disputeReason}

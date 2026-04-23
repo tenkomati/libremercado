@@ -235,10 +235,13 @@ Criticidad: `P0`
 - [ ] Admin puede resolver disputa a favor del comprador con reembolso.
 - [ ] Admin puede resolver disputa a favor del vendedor con liberacion de fondos.
 - [ ] Comprador y vendedor ven el seguimiento/resolucion en `/account`.
+- [ ] Home explica cancelacion, disputa y liberacion de fondos sin lenguaje tecnico.
+- [ ] Detalle de publicacion muestra reglas de compra protegida antes de comprar.
+- [ ] `/account` muestra reglas de compra/venta protegida dentro de cada operacion.
 
 Pendiente funcional conocido:
 
-- Seguimiento y resolucion de disputa desde usuario aun no tienen vista dedicada; soporte/admin resuelve por panel.
+- Seguimiento y resolucion de disputa desde usuario ya muestra motivo/eventos relevantes; soporte/admin resuelve por panel.
 
 Criterio de aceptacion:
 

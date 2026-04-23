@@ -88,6 +88,12 @@ Modelos principales:
 - `PaymentIntent`
 - `PaymentEvent`
 
+El frontend muestra términos operativos de compra protegida para:
+
+- cancelación con motivo y eventual reembolso
+- disputa con fondos retenidos mientras soporte revisa evidencia
+- liberación de fondos cuando la entrega queda confirmada o validada
+
 Adapters previstos:
 
 - `SANDBOX`
