@@ -108,8 +108,8 @@ Este documento ordena los pasos necesarios para llevar LibreMercado a una beta s
 - [x] Landing/home con CTA real para comprar y vender.
 - [x] Estados vacios profesionales.
 - [x] Mensajes de error entendibles para usuarios comunes.
-- [ ] Onboarding breve para comprador.
-- [ ] Onboarding breve para vendedor.
+- [x] Onboarding breve para comprador.
+- [x] Onboarding breve para vendedor.
 - [x] Emails transaccionales minimos.
 - [x] Notificacion de nueva operacion.
 - [x] Notificacion de cambio de entrega.
@@ -208,3 +208,4 @@ Este documento ordena los pasos necesarios para llevar LibreMercado a una beta s
 - 2026-04-22: se elimino `@aws-sdk/client-s3` por vulnerabilidades transitivas y se reemplazo el upload S3/R2 por firma AWS Signature V4 nativa; `npm audit` vuelve a `0 vulnerabilities`.
 - 2026-04-23: se agrego recuperacion de contrasena por email con token hasheado de un solo uso, expiracion configurable, auditoria, rate limiting y pantallas `/forgot-password` / `/reset-password`.
 - 2026-04-23: se agregaron terminos visibles de compra protegida para cancelacion, disputa y liberacion de fondos en home, detalle de publicacion y `/account`.
+- 2026-04-23: se agrego onboarding breve comprador/vendedor con guias reutilizables en home, market, detalle de publicacion y `/account`.

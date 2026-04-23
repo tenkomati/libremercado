@@ -3,6 +3,8 @@ import Link from "next/link";
 import { apiFetch } from "../../lib/api";
 import { formatCurrency } from "../../lib/format";
 
+import { SafeOperationGuides } from "../components/safe-operation-guides";
+
 export const dynamic = "force-dynamic";
 
 type Listing = {
@@ -108,6 +110,10 @@ export default async function MarketPage() {
             </span>
           ))}
         </div>
+      </section>
+
+      <section className="mt-8">
+        <SafeOperationGuides compact mode="buyer" />
       </section>
 
       <section className="mt-8 grid gap-6 md:grid-cols-2 xl:grid-cols-3">

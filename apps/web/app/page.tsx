@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { ProtectedPurchaseTerms } from "./components/protected-purchase-terms";
+import { SafeOperationGuides } from "./components/safe-operation-guides";
 
 const trustPillars = [
   {
@@ -346,6 +347,10 @@ export default function Home() {
 
       <section className="mx-auto w-full max-w-7xl px-6 py-8 sm:px-10 lg:px-12">
         <ProtectedPurchaseTerms title="Cancelación, disputa y liberación sin letra chica" />
+      </section>
+
+      <section className="mx-auto w-full max-w-7xl px-6 py-8 sm:px-10 lg:px-12">
+        <SafeOperationGuides />
       </section>
 
       <section id="roadmap" className="mx-auto w-full max-w-7xl px-6 py-8 pb-20 sm:px-10 lg:px-12">

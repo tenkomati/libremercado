@@ -8,6 +8,7 @@ import { formatCurrency, formatDate, formatDateTime } from "../../lib/format";
 
 import { LogoutButton } from "../admin/logout-button";
 import { ProtectedPurchaseTerms } from "../components/protected-purchase-terms";
+import { SafeOperationGuides } from "../components/safe-operation-guides";
 
 import { AvailabilitySlotForm } from "./availability-slot-form";
 import {
@@ -1104,6 +1105,8 @@ export default async function AccountPage({ searchParams }: AccountPageProps) {
               ) : null}
             </div>
           </div>
+
+          <SafeOperationGuides compact />
 
           <div className="rounded-[1.75rem] border border-[var(--surface-border)] bg-white/85 p-6">
             <div className="flex items-center justify-between gap-4">

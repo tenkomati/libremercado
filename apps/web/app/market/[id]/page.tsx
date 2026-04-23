@@ -6,6 +6,7 @@ import { AUTH_COOKIE_NAME, verifySessionToken } from "../../../lib/auth";
 import { formatCurrency, formatDate } from "../../../lib/format";
 import { getProtectedPurchaseSummary } from "../../../lib/protected-purchase-terms";
 import { ProtectedPurchaseTerms } from "../../components/protected-purchase-terms";
+import { SafeOperationGuides } from "../../components/safe-operation-guides";
 
 import { createProtectedPurchaseAction } from "./actions";
 
@@ -259,6 +260,8 @@ export default async function ListingDetailPage({
           </section>
 
           <ProtectedPurchaseTerms compact title="Antes de comprar, estas son las reglas" />
+
+          <SafeOperationGuides compact mode="buyer" />
         </aside>
       </section>
     </main>

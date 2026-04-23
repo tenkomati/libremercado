@@ -238,6 +238,9 @@ Criticidad: `P0`
 - [ ] Home explica cancelacion, disputa y liberacion de fondos sin lenguaje tecnico.
 - [ ] Detalle de publicacion muestra reglas de compra protegida antes de comprar.
 - [ ] `/account` muestra reglas de compra/venta protegida dentro de cada operacion.
+- [ ] Home muestra guia breve para comprador y vendedor.
+- [ ] Market y detalle de publicacion muestran guia breve para comprar seguro.
+- [ ] `/account` muestra guia breve para comprar y vender seguro.
 
 Pendiente funcional conocido:
 

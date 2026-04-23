@@ -94,6 +94,11 @@ El frontend muestra términos operativos de compra protegida para:
 - disputa con fondos retenidos mientras soporte revisa evidencia
 - liberación de fondos cuando la entrega queda confirmada o validada
 
+También incluye guías breves de onboarding para comprador y vendedor:
+
+- comprar seguro revisando publicación, usando pago protegido y confirmando solo al recibir
+- vender seguro publicando datos completos, entregando con trazabilidad y sin cerrar por fuera
+
 Adapters previstos:
 
 - `SANDBOX`
