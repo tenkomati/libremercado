@@ -195,15 +195,24 @@ Notas:
 
 - `POST /payments/checkout`
 - `GET /payments/:id`
+- `POST /payments/webhooks/:provider` -> publico con firma HMAC obligatoria
 - `POST /payments/:id/sandbox/approve` -> `ADMIN` / `OPS`
 
 Implementado:
 
 - capa neutral de pagos para soportar adapters `SANDBOX`, `MERCADO_PAGO` y `MOBBEX`
+- seleccion de adapter por `PAYMENT_PROVIDER`
+- checkout externo configurable por `PAYMENT_CHECKOUT_BASE_URL`
 - `PaymentIntent` con estado financiero y referencias del proveedor
 - `PaymentEvent` para eventos/webhooks auditables
 - adapter sandbox inicial
+- webhook neutral firmado con `x-lm-signature` HMAC SHA-256 usando `PAYMENT_WEBHOOK_SECRET` o `PAYMENT_WEBHOOK_SECRET_<PROVIDER>`
+- normalizacion generica de eventos por `paymentIntentId`, `providerPaymentId` o `providerPreferenceId`
+- idempotencia basica por `providerEventId`
 - aprobación sandbox desde admin que mueve fondos a protegidos y notifica comprador/vendedor
+- webhook `FUNDS_HELD` mueve escrow a `FUNDS_HELD`
+- webhook `REFUNDED` mueve escrow a `REFUNDED`
+- webhook `DISPUTED` mueve escrow a `DISPUTED`
 - entrega confirmada mueve pagos asociados de `FUNDS_HELD` a `READY_TO_RELEASE`
 - liberación de fondos mueve pagos asociados a `RELEASED`
 - disputa mueve pagos asociados a `DISPUTED`

@@ -170,6 +170,12 @@ Criticidad: `P0`
 - [ ] Admin puede aprobar pago sandbox.
 - [ ] Pago pasa a `FUNDS_HELD`.
 - [ ] Escrow pasa a `FUNDS_HELD`.
+- [ ] Webhook firmado con `x-lm-signature` valido actualiza `PaymentIntent`.
+- [ ] Webhook sin firma o con firma invalida responde error y no cambia estados.
+- [ ] Webhook duplicado por mismo `eventId` no duplica efectos.
+- [ ] Webhook `FUNDS_HELD` mueve escrow a `FUNDS_HELD`.
+- [ ] Webhook `REFUNDED` mueve escrow a `REFUNDED`.
+- [ ] Webhook `DISPUTED` mueve escrow a `DISPUTED`.
 - [ ] Compra en ARS conserva moneda, monto, comision y neto vendedor correctos.
 - [ ] Compra en USD conserva moneda, monto, comision y neto vendedor correctos.
 - [ ] Publicacion queda reservada/no disponible para otra compra.

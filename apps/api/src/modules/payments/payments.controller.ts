@@ -3,20 +3,24 @@ import {
   Body,
   Controller,
   Get,
+  Headers,
   Param,
   Post,
+  Req,
   UseGuards
 } from "@nestjs/common";
 import { UserRole } from "@prisma/client";
 
 import { AuditService } from "../audit/audit.service";
 import { CurrentUser } from "../auth/decorators/current-user.decorator";
+import { Public } from "../auth/decorators/public.decorator";
 import { Roles } from "../auth/decorators/roles.decorator";
 import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
 import { RolesGuard } from "../auth/guards/roles.guard";
 import { RateLimit } from "../rate-limit/rate-limit.decorator";
 
 import { CreateCheckoutDto } from "./dto/create-checkout.dto";
+import { PaymentWebhookDto } from "./dto/payment-webhook.dto";
 import { PaymentsService } from "./payments.service";
 
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -38,7 +42,7 @@ export class PaymentsController {
     }
 
     return this.paymentsService
-      .createSandboxCheckout(dto, user.sub)
+      .createCheckout(dto, user.sub)
       .then(async (paymentIntent) => {
         await this.auditService.logAction({
           actorUserId: user.sub,
@@ -55,6 +59,26 @@ export class PaymentsController {
 
         return paymentIntent;
       });
+  }
+
+  @Public()
+  @Post("webhooks/:provider")
+  @RateLimit({ keyPrefix: "payment-webhook", limit: 600, windowSeconds: 3600 })
+  processWebhook(
+    @Param("provider") provider: string,
+    @Body() body: Omit<PaymentWebhookDto, "provider">,
+    @Headers() headers: Record<string, string | string[] | undefined>,
+    @Req() request: { rawBody?: Buffer }
+  ) {
+    return this.paymentsService.processWebhook(
+      {
+        ...body,
+        provider: provider.toUpperCase() as PaymentWebhookDto["provider"],
+        rawPayload: body.rawPayload ?? (body as Record<string, unknown>)
+      },
+      headers,
+      request.rawBody
+    );
   }
 
   @Get(":id")

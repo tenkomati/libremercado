@@ -41,7 +41,8 @@ Este documento ordena los pasos necesarios para llevar LibreMercado a una beta s
 - [ ] Definir proveedor de pago para Argentina.
 - [ ] Validar si el proveedor permite retencion real de fondos o si requiere flujo alternativo.
 - [x] Implementar pago sandbox.
-- [ ] Implementar webhooks firmados.
+- [x] Implementar endpoint neutral de webhooks firmados.
+- [ ] Adaptar webhooks especificos del proveedor elegido.
 - [x] Persistir estados financieros auditables.
 - [x] Estado: pago iniciado.
 - [x] Estado: pago aprobado.
@@ -212,3 +213,4 @@ Este documento ordena los pasos necesarios para llevar LibreMercado a una beta s
 - 2026-04-23: se agregaron terminos visibles de compra protegida para cancelacion, disputa y liberacion de fondos en home, detalle de publicacion y `/account`.
 - 2026-04-23: se agrego onboarding breve comprador/vendedor con guias reutilizables en home, market, detalle de publicacion y `/account`.
 - 2026-04-23: se agrego `PlatformSettings` global administrable desde `/admin`: comprador 0%, vendedor 5%, publicar gratis, sin costo fijo, USD habilitado. Las publicaciones aceptan ARS/USD y el vendedor ve neto estimado antes de publicar/editar y en ventas.
+- 2026-04-23: se agrego capa neutral de adapters de pago con `PAYMENT_PROVIDER`, checkout externo configurable y webhook firmado HMAC en `POST /payments/webhooks/:provider`. El webhook normaliza eventos, evita duplicados por `providerEventId`, actualiza `PaymentIntent`, mueve escrow a `FUNDS_HELD`/`REFUNDED`/`DISPUTED` segun corresponda y notifica a comprador/vendedor.
