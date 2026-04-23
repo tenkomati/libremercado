@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState, useTransition } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
@@ -94,6 +95,13 @@ export function LoginForm() {
       >
         {isPending ? "Ingresando..." : "Ingresar"}
       </button>
+
+      <Link
+        className="mt-4 inline-flex text-sm font-semibold text-[var(--brand-strong)]"
+        href="/forgot-password"
+      >
+        Olvidé mi contraseña
+      </Link>
 
       <div className="mt-6 rounded-[1.5rem] bg-[#f5f9ff] p-4 text-sm leading-6 text-[var(--muted)]">
         Demo:

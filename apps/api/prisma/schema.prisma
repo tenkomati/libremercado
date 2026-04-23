@@ -169,11 +169,26 @@ model User {
   sellerPaymentIntents PaymentIntent[] @relation("PaymentSeller")
   notifications     UserNotification[]
   adminAuditLogs   AdminAuditLog[]
+  passwordResetTokens PasswordResetToken[]
 
   @@index([status])
   @@index([role])
   @@index([kycStatus])
   @@index([province, city])
+}
+
+model PasswordResetToken {
+  id          String    @id @default(cuid())
+  userId      String
+  tokenHash   String    @unique
+  expiresAt   DateTime
+  usedAt      DateTime?
+  requestedIp String?
+  createdAt   DateTime  @default(now())
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, usedAt, expiresAt])
+  @@index([expiresAt])
 }
 
 model AdminAuditLog {

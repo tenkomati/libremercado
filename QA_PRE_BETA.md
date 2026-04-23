@@ -96,6 +96,11 @@ Criticidad: `P0`
 - [ ] Usuario autenticado puede cambiar contraseña informando contraseña actual.
 - [ ] Cambio de contraseña falla si la contraseña actual es incorrecta.
 - [ ] Cambio de contraseña falla si confirmación y nueva contraseña no coinciden.
+- [ ] Usuario puede pedir recuperación de contraseña desde `/forgot-password`.
+- [ ] Solicitud de recuperación no filtra si el email existe.
+- [ ] Email/log de recuperación incluye enlace a `/reset-password`.
+- [ ] Token de recuperación permite crear contraseña nueva una sola vez.
+- [ ] Token usado o vencido no permite cambiar contraseña.
 - [ ] Rate limit de login responde `429` despues de intentos excesivos.
 
 Criterio de aceptacion:

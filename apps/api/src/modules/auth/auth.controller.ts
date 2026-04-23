@@ -8,6 +8,8 @@ import { CurrentUser } from "./decorators/current-user.decorator";
 import { Public } from "./decorators/public.decorator";
 import { LoginDto } from "./dto/login.dto";
 import { RegisterDto } from "./dto/register.dto";
+import { RequestPasswordResetDto } from "./dto/request-password-reset.dto";
+import { ResetPasswordDto } from "./dto/reset-password.dto";
 import { JwtAuthGuard } from "./guards/jwt-auth.guard";
 
 @Controller("auth")
@@ -26,6 +28,23 @@ export class AuthController {
   @Post("login")
   login(@Body() dto: LoginDto, @Ip() ipAddress: string) {
     return this.authService.login(dto, { ipAddress });
+  }
+
+  @Public()
+  @RateLimit({ keyPrefix: "auth-password-reset-request", limit: 5, windowSeconds: 900 })
+  @Post("password-reset/request")
+  requestPasswordReset(
+    @Body() dto: RequestPasswordResetDto,
+    @Ip() ipAddress: string
+  ) {
+    return this.authService.requestPasswordReset(dto, { ipAddress });
+  }
+
+  @Public()
+  @RateLimit({ keyPrefix: "auth-password-reset-confirm", limit: 10, windowSeconds: 900 })
+  @Post("password-reset/confirm")
+  resetPassword(@Body() dto: ResetPasswordDto) {
+    return this.authService.resetPassword(dto);
   }
 
   @UseGuards(JwtAuthGuard)

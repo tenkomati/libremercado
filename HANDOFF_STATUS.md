@@ -66,6 +66,8 @@ Modelos relevantes:
 
 - `POST /auth/register`
 - `POST /auth/login`
+- `POST /auth/password-reset/request`
+- `POST /auth/password-reset/confirm`
 - `POST /auth/logout`
 - `GET /auth/me`
 
@@ -80,6 +82,8 @@ Incluye:
 - auditoría de login/logout exitosos
 - auditoría de actualización de perfil
 - auditoría de cambio de contraseña autenticado
+- recuperación de contraseña por email con token hasheado de un solo uso
+- auditoría de solicitud y confirmación de recuperación de contraseña
 - `JwtAuthGuard`
 - `RolesGuard`
 - decorators `@Public`, `@CurrentUser`, `@Roles`
@@ -195,6 +199,8 @@ Implementado:
 - rutas protegidas:
   - `POST /auth/register`
   - `POST /auth/login`
+  - `POST /auth/password-reset/request`
+  - `POST /auth/password-reset/confirm`
   - `POST /kyc/verifications`
   - `POST /listings`
   - `PATCH /listings/:id`
@@ -609,6 +615,7 @@ Cerrado en código:
 - Rate limiting Redis/fallback agregado para endpoints sensibles: auth, KYC, listings, escrows, mensajes, coordinación de entrega y pagos sandbox.
 - Rate limiting Redis/fallback agregado para uploads web de publicaciones y KYC.
 - Corte temprano por tamaño de payload en uploads de imágenes antes de parsear `formData`.
+- Recuperación de contraseña pública implementada en `/forgot-password` y `/reset-password`; usa `PasswordResetToken`, `PASSWORD_RESET_TOKEN_TTL_SECONDS` y email transaccional.
 
 Prioridad media:
 
@@ -647,7 +654,6 @@ Incluye:
 - modelo persistente de sesiones
 - rotación de refresh tokens
 - revocación por dispositivo
-- password reset por email
 
 ### 2. Frontoffice real de publicaciones avanzado
 

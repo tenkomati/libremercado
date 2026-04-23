@@ -12,7 +12,7 @@ Este documento ordena los pasos necesarios para llevar LibreMercado a una beta s
 
 - [x] Registro y login funcionando de punta a punta en frontend.
 - [x] Cambio de contrasena autenticado desde `/account`.
-- [ ] Recuperacion de contrasena por email.
+- [x] Recuperacion de contrasena por email.
 - [x] Perfil de usuario editable con datos basicos, direccion y contacto.
 - [x] Onboarding KYC publico completo.
 - [x] Carga de DNI frente y dorso.
@@ -206,3 +206,4 @@ Este documento ordena los pasos necesarios para llevar LibreMercado a una beta s
 - 2026-04-22: se verifico MCP Supabase disponible en Codex para el proyecto `https://qjmhiagfolrlcktrnqtu.supabase.co`; falta definir migracion/variables por ambiente antes de usarlo como beta DB.
 - 2026-04-22: se podaron carpetas extra de integraciones de agentes/skills y se dejo el repo Codex-only; se agrego `STAGING_SUPABASE_RUNBOOK.md`, `.env.staging.example` y scripts de migracion staging.
 - 2026-04-22: se elimino `@aws-sdk/client-s3` por vulnerabilidades transitivas y se reemplazo el upload S3/R2 por firma AWS Signature V4 nativa; `npm audit` vuelve a `0 vulnerabilities`.
+- 2026-04-23: se agrego recuperacion de contrasena por email con token hasheado de un solo uso, expiracion configurable, auditoria, rate limiting y pantallas `/forgot-password` / `/reset-password`.

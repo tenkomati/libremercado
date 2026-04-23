@@ -54,6 +54,19 @@ export class EmailService {
     );
   }
 
+  async sendPasswordResetEmail(userId: string, token: string) {
+    await this.runBestEffort(() =>
+      this.sendToUser(userId, {
+        subject: "Restablecé tu contraseña de LibreMercado",
+        preheader: "Usá este enlace para crear una contraseña nueva.",
+        body:
+          "Recibimos una solicitud para restablecer tu contraseña. El enlace vence pronto y solo puede usarse una vez. Si no fuiste vos, podés ignorar este mensaje.",
+        actionLabel: "Crear nueva contraseña",
+        actionPath: `/reset-password?token=${encodeURIComponent(token)}`
+      })
+    );
+  }
+
   async sendNotificationEmail(input: SendNotificationInput) {
     await this.runBestEffort(() =>
       this.sendToUser(input.userId, {

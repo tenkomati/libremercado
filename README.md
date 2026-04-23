@@ -134,9 +134,26 @@ EMAIL_FROM="LibreMercado <no-reply@libremercado.local>"
 Eventos cubiertos:
 
 - bienvenida luego del registro
+- recuperación de contraseña con enlace de un solo uso
 - verificacion de identidad aprobada, rechazada o con correccion requerida
 - inicio de compra protegida y pago protegido
 - cambios de entrega, encuentro seguro, mensajes y disputa
+
+## Recuperación de contraseña
+
+El flujo público usa tokens aleatorios hasheados en base de datos. El token vence
+por defecto a los 30 minutos y se invalida al usarlo.
+
+```bash
+PASSWORD_RESET_TOKEN_TTL_SECONDS=1800
+```
+
+Rutas:
+
+- `/forgot-password`
+- `/reset-password?token=...`
+- `POST /auth/password-reset/request`
+- `POST /auth/password-reset/confirm`
 
 ## Seguridad de dependencias
 
