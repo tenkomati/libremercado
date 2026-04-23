@@ -136,6 +136,7 @@ type AccountUser = {
     condition: string;
     status: string;
     price: string;
+    currency: "ARS" | "USD";
     locationCity: string;
     locationProvince: string;
     createdAt: string;
@@ -143,6 +144,10 @@ type AccountUser = {
   buyerEscrows: Array<{
     id: string;
     amount: string;
+    feePercentage: string;
+    feeAmount: string;
+    netAmount: string;
+    currency: "ARS" | "USD";
     status: string;
     shippingProvider: string;
     shippingTrackingCode: string | null;
@@ -159,6 +164,10 @@ type AccountUser = {
   sellerEscrows: Array<{
     id: string;
     amount: string;
+    feePercentage: string;
+    feeAmount: string;
+    netAmount: string;
+    currency: "ARS" | "USD";
     status: string;
     shippingProvider: string;
     shippingTrackingCode: string | null;
@@ -1155,7 +1164,7 @@ export default async function AccountPage({ searchParams }: AccountPageProps) {
                     <StatusPill label={listing.status} />
                   </div>
                   <p className="mt-3 text-xl font-semibold text-[var(--brand-strong)]">
-                    {formatCurrency(listing.price)}
+                    {formatCurrency(listing.price, listing.currency)}
                   </p>
                   <p className="mt-2 text-xs text-[var(--muted)]">
                     {listing.category} · {listing.condition} · {formatDate(listing.createdAt)}
@@ -1213,7 +1222,15 @@ export default async function AccountPage({ searchParams }: AccountPageProps) {
                         </p>
                         <p>
                           <span className="font-semibold text-[var(--navy)]">Precio:</span>{" "}
-                          {formatCurrency(escrow.amount)}
+                          {formatCurrency(escrow.amount, escrow.currency)}
+                        </p>
+                        <p>
+                          <span className="font-semibold text-[var(--navy)]">Comisión comprador:</span>{" "}
+                          Sin comisión
+                        </p>
+                        <p>
+                          <span className="font-semibold text-[var(--navy)]">Comisión vendedor:</span>{" "}
+                          {formatCurrency(escrow.feeAmount, escrow.currency)} ({Number(escrow.feePercentage)}%)
                         </p>
                         <p>
                           <span className="font-semibold text-[var(--navy)]">Forma de pago:</span>{" "}
@@ -1351,7 +1368,15 @@ export default async function AccountPage({ searchParams }: AccountPageProps) {
                           </p>
                           <p>
                             <span className="font-semibold text-[var(--navy)]">Precio:</span>{" "}
-                            {formatCurrency(escrow.amount)}
+                            {formatCurrency(escrow.amount, escrow.currency)}
+                          </p>
+                          <p>
+                            <span className="font-semibold text-[var(--navy)]">Comisión LibreMercado:</span>{" "}
+                            {formatCurrency(escrow.feeAmount, escrow.currency)} ({Number(escrow.feePercentage)}%)
+                          </p>
+                          <p>
+                            <span className="font-semibold text-[var(--navy)]">Neto estimado a cobrar:</span>{" "}
+                            {formatCurrency(escrow.netAmount, escrow.currency)}
                           </p>
                           <p>
                             <span className="font-semibold text-[var(--navy)]">Forma de cobro:</span>{" "}

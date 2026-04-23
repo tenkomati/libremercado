@@ -126,6 +126,35 @@ export async function updateListingStatusAction(formData: FormData) {
   }
 }
 
+export async function updatePlatformSettingsAction(formData: FormData) {
+  try {
+    const allowUsdListings = formData.get("allowUsdListings") === "on";
+
+    await callAdminApi("/admin/platform-settings", "PATCH", {
+      sellerCommissionPercentage: Number(
+        formData.get("sellerCommissionPercentage")
+      ),
+      buyerCommissionPercentage: Number(
+        formData.get("buyerCommissionPercentage")
+      ),
+      fixedListingFee: Number(formData.get("fixedListingFee")),
+      fixedTransactionFee: Number(formData.get("fixedTransactionFee")),
+      defaultCurrency: formData.get("defaultCurrency"),
+      allowUsdListings
+    });
+    redirectWithMessage("success", "Comisiones globales actualizadas.", "/admin");
+  } catch (error) {
+    if (isRedirectError(error)) throw error;
+    redirectWithMessage(
+      "error",
+      error instanceof Error
+        ? error.message
+        : "No se pudieron actualizar las comisiones.",
+      "/admin"
+    );
+  }
+}
+
 export async function runEscrowAction(formData: FormData) {
   try {
     const escrowId = String(formData.get("escrowId"));

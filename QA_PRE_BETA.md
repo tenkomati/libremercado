@@ -137,6 +137,10 @@ Criticidad: `P0`
 - [ ] Usuario sin identidad aprobada no puede publicar.
 - [ ] Vendedor aprobado puede abrir `/account/listings/new`.
 - [ ] Formulario exige titulo, descripcion, categoria, condicion, precio y ubicacion.
+- [ ] Formulario permite elegir ARS.
+- [ ] Formulario permite elegir USD si admin lo habilita.
+- [ ] Vendedor ve antes de publicar que publicar cuesta $0.
+- [ ] Vendedor ve comision estimada y neto estimado antes de publicar.
 - [ ] Imagen principal se puede subir y previsualizar.
 - [ ] HEIC/HEIF se convierte a JPG si el archivo es soportado por `sharp`.
 - [ ] Publicacion se crea como propia del vendedor autenticado.
@@ -166,12 +170,33 @@ Criticidad: `P0`
 - [ ] Admin puede aprobar pago sandbox.
 - [ ] Pago pasa a `FUNDS_HELD`.
 - [ ] Escrow pasa a `FUNDS_HELD`.
+- [ ] Compra en ARS conserva moneda, monto, comision y neto vendedor correctos.
+- [ ] Compra en USD conserva moneda, monto, comision y neto vendedor correctos.
 - [ ] Publicacion queda reservada/no disponible para otra compra.
 - [ ] Email/log de fondos protegidos se emite para comprador y vendedor.
 
 Criterio de aceptacion:
 
 - La compra queda protegida y visible para ambas partes, con estado financiero auditable.
+
+## Flujo 4B - Comisiones y Moneda Admin
+
+Criticidad: `P0`
+
+- [ ] Admin ve bloque de comisiones globales en `/admin`.
+- [ ] Admin puede dejar comprador en `0%`.
+- [ ] Admin puede dejar vendedor en `5%`.
+- [ ] Admin puede dejar costo fijo de publicacion en `0`.
+- [ ] Admin puede dejar costo fijo de venta en `0`.
+- [ ] Admin puede habilitar/deshabilitar publicaciones en USD.
+- [ ] Cambio de comisiones queda auditado como `PLATFORM_SETTINGS_UPDATED`.
+- [ ] Nueva publicacion toma moneda default si no se informa moneda.
+- [ ] Si USD esta deshabilitado, API rechaza publicacion USD.
+- [ ] Vendedor ve neto estimado antes de editar una publicacion.
+
+Criterio de aceptacion:
+
+- La politica comercial se puede cambiar desde admin sin redeploy y el vendedor entiende cuanto cobra antes de publicar o aceptar una venta.
 
 ## Flujo 5 - Coordinacion de Entrega
 

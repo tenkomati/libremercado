@@ -59,6 +59,7 @@ Modelos relevantes:
 - `UserNotification`
 - `EscrowEvent`
 - `AdminAuditLog`
+- `PlatformSettings`
 
 ## Módulos Nest implementados
 
@@ -138,6 +139,23 @@ Notas:
 
 - usuarios comunes solo pueden editar publicaciones propias
 - usuarios comunes solo pueden cambiar estado propio a `PUBLISHED` o `PAUSED`
+- las publicaciones aceptan `ARS` y `USD`
+- la moneda default y la habilitacion de USD salen de `PlatformSettings`
+
+### Platform Settings
+
+- `GET /platform-settings` -> publico, expone politica comercial y monedas disponibles
+- `PATCH /admin/platform-settings` -> `ADMIN`
+
+Configuracion actual para beta:
+
+- publicar es gratis
+- comprador 0%
+- vendedor 5% al concretar venta
+- sin costo fijo por publicacion
+- sin costo fijo por transaccion
+- ARS default
+- USD habilitado para productos premium
 
 Query params de listado:
 
@@ -171,6 +189,7 @@ Notas:
 
 - la creación de compra protegida vía checkout ahora deja escrow en `FUNDS_PENDING`
 - cuando el pago sandbox se aprueba, el escrow pasa a `FUNDS_HELD`
+- los escrows nuevos calculan `feeAmount` y `netAmount` con la comision vendedora global vigente al iniciar la compra
 
 ### Payments
 

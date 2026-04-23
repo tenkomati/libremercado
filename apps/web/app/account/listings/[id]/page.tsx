@@ -5,8 +5,10 @@ import { redirect } from "next/navigation";
 import { apiFetchWithToken } from "../../../../lib/api";
 import { AUTH_COOKIE_NAME, verifySessionToken } from "../../../../lib/auth";
 import { formatCurrency, formatDate } from "../../../../lib/format";
+import { getPlatformSettings } from "../../../../lib/platform-settings";
 
 import { updateOwnListingAction, updateOwnListingStatusAction } from "../../actions";
+import { FeePreview } from "../fee-preview";
 import { ListingImageUpload } from "../../listing-image-upload";
 
 type AccountListingPageProps = {
@@ -26,6 +28,7 @@ type ListingDetail = {
   condition: string;
   status: string;
   price: string;
+  currency: "ARS" | "USD";
   locationCity: string;
   locationProvince: string;
   publishedAt: string | null;
@@ -39,6 +42,10 @@ type ListingDetail = {
     id: string;
     status: string;
     amount: string;
+    currency: "ARS" | "USD";
+    feePercentage: string;
+    feeAmount: string;
+    netAmount: string;
     createdAt: string;
     buyer: {
       firstName: string;
@@ -77,12 +84,13 @@ export default async function AccountListingPage({
   searchParams
 }: AccountListingPageProps) {
   const { id } = await params;
-  const [listing, resolvedSearchParams] = await Promise.all([
+  const [listing, resolvedSearchParams, platformSettings] = await Promise.all([
     getListing(id),
     (searchParams ?? Promise.resolve({})) as Promise<{
       success?: string;
       error?: string;
-    }>
+    }>,
+    getPlatformSettings()
   ]);
   const imageUrl = listing.images[0]?.url ?? "";
 
@@ -128,7 +136,7 @@ export default async function AccountListingPage({
                 {listing.title}
               </h1>
               <p className="mt-3 text-3xl font-semibold text-[var(--brand-strong)]">
-                {formatCurrency(listing.price)}
+                {formatCurrency(listing.price, listing.currency)}
               </p>
               <p className="mt-3 text-sm text-[var(--muted)]">
                 Creada: {formatDate(listing.createdAt)} · Publicada: {formatDate(listing.publishedAt)}
@@ -177,7 +185,10 @@ export default async function AccountListingPage({
                     </div>
                     <div className="text-right">
                       <p className="text-sm font-semibold text-[var(--brand-strong)]">{escrow.status}</p>
-                      <p className="font-semibold text-[var(--navy)]">{formatCurrency(escrow.amount)}</p>
+                      <p className="font-semibold text-[var(--navy)]">{formatCurrency(escrow.amount, escrow.currency)}</p>
+                      <p className="text-xs text-[var(--muted)]">
+                        Neto {formatCurrency(escrow.netAmount, escrow.currency)}
+                      </p>
                     </div>
                   </div>
                 </article>
@@ -229,11 +240,13 @@ export default async function AccountListingPage({
               </label>
             </div>
 
-            <div className="grid gap-5 md:grid-cols-3">
-              <label className="grid gap-2 text-sm font-medium text-[var(--navy)]">
-                Precio ARS
-                <input className="rounded-2xl border border-[var(--surface-border)] bg-[#f8fbff] px-4 py-3 outline-none focus:border-[var(--brand)]" defaultValue={Number(listing.price)} min="1" name="price" required type="number" />
-              </label>
+            <FeePreview
+              defaultCurrency={listing.currency}
+              defaultPrice={Number(listing.price)}
+              settings={platformSettings}
+            />
+
+            <div className="grid gap-5 md:grid-cols-2">
               <label className="grid gap-2 text-sm font-medium text-[var(--navy)]">
                 Provincia
                 <input className="rounded-2xl border border-[var(--surface-border)] bg-[#f8fbff] px-4 py-3 outline-none focus:border-[var(--brand)]" defaultValue={listing.locationProvince} name="locationProvince" required />

@@ -66,7 +66,7 @@ export async function createListingAction(formData: FormData) {
       category: formData.get("category"),
       condition: formData.get("condition"),
       price: Number(formData.get("price")),
-      currency: "ARS",
+      currency: formData.get("currency"),
       locationProvince: formData.get("locationProvince"),
       locationCity: formData.get("locationCity"),
       status: "PUBLISHED",
@@ -200,7 +200,7 @@ export async function updateOwnListingAction(formData: FormData) {
       category: formData.get("category"),
       condition: formData.get("condition"),
       price: Number(formData.get("price")),
-      currency: "ARS",
+      currency: formData.get("currency"),
       locationProvince: formData.get("locationProvince"),
       locationCity: formData.get("locationCity"),
       ...(imageUrl ? { images: [{ url: imageUrl }] } : {})

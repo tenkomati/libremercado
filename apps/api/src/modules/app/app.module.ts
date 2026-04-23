@@ -7,6 +7,7 @@ import { EscrowModule } from "../escrow/escrow.module";
 import { KycModule } from "../kyc/kyc.module";
 import { ListingsModule } from "../listings/listings.module";
 import { PaymentsModule } from "../payments/payments.module";
+import { PlatformSettingsModule } from "../platform-settings/platform-settings.module";
 import { PrismaModule } from "../prisma/prisma.module";
 import { RateLimitModule } from "../rate-limit/rate-limit.module";
 import { UsersModule } from "../users/users.module";
@@ -27,6 +28,7 @@ import { AppController } from "./app.controller";
     KycModule,
     ListingsModule,
     PaymentsModule,
+    PlatformSettingsModule,
     EscrowModule
   ],
   controllers: [AppController]

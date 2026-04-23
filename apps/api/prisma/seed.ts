@@ -43,6 +43,7 @@ type SeedListing = {
   condition: ListingCondition;
   status: ListingStatus;
   price: string;
+  currency?: CurrencyCode;
   locationProvince: string;
   locationCity: string;
   aiSuggestedPrice?: string;
@@ -172,6 +173,7 @@ const listings: SeedListing[] = [
     condition: ListingCondition.LIKE_NEW,
     status: ListingStatus.PUBLISHED,
     price: "1450000",
+    currency: CurrencyCode.ARS,
     aiSuggestedPrice: "1490000",
     locationProvince: "Buenos Aires",
     locationCity: "La Plata",
@@ -190,8 +192,9 @@ const listings: SeedListing[] = [
     category: "Computacion",
     condition: ListingCondition.VERY_GOOD,
     status: ListingStatus.PUBLISHED,
-    price: "1780000",
-    aiSuggestedPrice: "1815000",
+    price: "1650",
+    currency: CurrencyCode.USD,
+    aiSuggestedPrice: "1700",
     locationProvince: "Cordoba",
     locationCity: "Cordoba",
     publishedAt: new Date("2026-03-11T18:30:00.000Z"),
@@ -210,6 +213,7 @@ const listings: SeedListing[] = [
     condition: ListingCondition.VERY_GOOD,
     status: ListingStatus.RESERVED,
     price: "920000",
+    currency: CurrencyCode.ARS,
     aiSuggestedPrice: "899000",
     locationProvince: "Buenos Aires",
     locationCity: "La Plata",
@@ -228,6 +232,7 @@ const listings: SeedListing[] = [
     condition: ListingCondition.GOOD,
     status: ListingStatus.PUBLISHED,
     price: "210000",
+    currency: CurrencyCode.ARS,
     aiSuggestedPrice: "198000",
     locationProvince: "Cordoba",
     locationCity: "Cordoba",
@@ -246,6 +251,7 @@ const listings: SeedListing[] = [
     condition: ListingCondition.LIKE_NEW,
     status: ListingStatus.PUBLISHED,
     price: "185000",
+    currency: CurrencyCode.ARS,
     aiSuggestedPrice: "192500",
     locationProvince: "Buenos Aires",
     locationCity: "La Plata",
@@ -263,8 +269,9 @@ const listings: SeedListing[] = [
     category: "Deportes",
     condition: ListingCondition.GOOD,
     status: ListingStatus.UNDER_REVIEW,
-    price: "980000",
-    aiSuggestedPrice: "1010000",
+    price: "850",
+    currency: CurrencyCode.USD,
+    aiSuggestedPrice: "900",
     locationProvince: "Santa Fe",
     locationCity: "Rosario",
     images: [
@@ -287,7 +294,20 @@ async function main() {
   await prisma.listingImage.deleteMany();
   await prisma.listing.deleteMany();
   await prisma.kycVerification.deleteMany();
+  await prisma.platformSettings.deleteMany();
   await prisma.user.deleteMany();
+
+  await prisma.platformSettings.create({
+    data: {
+      id: "global",
+      sellerCommissionPercentage: new Prisma.Decimal("5.00"),
+      buyerCommissionPercentage: new Prisma.Decimal("0.00"),
+      fixedListingFee: new Prisma.Decimal("0.00"),
+      fixedTransactionFee: new Prisma.Decimal("0.00"),
+      defaultCurrency: CurrencyCode.ARS,
+      allowUsdListings: true
+    }
+  });
 
   const userMap = new Map<string, string>();
   const listingMap = new Map<string, string>();
@@ -354,7 +374,7 @@ async function main() {
         condition: listing.condition,
         status: listing.status,
         price: new Prisma.Decimal(listing.price),
-        currency: CurrencyCode.ARS,
+        currency: listing.currency ?? CurrencyCode.ARS,
         locationProvince: listing.locationProvince,
         locationCity: listing.locationCity,
         aiSuggestedPrice: listing.aiSuggestedPrice
@@ -379,9 +399,9 @@ async function main() {
       buyerId: userMap.get("buyer-frequent")!,
       sellerId: userMap.get("seller-premium")!,
       amount: new Prisma.Decimal("920000"),
-      feePercentage: new Prisma.Decimal("4.00"),
-      feeAmount: new Prisma.Decimal("36800"),
-      netAmount: new Prisma.Decimal("883200"),
+      feePercentage: new Prisma.Decimal("5.00"),
+      feeAmount: new Prisma.Decimal("46000"),
+      netAmount: new Prisma.Decimal("874000"),
       currency: CurrencyCode.ARS,
       status: EscrowStatus.SHIPPED,
       shippingProvider: "Andreani",
@@ -411,11 +431,11 @@ async function main() {
       listingId: listingMap.get("macbook-air")!,
       buyerId: userMap.get("buyer-interior")!,
       sellerId: userMap.get("seller-tech")!,
-      amount: new Prisma.Decimal("1780000"),
-      feePercentage: new Prisma.Decimal("4.00"),
-      feeAmount: new Prisma.Decimal("71200"),
-      netAmount: new Prisma.Decimal("1708800"),
-      currency: CurrencyCode.ARS,
+      amount: new Prisma.Decimal("1650"),
+      feePercentage: new Prisma.Decimal("5.00"),
+      feeAmount: new Prisma.Decimal("82.50"),
+      netAmount: new Prisma.Decimal("1567.50"),
+      currency: CurrencyCode.USD,
       status: EscrowStatus.DELIVERED,
       shippingProvider: "Correo Argentino",
       shippingTrackingCode: "CA-LM-2988771",
@@ -430,7 +450,7 @@ async function main() {
           },
           {
             type: EscrowEventType.FUNDS_HELD,
-            payload: { amount: "1780000.00", currency: "ARS" }
+            payload: { amount: "1650.00", currency: "USD" }
           },
           {
             type: EscrowEventType.SHIPPED,
@@ -451,9 +471,9 @@ async function main() {
       buyerId: userMap.get("buyer-frequent")!,
       sellerId: userMap.get("seller-premium")!,
       amount: new Prisma.Decimal("185000"),
-      feePercentage: new Prisma.Decimal("4.00"),
-      feeAmount: new Prisma.Decimal("7400"),
-      netAmount: new Prisma.Decimal("177600"),
+      feePercentage: new Prisma.Decimal("5.00"),
+      feeAmount: new Prisma.Decimal("9250"),
+      netAmount: new Prisma.Decimal("175750"),
       currency: CurrencyCode.ARS,
       status: EscrowStatus.DISPUTED,
       shippingProvider: "Pickit",

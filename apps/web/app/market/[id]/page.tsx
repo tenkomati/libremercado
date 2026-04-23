@@ -4,6 +4,7 @@ import { cookies } from "next/headers";
 import { apiFetch } from "../../../lib/api";
 import { AUTH_COOKIE_NAME, verifySessionToken } from "../../../lib/auth";
 import { formatCurrency, formatDate } from "../../../lib/format";
+import { getPlatformSettings, calculateSellerNetAmount } from "../../../lib/platform-settings";
 import { getProtectedPurchaseSummary } from "../../../lib/protected-purchase-terms";
 import { ProtectedPurchaseTerms } from "../../components/protected-purchase-terms";
 import { SafeOperationGuides } from "../../components/safe-operation-guides";
@@ -30,6 +31,7 @@ type ListingDetail = {
   condition: string;
   status: string;
   price: string;
+  currency: "ARS" | "USD";
   aiSuggestedPrice: string | null;
   publishedAt: string | null;
   locationCity: string;
@@ -74,12 +76,17 @@ export default async function ListingDetailPage({
 }: ListingDetailPageProps) {
   const { id } = await params;
   const resolvedSearchParams = (await searchParams) ?? {};
-  const [listing, session] = await Promise.all([
+  const [listing, session, platformSettings] = await Promise.all([
     apiFetch<ListingDetail>(`/listings/${id}`),
-    getSession()
+    getSession(),
+    getPlatformSettings()
   ]);
   const isAvailable = listing.status === "PUBLISHED";
   const isOwnListing = session?.sub === listing.seller.id;
+  const sellerNetPreview = calculateSellerNetAmount(
+    Number(listing.price),
+    platformSettings
+  );
 
   return (
     <main className="mx-auto w-full max-w-7xl px-6 py-8 sm:px-10 lg:px-12">
@@ -163,12 +170,31 @@ export default async function ListingDetailPage({
               <div>
                 <p className="text-sm text-[var(--muted)]">Precio protegido</p>
                 <p className="text-4xl font-semibold text-[var(--brand-strong)]">
-                  {formatCurrency(listing.price)}
+                  {formatCurrency(listing.price, listing.currency)}
                 </p>
               </div>
               <div className="text-right text-sm text-[var(--muted)]">
                 <p>{listing.locationCity}</p>
                 <p>{listing.locationProvince}</p>
+              </div>
+            </div>
+
+            <div className="mt-5 rounded-[1.5rem] border border-[rgba(18,107,255,0.12)] bg-[#f5f9ff] p-4 text-sm text-[var(--navy)]">
+              <div className="flex items-center justify-between gap-3">
+                <span>Publicar es gratis</span>
+                <strong>$0 costo fijo</strong>
+              </div>
+              <div className="mt-2 flex items-center justify-between gap-3">
+                <span>Comprador paga</span>
+                <strong>{formatCurrency(listing.price, listing.currency)}</strong>
+              </div>
+              <div className="mt-2 flex items-center justify-between gap-3">
+                <span>Comisión vendedor</span>
+                <strong>{sellerNetPreview.commissionPercentage}% al vender</strong>
+              </div>
+              <div className="mt-2 flex items-center justify-between gap-3">
+                <span>Vendedor recibe estimado</span>
+                <strong>{formatCurrency(sellerNetPreview.netAmount, listing.currency)}</strong>
               </div>
             </div>
 

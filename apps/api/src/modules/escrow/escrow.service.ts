@@ -26,6 +26,7 @@ import {
 } from "../common/pagination";
 import { EmailService } from "../email/email.service";
 import { ListingsService } from "../listings/listings.service";
+import { PlatformSettingsService } from "../platform-settings/platform-settings.service";
 import { PrismaService } from "../prisma/prisma.service";
 import { UsersService } from "../users/users.service";
 
@@ -53,6 +54,7 @@ export class EscrowService {
     private readonly prisma: PrismaService,
     private readonly usersService: UsersService,
     private readonly listingsService: ListingsService,
+    private readonly platformSettingsService: PlatformSettingsService,
     private readonly googleMapsService: GoogleMapsService,
     private readonly emailService: EmailService
   ) {}
@@ -80,11 +82,14 @@ export class EscrowService {
       throw new BadRequestException("Seller cannot buy their own listing");
     }
 
-    const feePercentage = new Prisma.Decimal(
-      process.env.DEFAULT_ESCROW_FEE_PERCENTAGE ?? "4"
-    );
+    const platformSettings = await this.platformSettingsService.getSettings();
+    const sellerCommissionPercentage =
+      platformSettings.sellerCommissionPercentage;
     const amount = new Prisma.Decimal(listing.price);
-    const feeAmount = amount.mul(feePercentage).div(100);
+    const feeAmount = amount
+      .mul(sellerCommissionPercentage)
+      .div(100)
+      .add(platformSettings.fixedTransactionFee);
     const netAmount = amount.sub(feeAmount);
 
     return this.prisma.$transaction(async (tx) => {
@@ -94,7 +99,7 @@ export class EscrowService {
           buyerId: dto.buyerId,
           sellerId: listing.sellerId,
           amount,
-          feePercentage,
+          feePercentage: sellerCommissionPercentage,
           feeAmount,
           netAmount,
           currency: listing.currency,
@@ -107,7 +112,14 @@ export class EscrowService {
                 type: EscrowEventType.CREATED,
                 payload: {
                   listingId: dto.listingId,
-                  buyerId: dto.buyerId
+                  buyerId: dto.buyerId,
+                  buyerCommissionPercentage:
+                    platformSettings.buyerCommissionPercentage.toString(),
+                  sellerCommissionPercentage:
+                    sellerCommissionPercentage.toString(),
+                  fixedListingFee: platformSettings.fixedListingFee.toString(),
+                  fixedTransactionFee:
+                    platformSettings.fixedTransactionFee.toString()
                 }
               },
             ]

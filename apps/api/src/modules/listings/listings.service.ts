@@ -3,7 +3,7 @@ import {
   Injectable,
   NotFoundException
 } from "@nestjs/common";
-import { KycStatus, ListingStatus, Prisma } from "@prisma/client";
+import { CurrencyCode, KycStatus, ListingStatus, Prisma } from "@prisma/client";
 
 import {
   getPagination,
@@ -11,6 +11,7 @@ import {
   getSortOrder,
   makePaginationMeta
 } from "../common/pagination";
+import { PlatformSettingsService } from "../platform-settings/platform-settings.service";
 import { PrismaService } from "../prisma/prisma.service";
 import { UsersService } from "../users/users.service";
 
@@ -23,6 +24,7 @@ import { UpdateListingDto } from "./dto/update-listing.dto";
 export class ListingsService {
   constructor(
     private readonly prisma: PrismaService,
+    private readonly platformSettingsService: PlatformSettingsService,
     private readonly usersService: UsersService
   ) {}
 
@@ -41,6 +43,7 @@ export class ListingsService {
       dto.status && dto.status !== ListingStatus.PUBLISHED
         ? dto.status
         : ListingStatus.PUBLISHED;
+    const currency = await this.getAllowedCurrency(dto.currency);
 
     return this.prisma.listing.create({
       data: {
@@ -50,7 +53,7 @@ export class ListingsService {
         category: dto.category,
         condition: dto.condition,
         price: new Prisma.Decimal(dto.price),
-        currency: dto.currency,
+        currency,
         locationProvince: dto.locationProvince,
         locationCity: dto.locationCity,
         status: initialStatus,
@@ -231,6 +234,8 @@ export class ListingsService {
     ) {
       throw new BadRequestException("Users can only publish or pause listings");
     }
+    const currency =
+      dto.currency !== undefined ? await this.getAllowedCurrency(dto.currency) : undefined;
 
     return this.prisma.$transaction(async (tx) => {
       if (dto.images) {
@@ -247,7 +252,7 @@ export class ListingsService {
           category: dto.category,
           condition: dto.condition,
           price: dto.price !== undefined ? new Prisma.Decimal(dto.price) : undefined,
-          currency: dto.currency,
+          currency,
           locationProvince: dto.locationProvince,
           locationCity: dto.locationCity,
           status: dto.status,
@@ -273,5 +278,16 @@ export class ListingsService {
         }
       });
     });
+  }
+
+  private async getAllowedCurrency(currency?: CurrencyCode) {
+    const settings = await this.platformSettingsService.getSettings();
+    const selectedCurrency = currency ?? settings.defaultCurrency;
+
+    if (selectedCurrency === CurrencyCode.USD && !settings.allowUsdListings) {
+      throw new BadRequestException("USD listings are disabled");
+    }
+
+    return selectedCurrency;
   }
 }

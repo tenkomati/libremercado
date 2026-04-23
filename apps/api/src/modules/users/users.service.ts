@@ -115,6 +115,9 @@ export class UsersService {
           select: {
             id: true,
             amount: true,
+            feePercentage: true,
+            feeAmount: true,
+            netAmount: true,
             currency: true,
             status: true,
             shippingProvider: true,
@@ -212,6 +215,9 @@ export class UsersService {
           select: {
             id: true,
             amount: true,
+            feePercentage: true,
+            feeAmount: true,
+            netAmount: true,
             currency: true,
             status: true,
             shippingProvider: true,

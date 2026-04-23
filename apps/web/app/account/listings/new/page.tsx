@@ -4,8 +4,10 @@ import { redirect } from "next/navigation";
 
 import { apiFetchWithToken } from "../../../../lib/api";
 import { AUTH_COOKIE_NAME, verifySessionToken } from "../../../../lib/auth";
+import { getPlatformSettings } from "../../../../lib/platform-settings";
 
 import { createListingAction } from "../../actions";
+import { FeePreview } from "../fee-preview";
 import { ListingImageUpload } from "../../listing-image-upload";
 
 type NewListingPageProps = {
@@ -41,9 +43,10 @@ async function getCurrentUser() {
 }
 
 export default async function NewListingPage({ searchParams }: NewListingPageProps) {
-  const [user, params] = await Promise.all([
+  const [user, params, platformSettings] = await Promise.all([
     getCurrentUser(),
-    (searchParams ?? Promise.resolve({})) as Promise<{ error?: string }>
+    (searchParams ?? Promise.resolve({})) as Promise<{ error?: string }>,
+    getPlatformSettings()
   ]);
   const canPublish = user.status === "ACTIVE" && user.kycStatus === "APPROVED";
 
@@ -118,11 +121,9 @@ export default async function NewListingPage({ searchParams }: NewListingPagePro
               </label>
             </div>
 
-            <div className="grid gap-5 md:grid-cols-3">
-              <label className="grid gap-2 text-sm font-medium text-[var(--navy)]">
-                Precio ARS
-                <input className="rounded-2xl border border-[var(--surface-border)] bg-[#f8fbff] px-4 py-3 outline-none focus:border-[var(--brand)]" min="1" name="price" required type="number" />
-              </label>
+            <FeePreview settings={platformSettings} />
+
+            <div className="grid gap-5 md:grid-cols-2">
               <label className="grid gap-2 text-sm font-medium text-[var(--navy)]">
                 Provincia
                 <input className="rounded-2xl border border-[var(--surface-border)] bg-[#f8fbff] px-4 py-3 outline-none focus:border-[var(--brand)]" defaultValue={user.province} name="locationProvince" required />

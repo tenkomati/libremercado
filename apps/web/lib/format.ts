@@ -1,8 +1,8 @@
-export function formatCurrency(value: number | string) {
+export function formatCurrency(value: number | string, currency = "ARS") {
   return new Intl.NumberFormat("es-AR", {
     style: "currency",
-    currency: "ARS",
-    maximumFractionDigits: 0
+    currency,
+    maximumFractionDigits: currency === "USD" ? 2 : 0
   }).format(Number(value));
 }
 

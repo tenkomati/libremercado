@@ -27,6 +27,7 @@ type ListingDetail = {
   condition: string;
   status: string;
   price: string;
+  currency: "ARS" | "USD";
   aiSuggestedPrice: string | null;
   locationCity: string;
   locationProvince: string;
@@ -52,6 +53,7 @@ type ListingDetail = {
     id: string;
     status: string;
     amount: string;
+    currency: "ARS" | "USD";
     shippingProvider: string;
     shippingTrackingCode: string | null;
     createdAt: string;
@@ -173,7 +175,7 @@ export default async function ListingDetailPage({
           <div className="text-right">
             <p className="text-sm text-white/60">Estado</p>
             <p className="mt-2 text-3xl font-semibold">{listing.status}</p>
-            <p className="mt-2 text-lg text-white/80">{formatCurrency(listing.price)}</p>
+            <p className="mt-2 text-lg text-white/80">{formatCurrency(listing.price, listing.currency)}</p>
           </div>
         </div>
       </section>
@@ -220,7 +222,7 @@ export default async function ListingDetailPage({
                     </div>
                     <div className="text-right">
                       <p className="font-semibold text-[var(--navy)]">
-                        {formatCurrency(escrow.amount)}
+                        {formatCurrency(escrow.amount, escrow.currency)}
                       </p>
                       <p className="text-sm text-[var(--muted)]">
                         {formatDate(escrow.createdAt)}
@@ -307,7 +309,7 @@ export default async function ListingDetailPage({
             <div className="mt-5 grid gap-3 text-sm text-[var(--muted)]">
               <p>Condicion: {listing.condition}</p>
               <p>Publicado: {formatDate(listing.publishedAt)}</p>
-              <p>IA sugerido: {listing.aiSuggestedPrice ? formatCurrency(listing.aiSuggestedPrice) : "Sin sugerencia"}</p>
+              <p>IA sugerido: {listing.aiSuggestedPrice ? formatCurrency(listing.aiSuggestedPrice, listing.currency) : "Sin sugerencia"}</p>
             </div>
 
             <ConfirmForm action={updateListingStatusAction} className="mt-6 flex flex-wrap gap-2">

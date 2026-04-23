@@ -421,7 +421,7 @@ export default async function UserDetailPage({
                       />
                     </div>
                     <p className="mt-2 text-lg font-semibold text-[var(--brand)]">
-                      {formatCurrency(listing.price)}
+                      {formatCurrency(listing.price, listing.currency)}
                     </p>
                     <p className="mt-1 text-xs text-[var(--muted)]">
                       {listing.category} · {listing.condition} · {listing.locationCity}
@@ -462,7 +462,7 @@ export default async function UserDetailPage({
                       </div>
                       <div className="text-right">
                         <p className="text-base font-semibold text-[var(--navy)]">
-                          {formatCurrency(escrow.amount)}
+                          {formatCurrency(escrow.amount, escrow.currency)}
                         </p>
                         <Badge
                           label={escrow.status}
@@ -503,7 +503,7 @@ export default async function UserDetailPage({
                       </div>
                       <div className="text-right">
                         <p className="text-base font-semibold text-[var(--navy)]">
-                          {formatCurrency(escrow.amount)}
+                          {formatCurrency(escrow.amount, escrow.currency)}
                         </p>
                         <Badge
                           label={escrow.status}

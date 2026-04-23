@@ -32,6 +32,7 @@ type EscrowDetail = {
   amount: string;
   feeAmount: string;
   netAmount: string;
+  currency: "ARS" | "USD";
   shippingProvider: string;
   shippingTrackingCode: string | null;
   shippedAt: string | null;
@@ -72,6 +73,7 @@ type EscrowDetail = {
     amount: string;
     feeAmount: string;
     netAmount: string;
+    currency: "ARS" | "USD";
     checkoutUrl: string | null;
     providerPaymentId: string | null;
     providerPreferenceId: string | null;
@@ -196,7 +198,7 @@ export default async function EscrowDetailPage({
           <div className="text-right">
             <p className="text-sm text-white/60">Estado actual</p>
             <p className="mt-2 text-3xl font-semibold">{escrow.status}</p>
-            <p className="mt-2 text-lg text-white/80">{formatCurrency(escrow.amount)}</p>
+            <p className="mt-2 text-lg text-white/80">{formatCurrency(escrow.amount, escrow.currency)}</p>
           </div>
         </div>
       </section>
@@ -209,19 +211,19 @@ export default async function EscrowDetailPage({
               <div className="rounded-[1.25rem] bg-[#f8fbff] p-4">
                 <p className="text-sm text-[var(--muted)]">Monto</p>
                 <p className="mt-2 text-2xl font-semibold text-[var(--navy)]">
-                  {formatCurrency(escrow.amount)}
+                  {formatCurrency(escrow.amount, escrow.currency)}
                 </p>
               </div>
               <div className="rounded-[1.25rem] bg-[#f8fbff] p-4">
                 <p className="text-sm text-[var(--muted)]">Fee</p>
                 <p className="mt-2 text-2xl font-semibold text-[var(--navy)]">
-                  {formatCurrency(escrow.feeAmount)}
+                  {formatCurrency(escrow.feeAmount, escrow.currency)}
                 </p>
               </div>
               <div className="rounded-[1.25rem] bg-[#f8fbff] p-4">
                 <p className="text-sm text-[var(--muted)]">Neto vendedor</p>
                 <p className="mt-2 text-2xl font-semibold text-[var(--navy)]">
-                  {formatCurrency(escrow.netAmount)}
+                  {formatCurrency(escrow.netAmount, escrow.currency)}
                 </p>
               </div>
             </div>
@@ -259,7 +261,7 @@ export default async function EscrowDetailPage({
                     </div>
                     <div className="text-right">
                       <p className="font-semibold text-[var(--navy)]">
-                        {formatCurrency(paymentIntent.amount)}
+                        {formatCurrency(paymentIntent.amount, paymentIntent.currency)}
                       </p>
                       <p className="text-sm text-[var(--muted)]">
                         {formatDate(paymentIntent.createdAt)}
@@ -268,8 +270,8 @@ export default async function EscrowDetailPage({
                   </div>
 
                   <div className="mt-4 grid gap-2 text-sm text-[var(--muted)] md:grid-cols-3">
-                    <p>Fee: {formatCurrency(paymentIntent.feeAmount)}</p>
-                    <p>Neto: {formatCurrency(paymentIntent.netAmount)}</p>
+                    <p>Fee: {formatCurrency(paymentIntent.feeAmount, paymentIntent.currency)}</p>
+                    <p>Neto: {formatCurrency(paymentIntent.netAmount, paymentIntent.currency)}</p>
                     <p>Aprobado: {formatDate(paymentIntent.approvedAt)}</p>
                   </div>
 

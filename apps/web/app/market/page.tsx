@@ -15,6 +15,7 @@ type Listing = {
   condition: string;
   status: string;
   price: string;
+  currency: "ARS" | "USD";
   locationProvince: string;
   locationCity: string;
   seller: {
@@ -149,7 +150,7 @@ export default async function MarketPage() {
                 <div>
                   <p className="text-sm text-[var(--muted)]">Precio</p>
                   <p className="text-3xl font-semibold text-[var(--brand-strong)]">
-                    {formatCurrency(listing.price)}
+                    {formatCurrency(listing.price, listing.currency)}
                   </p>
                 </div>
                 <div className="text-right text-sm text-[var(--muted)]">

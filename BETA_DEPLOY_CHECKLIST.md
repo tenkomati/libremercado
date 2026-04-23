@@ -49,8 +49,9 @@ Este documento ordena los pasos necesarios para llevar LibreMercado a una beta s
 - [x] Estado: pago liberado.
 - [x] Estado: pago reembolsado.
 - [x] Estado: pago en disputa.
-- [ ] Comisiones parametrizables por ambiente.
-- [ ] Calculo de comision visible para comprador y vendedor.
+- [x] Comisiones globales parametrizables desde admin.
+- [x] Calculo de comision visible para comprador y vendedor.
+- [x] Publicaciones y ventas en ARS y USD.
 - [x] Registro interno de eventos financieros.
 - [ ] Pruebas de pago aprobado, rechazado, expirado y reembolsado.
 
@@ -95,6 +96,7 @@ Este documento ordena los pasos necesarios para llevar LibreMercado a una beta s
 - [x] Audit logs utiles.
 - [x] Filtros admin por usuario, estado, fecha y riesgo.
 - [x] Vista de metricas basicas: usuarios, publicaciones, operaciones, disputas.
+- [x] Configuracion global de comisiones comprador/vendedor desde admin.
 - [ ] Herramientas de soporte para responder casos.
 
 ## 5. Confianza y Experiencia Beta
@@ -209,3 +211,4 @@ Este documento ordena los pasos necesarios para llevar LibreMercado a una beta s
 - 2026-04-23: se agrego recuperacion de contrasena por email con token hasheado de un solo uso, expiracion configurable, auditoria, rate limiting y pantallas `/forgot-password` / `/reset-password`.
 - 2026-04-23: se agregaron terminos visibles de compra protegida para cancelacion, disputa y liberacion de fondos en home, detalle de publicacion y `/account`.
 - 2026-04-23: se agrego onboarding breve comprador/vendedor con guias reutilizables en home, market, detalle de publicacion y `/account`.
+- 2026-04-23: se agrego `PlatformSettings` global administrable desde `/admin`: comprador 0%, vendedor 5%, publicar gratis, sin costo fijo, USD habilitado. Las publicaciones aceptan ARS/USD y el vendedor ve neto estimado antes de publicar/editar y en ventas.

@@ -107,7 +107,8 @@ export class AuditService {
       kycByStatus,
       listingsByStatus,
       escrowsByStatus,
-      escrowFinancials
+      escrowFinancials,
+      platformSettings
     ] = await Promise.all([
       this.prisma.user.count(),
       this.prisma.user.groupBy({
@@ -152,6 +153,19 @@ export class AuditService {
         _count: {
           _all: true
         }
+      }),
+      this.prisma.platformSettings.upsert({
+        where: { id: "global" },
+        update: {},
+        create: {
+          id: "global",
+          sellerCommissionPercentage: new Prisma.Decimal("5"),
+          buyerCommissionPercentage: new Prisma.Decimal("0"),
+          fixedListingFee: new Prisma.Decimal("0"),
+          fixedTransactionFee: new Prisma.Decimal("0"),
+          defaultCurrency: "ARS",
+          allowUsdListings: true
+        }
       })
     ]);
 
@@ -185,6 +199,17 @@ export class AuditService {
           netSellerAmount: escrowFinancials._sum.netAmount?.toString() ?? "0",
           averageTicket: escrowFinancials._avg.amount?.toString() ?? "0"
         }
+      },
+      platformSettings: {
+        sellerCommissionPercentage:
+          platformSettings.sellerCommissionPercentage.toString(),
+        buyerCommissionPercentage:
+          platformSettings.buyerCommissionPercentage.toString(),
+        fixedListingFee: platformSettings.fixedListingFee.toString(),
+        fixedTransactionFee: platformSettings.fixedTransactionFee.toString(),
+        defaultCurrency: platformSettings.defaultCurrency,
+        allowUsdListings: platformSettings.allowUsdListings,
+        updatedAt: platformSettings.updatedAt.toISOString()
       }
     };
   }

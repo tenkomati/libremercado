@@ -9,6 +9,7 @@ import { formatCurrency, formatDate } from "../../lib/format";
 import {
   reviewKycAction,
   runEscrowAction,
+  updatePlatformSettingsAction,
   updateListingStatusAction
 } from "./actions";
 import { ConfirmForm, SubmitButton } from "./form-controls";
@@ -61,6 +62,7 @@ type Listing = {
   category: string;
   status: string;
   price: string;
+  currency: "ARS" | "USD";
   locationCity: string;
   locationProvince: string;
   seller: {
@@ -76,6 +78,7 @@ type Escrow = {
   amount: string;
   feeAmount: string;
   netAmount: string;
+  currency: "ARS" | "USD";
   shippingProvider: string;
   shippingTrackingCode: string | null;
   releaseEligibleAt: string | null;
@@ -144,6 +147,15 @@ type AdminOverview = {
       netSellerAmount: string;
       averageTicket: string;
     };
+  };
+  platformSettings: {
+    sellerCommissionPercentage: string;
+    buyerCommissionPercentage: string;
+    fixedListingFee: string;
+    fixedTransactionFee: string;
+    defaultCurrency: "ARS" | "USD";
+    allowUsdListings: boolean;
+    updatedAt: string;
   };
 };
 
@@ -527,6 +539,103 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
       <section className="mt-6 rounded-[1.75rem] border border-[var(--surface-border)] bg-white/80 p-6">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
           <div>
+            <h2 className="text-2xl font-semibold text-[var(--navy)]">
+              Comisiones globales
+            </h2>
+            <p className="mt-2 text-sm leading-6 text-[var(--muted)]">
+              Política actual: publicar gratis, comprador sin comisión y
+              comisión al vendedor sólo cuando vende.
+            </p>
+          </div>
+          <span className="rounded-full bg-[#ecfdf5] px-4 py-2 text-sm font-semibold text-[#047857]">
+            Última edición {formatDate(overview.platformSettings.updatedAt)}
+          </span>
+        </div>
+
+        <form action={updatePlatformSettingsAction} className="mt-5 grid gap-4 lg:grid-cols-6">
+          <label className="grid gap-2 text-sm font-medium text-[var(--navy)]">
+            Comprador %
+            <input
+              className="rounded-2xl border border-[var(--surface-border)] bg-[#f8fbff] px-4 py-3 outline-none focus:border-[var(--brand)]"
+              defaultValue={overview.platformSettings.buyerCommissionPercentage}
+              max="30"
+              min="0"
+              name="buyerCommissionPercentage"
+              required
+              step="0.01"
+              type="number"
+            />
+          </label>
+          <label className="grid gap-2 text-sm font-medium text-[var(--navy)]">
+            Vendedor %
+            <input
+              className="rounded-2xl border border-[var(--surface-border)] bg-[#f8fbff] px-4 py-3 outline-none focus:border-[var(--brand)]"
+              defaultValue={overview.platformSettings.sellerCommissionPercentage}
+              max="30"
+              min="0"
+              name="sellerCommissionPercentage"
+              required
+              step="0.01"
+              type="number"
+            />
+          </label>
+          <label className="grid gap-2 text-sm font-medium text-[var(--navy)]">
+            Publicar fijo
+            <input
+              className="rounded-2xl border border-[var(--surface-border)] bg-[#f8fbff] px-4 py-3 outline-none focus:border-[var(--brand)]"
+              defaultValue={overview.platformSettings.fixedListingFee}
+              min="0"
+              name="fixedListingFee"
+              required
+              step="0.01"
+              type="number"
+            />
+          </label>
+          <label className="grid gap-2 text-sm font-medium text-[var(--navy)]">
+            Venta fijo
+            <input
+              className="rounded-2xl border border-[var(--surface-border)] bg-[#f8fbff] px-4 py-3 outline-none focus:border-[var(--brand)]"
+              defaultValue={overview.platformSettings.fixedTransactionFee}
+              min="0"
+              name="fixedTransactionFee"
+              required
+              step="0.01"
+              type="number"
+            />
+          </label>
+          <label className="grid gap-2 text-sm font-medium text-[var(--navy)]">
+            Moneda default
+            <select
+              className="rounded-2xl border border-[var(--surface-border)] bg-[#f8fbff] px-4 py-3 outline-none focus:border-[var(--brand)]"
+              defaultValue={overview.platformSettings.defaultCurrency}
+              name="defaultCurrency"
+            >
+              <option value="ARS">ARS</option>
+              <option value="USD">USD</option>
+            </select>
+          </label>
+          <div className="grid gap-2">
+            <label className="flex items-center gap-3 rounded-2xl border border-[var(--surface-border)] bg-[#f8fbff] px-4 py-3 text-sm font-medium text-[var(--navy)]">
+              <input
+                defaultChecked={overview.platformSettings.allowUsdListings}
+                name="allowUsdListings"
+                type="checkbox"
+              />
+              Permitir USD
+            </label>
+            <button
+              className="rounded-2xl bg-[var(--navy)] px-4 py-3 text-sm font-semibold text-white"
+              type="submit"
+            >
+              Guardar
+            </button>
+          </div>
+        </form>
+      </section>
+
+      <section className="mt-6 rounded-[1.75rem] border border-[var(--surface-border)] bg-white/80 p-6">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+          <div>
             <h2 className="text-2xl font-semibold text-[var(--navy)]">Filtros operativos</h2>
             <p className="mt-2 text-sm leading-6 text-[var(--muted)]">
               Busqueda transversal y recortes por estado para revisar rapido lo
@@ -825,7 +934,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
                         </span>
                       </td>
                       <td className="px-4 py-4 font-semibold text-[var(--navy)]">
-                        {formatCurrency(listing.price)}
+                        {formatCurrency(listing.price, listing.currency)}
                       </td>
                       <td className="px-4 py-4">
                         <div className="flex flex-wrap items-center gap-2">
@@ -898,7 +1007,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
                         {escrow.status}
                       </p>
                       <p className="text-lg font-semibold text-[var(--navy)]">
-                        {formatCurrency(escrow.amount)}
+                        {formatCurrency(escrow.amount, escrow.currency)}
                       </p>
                     </div>
                   </div>
