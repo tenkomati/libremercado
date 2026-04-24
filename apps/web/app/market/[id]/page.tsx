@@ -10,6 +10,7 @@ import { ProtectedPurchaseTerms } from "../../components/protected-purchase-term
 import { SafeOperationGuides } from "../../components/safe-operation-guides";
 
 import { createProtectedPurchaseAction } from "./actions";
+import { PurchaseCheckoutCard } from "./purchase-checkout-card";
 
 export const dynamic = "force-dynamic";
 
@@ -64,10 +65,46 @@ async function getSession() {
   }
 
   try {
-    return await verifySessionToken(token);
+    const session = await verifySessionToken(token);
+    return { ...session, token };
   } catch {
     return null;
   }
+}
+
+async function getInsuranceQuote(listingId: string, token: string) {
+  const response = await fetch(
+    `${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001"}/insurance/get-quote`,
+    {
+      method: "POST",
+      cache: "no-store",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        productId: listingId
+      })
+    }
+  );
+
+  if (!response.ok) {
+    return null;
+  }
+
+  return (await response.json()) as {
+    eligible: boolean;
+    requiresIdentityVerified: boolean;
+    provider: {
+      name: string;
+    };
+    pricing: {
+      premiumAmount: string;
+      coverageAmount: string;
+      totalWithInsurance: string;
+    };
+    reason: string | null;
+  };
 }
 
 export default async function ListingDetailPage({
@@ -87,6 +124,10 @@ export default async function ListingDetailPage({
     Number(listing.price),
     platformSettings
   );
+  const insuranceQuote =
+    session && !isOwnListing && isAvailable
+      ? await getInsuranceQuote(id, session.token)
+      : null;
 
   return (
     <main className="mx-auto w-full max-w-7xl px-6 py-8 sm:px-10 lg:px-12">
@@ -199,15 +240,13 @@ export default async function ListingDetailPage({
             </div>
 
             {session && isAvailable && !isOwnListing ? (
-              <form action={createProtectedPurchaseAction} className="mt-7">
-                <input name="listingId" type="hidden" value={listing.id} />
-                <button
-                  className="w-full rounded-full bg-[var(--brand)] px-5 py-4 font-semibold text-white shadow-[0_14px_40px_rgba(18,107,255,0.24)] transition hover:bg-[var(--brand-strong)]"
-                  type="submit"
-                >
-                  Comprar con pago protegido
-                </button>
-              </form>
+              <PurchaseCheckoutCard
+                action={createProtectedPurchaseAction}
+                basePrice={listing.price}
+                currency={listing.currency}
+                insuranceQuote={insuranceQuote}
+                listingId={listing.id}
+              />
             ) : null}
 
             {!session ? (

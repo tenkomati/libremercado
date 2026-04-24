@@ -207,6 +207,16 @@ export class UsersService {
               orderBy: {
                 createdAt: "asc"
               }
+            },
+            insurancePolicy: {
+              include: {
+                provider: {
+                  select: {
+                    id: true,
+                    name: true
+                  }
+                }
+              }
             }
           },
           orderBy: {
@@ -308,6 +318,16 @@ export class UsersService {
             events: {
               orderBy: {
                 createdAt: "asc"
+              }
+            },
+            insurancePolicy: {
+              include: {
+                provider: {
+                  select: {
+                    id: true,
+                    name: true
+                  }
+                }
               }
             }
           },

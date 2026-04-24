@@ -310,6 +310,16 @@ export class EscrowService {
                 }
               }
             }
+          },
+          insurancePolicy: {
+            include: {
+              provider: {
+                select: {
+                  id: true,
+                  name: true
+                }
+              }
+            }
           }
         },
         orderBy: {
@@ -414,12 +424,22 @@ export class EscrowService {
             events: {
               orderBy: {
                 createdAt: "asc"
+                }
+              }
+            }
+          },
+          insurancePolicy: {
+            include: {
+              provider: {
+                select: {
+                  id: true,
+                  name: true
+                }
               }
             }
           }
         }
-      }
-    });
+      });
 
     if (!escrow) {
       throw new NotFoundException(`Escrow ${id} not found`);

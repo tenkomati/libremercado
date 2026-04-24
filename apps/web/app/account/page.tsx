@@ -109,6 +109,19 @@ type EscrowEvent = {
   createdAt: string;
 };
 
+type InsurancePolicy = {
+  id: string;
+  status: string;
+  policyUrl: string;
+  externalPolicyId: string;
+  premiumAmount: string;
+  coverageAmount: string;
+  provider: {
+    id: string;
+    name: string;
+  };
+};
+
 type Notification = {
   id: string;
   title: string;
@@ -149,6 +162,8 @@ type AccountUser = {
     netAmount: string;
     currency: "ARS" | "USD";
     status: string;
+    isInsured: boolean;
+    insuranceFee: string;
     shippingProvider: string;
     shippingTrackingCode: string | null;
     disputeReason: string | null;
@@ -160,6 +175,7 @@ type AccountUser = {
     availabilitySlots: AvailabilitySlot[];
     messages: EscrowMessage[];
     events: EscrowEvent[];
+    insurancePolicy: InsurancePolicy | null;
   }>;
   sellerEscrows: Array<{
     id: string;
@@ -169,6 +185,8 @@ type AccountUser = {
     netAmount: string;
     currency: "ARS" | "USD";
     status: string;
+    isInsured: boolean;
+    insuranceFee: string;
     shippingProvider: string;
     shippingTrackingCode: string | null;
     disputeReason: string | null;
@@ -180,6 +198,7 @@ type AccountUser = {
     availabilitySlots: AvailabilitySlot[];
     messages: EscrowMessage[];
     events: EscrowEvent[];
+    insurancePolicy: InsurancePolicy | null;
   }>;
   kycVerifications: Array<{
     id: string;
@@ -1240,7 +1259,35 @@ export default async function AccountPage({ searchParams }: AccountPageProps) {
                           <span className="font-semibold text-[var(--navy)]">Estado del pago:</span>{" "}
                           {getPaymentStatusLabel(escrow.status)}
                         </p>
+                        <p>
+                          <span className="font-semibold text-[var(--navy)]">Micro-seguro:</span>{" "}
+                          {escrow.isInsured ? "Agregado" : "No contratado"}
+                        </p>
+                        <p>
+                          <span className="font-semibold text-[var(--navy)]">Prima:</span>{" "}
+                          {escrow.isInsured
+                            ? formatCurrency(escrow.insuranceFee, escrow.currency)
+                            : "Sin cargo"}
+                        </p>
                       </div>
+                      {escrow.insurancePolicy ? (
+                        <div className="mt-4 rounded-2xl border border-[rgba(5,150,105,0.14)] bg-[#f0fdf4] p-4 text-sm text-[#065f46]">
+                          <p className="font-semibold">
+                            Póliza {escrow.insurancePolicy.status} · {escrow.insurancePolicy.provider.name}
+                          </p>
+                          <p className="mt-1">
+                            Cobertura: {formatCurrency(escrow.insurancePolicy.coverageAmount, escrow.currency)}
+                          </p>
+                          <a
+                            className="mt-2 inline-flex font-semibold underline"
+                            href={escrow.insurancePolicy.policyUrl}
+                            rel="noreferrer"
+                            target="_blank"
+                          >
+                            Ver póliza
+                          </a>
+                        </div>
+                      ) : null}
                     </section>
 
                     <section className="rounded-2xl bg-white p-4">
@@ -1386,7 +1433,35 @@ export default async function AccountPage({ searchParams }: AccountPageProps) {
                             <span className="font-semibold text-[var(--navy)]">Estado del pago:</span>{" "}
                             {getPaymentStatusLabel(escrow.status)}
                           </p>
+                          <p>
+                            <span className="font-semibold text-[var(--navy)]">Micro-seguro:</span>{" "}
+                            {escrow.isInsured ? "Agregado" : "No contratado"}
+                          </p>
+                          <p>
+                            <span className="font-semibold text-[var(--navy)]">Prima:</span>{" "}
+                            {escrow.isInsured
+                              ? formatCurrency(escrow.insuranceFee, escrow.currency)
+                              : "Sin cargo"}
+                          </p>
                         </div>
+                        {escrow.insurancePolicy ? (
+                          <div className="mt-4 rounded-2xl border border-[rgba(5,150,105,0.14)] bg-[#f0fdf4] p-4 text-sm text-[#065f46]">
+                            <p className="font-semibold">
+                              Póliza {escrow.insurancePolicy.status} · {escrow.insurancePolicy.provider.name}
+                            </p>
+                            <p className="mt-1">
+                              Cobertura: {formatCurrency(escrow.insurancePolicy.coverageAmount, escrow.currency)}
+                            </p>
+                            <a
+                              className="mt-2 inline-flex font-semibold underline"
+                              href={escrow.insurancePolicy.policyUrl}
+                              rel="noreferrer"
+                              target="_blank"
+                            >
+                              Ver póliza
+                            </a>
+                          </div>
+                        ) : null}
                       </section>
 
                       <section className="rounded-2xl bg-white p-4">

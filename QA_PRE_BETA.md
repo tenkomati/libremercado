@@ -197,9 +197,12 @@ Criticidad: `P1`
 - [ ] Usuario sin identidad aprobada no puede emitir seguro aunque vea cotización.
 - [ ] Checkout con `insuranceSelected=true` guarda `is_insured=true` en escrow.
 - [ ] Checkout con seguro guarda `insurance_fee` en escrow.
+- [ ] Ficha pública muestra checkbox de micro-seguro con prima, cobertura y total.
 - [ ] Pago confirmado emite póliza automáticamente.
 - [ ] Se crea registro en `insurance_policies`.
 - [ ] `policy_id_externo`, `premium_amount`, `coverage_amount` y `policy_url` quedan persistidos.
+- [ ] `/account` muestra estado del seguro y link a póliza.
+- [ ] `/admin/escrows/:id` muestra estado del seguro y link a póliza.
 - [ ] Webhook de póliza firmado actualiza estado a `ACTIVE` o `CLAIMED`.
 - [ ] Webhook de póliza sin firma válida no actualiza nada.
 

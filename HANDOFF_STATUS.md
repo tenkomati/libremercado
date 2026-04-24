@@ -237,6 +237,8 @@ Implementado:
 - validación de identidad verificada antes de emitir cobertura
 - webhook de póliza para pasar estados `PENDING` / `ACTIVE` / `CLAIMED`
 - documento funcional en `EMBEDDED_INSURANCE_MODULE.md`
+- ficha pública `/market/[id]` muestra micro-seguro opcional con prima, cobertura y total
+- `/account` y `/admin/escrows/:id` muestran estado de seguro, prima y link a póliza cuando existe
 
 ### Rate limiting / anti-abuso
 

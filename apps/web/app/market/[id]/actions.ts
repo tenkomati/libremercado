@@ -48,7 +48,8 @@ export async function createProtectedPurchaseAction(formData: FormData) {
     },
     body: JSON.stringify({
       listingId,
-      shippingProvider: "Entrega protegida libremercado"
+      shippingProvider: "Entrega protegida libremercado",
+      insuranceSelected: formData.get("insuranceSelected") === "on"
     }),
     cache: "no-store"
   });

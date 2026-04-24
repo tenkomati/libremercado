@@ -57,8 +57,8 @@ Este documento ordena los pasos necesarios para llevar LibreMercado a una beta s
 - [ ] Pruebas de pago aprobado, rechazado, expirado y reembolsado.
 - [x] Base técnica para micro-seguro embebido en checkout.
 - [ ] Integrar proveedor real de micro-seguro.
-- [ ] Exponer checkbox/resumen de seguro en frontend checkout.
-- [ ] Mostrar póliza activa y URL en cuenta/admin.
+- [x] Exponer checkbox/resumen de seguro en frontend checkout.
+- [x] Mostrar póliza activa y URL en cuenta/admin.
 
 ## 3. Seguridad y Anti-Abuso
 

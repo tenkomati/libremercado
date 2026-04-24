@@ -32,6 +32,8 @@ type EscrowDetail = {
   amount: string;
   feeAmount: string;
   netAmount: string;
+  isInsured: boolean;
+  insuranceFee: string;
   currency: "ARS" | "USD";
   shippingProvider: string;
   shippingTrackingCode: string | null;
@@ -90,6 +92,18 @@ type EscrowDetail = {
       createdAt: string;
     }>;
   }>;
+  insurancePolicy: {
+    id: string;
+    status: string;
+    policyUrl: string;
+    externalPolicyId: string;
+    premiumAmount: string;
+    coverageAmount: string;
+    provider: {
+      id: string;
+      name: string;
+    };
+  } | null;
 };
 
 type AuditLog = {
@@ -227,7 +241,43 @@ export default async function EscrowDetailPage({
                 </p>
               </div>
             </div>
+            <div className="mt-4 rounded-[1.25rem] bg-[#f8fbff] p-4 text-sm text-[var(--navy)]">
+              <p>
+                <span className="font-semibold">Micro-seguro:</span>{" "}
+                {escrow.isInsured ? "Sí" : "No"}
+              </p>
+              <p className="mt-1">
+                <span className="font-semibold">Prima:</span>{" "}
+                {formatCurrency(escrow.insuranceFee, escrow.currency)}
+              </p>
+            </div>
           </div>
+
+          {escrow.insurancePolicy ? (
+            <div className="rounded-[1.75rem] border border-[var(--surface-border)] bg-white/80 p-6">
+              <h2 className="text-2xl font-semibold text-[var(--navy)]">Seguro embebido</h2>
+              <div className="mt-5 rounded-[1.25rem] bg-[#f0fdf4] p-4 text-sm text-[#065f46]">
+                <p className="font-semibold">
+                  {escrow.insurancePolicy.provider.name} · {escrow.insurancePolicy.status}
+                </p>
+                <p className="mt-2">
+                  Prima: {formatCurrency(escrow.insurancePolicy.premiumAmount, escrow.currency)}
+                </p>
+                <p className="mt-1">
+                  Cobertura: {formatCurrency(escrow.insurancePolicy.coverageAmount, escrow.currency)}
+                </p>
+                <p className="mt-1">ID externo: {escrow.insurancePolicy.externalPolicyId}</p>
+                <a
+                  className="mt-3 inline-flex font-semibold underline"
+                  href={escrow.insurancePolicy.policyUrl}
+                  rel="noreferrer"
+                  target="_blank"
+                >
+                  Abrir póliza
+                </a>
+              </div>
+            </div>
+          ) : null}
 
           <div className="rounded-[1.75rem] border border-[var(--surface-border)] bg-white/80 p-6">
             <div className="flex flex-wrap items-center justify-between gap-4">
