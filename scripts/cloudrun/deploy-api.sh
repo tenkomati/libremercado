@@ -8,6 +8,9 @@ REPOSITORY="${ARTIFACT_REPOSITORY:-libremercado}"
 IMAGE="us-docker.pkg.dev/${PROJECT_ID}/${REPOSITORY}/${SERVICE_NAME}"
 ENV_FILE="${API_ENV_FILE:-cloudrun/api.mock.env.yaml}"
 
+echo "Validating API env file: ${ENV_FILE}"
+node scripts/cloudrun/validate-mock-env.mjs api
+
 echo "Building API image: ${IMAGE}"
 gcloud builds submit \
   --project "${PROJECT_ID}" \

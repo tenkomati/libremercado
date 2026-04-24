@@ -6,6 +6,7 @@ Smoke automático disponible:
 
 - `npm run smoke:predeploy`
 - guía: `SMOKE_PREDEPLOY.md`
+- validación env Cloud Run mock: `npm run cloudrun:validate:mock`
 
 Modo Cloud Run mock disponible:
 

@@ -140,6 +140,8 @@ Este documento ordena los pasos necesarios para llevar LibreMercado a una beta s
 - [ ] Pipeline ejecuta typecheck.
 - [ ] Pipeline ejecuta build.
 - [ ] Pipeline ejecuta migraciones de forma controlada.
+- [x] Runbook Cloud Run mock documentado.
+- [x] Validacion automatica de env files de Cloud Run mock.
 - [ ] Logs centralizados.
 - [ ] Healthcheck real de API.
 - [ ] Monitoreo basico de uptime.
@@ -225,3 +227,4 @@ Este documento ordena los pasos necesarios para llevar LibreMercado a una beta s
 - 2026-04-24: se reemplazó la carga manual de links por upload real de evidencias en `POST /api/uploads/insurance-claim-image`, reutilizando `media-storage` local/S3 y soporte HEIC/HEIF igual que KYC/listings.
 - 2026-04-24: se agregó smoke predeploy ejecutable en `scripts/smoke-predeploy.mjs` y guía `SMOKE_PREDEPLOY.md`, cubriendo seller -> buyer -> admin con publicación nueva, checkout con seguro, aprobación sandbox, claim con evidencia y resolución manual.
 - 2026-04-24: se preparó deploy mock a Cloud Run con `CLOUD_RUN_MOCK_DEPLOY.md`, env files ejemplo (`cloudrun/api.mock.env.yaml`, `cloudrun/web.mock.env.yaml`) y scripts `scripts/cloudrun/deploy-api.sh` / `deploy-web.sh`. Se dejó `apps/web` compatible con `0.0.0.0:$PORT`.
+- 2026-04-24: se agregó validación automática de `cloudrun/api.mock.env.yaml` y `cloudrun/web.mock.env.yaml` mediante `scripts/cloudrun/validate-mock-env.mjs`, y los scripts de deploy ahora cortan antes de build si quedan placeholders o secretos/URLs inconsistentes.

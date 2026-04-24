@@ -256,8 +256,16 @@ Implementado:
   - `CLOUD_RUN_MOCK_DEPLOY.md`
   - `cloudrun/api.mock.env.yaml`
   - `cloudrun/web.mock.env.yaml`
+  - `scripts/cloudrun/validate-mock-env.mjs`
   - `scripts/cloudrun/deploy-api.sh`
   - `scripts/cloudrun/deploy-web.sh`
+  - `npm run cloudrun:validate:mock`
+
+Notas:
+
+- los deploys mock de Cloud Run ahora validan env files antes de construir imagen
+- `JWT_SECRET` y `APP_PUBLIC_URL` deben quedar alineados entre API y Web
+- el modo mock sigue usando storage efímero local y pagos sandbox; sirve para staging técnico, no para beta pública
 - `apps/web` ahora arranca en `0.0.0.0:$PORT`, compatible con Cloud Run
 - modo recomendado mientras proveedores sigan mock:
   - `PAYMENT_PROVIDER=SANDBOX`

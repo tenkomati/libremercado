@@ -8,6 +8,9 @@ REPOSITORY="${ARTIFACT_REPOSITORY:-libremercado}"
 IMAGE="us-docker.pkg.dev/${PROJECT_ID}/${REPOSITORY}/${SERVICE_NAME}"
 ENV_FILE="${WEB_ENV_FILE:-cloudrun/web.mock.env.yaml}"
 
+echo "Validating Web env file: ${ENV_FILE}"
+node scripts/cloudrun/validate-mock-env.mjs web
+
 echo "Building Web image: ${IMAGE}"
 gcloud builds submit \
   --project "${PROJECT_ID}" \

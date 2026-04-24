@@ -1,122 +1,126 @@
 import Link from "next/link";
 
-import { ProtectedPurchaseTerms } from "./components/protected-purchase-terms";
-import { SafeOperationGuides } from "./components/safe-operation-guides";
+const heroSignals = [
+  { value: "MVP activo", label: "marketplace, checkout protegido y backoffice operando" },
+  { value: "4 capas", label: "identidad, fondos retenidos, seguro y encuentro seguro" },
+  { value: "ARS + USD", label: "economics pensados para usados premium en Argentina" }
+];
 
-const trustPillars = [
+const marketGap = [
   {
-    label: "Identidad verificada",
-    title: "Identidad obligatoria antes de publicar o comprar",
+    title: "Marketplace informal",
     description:
-      "Cada cuenta transaccional pasa por verificacion documental y biometrica para bajar fraude, perfiles descartables y disputas sin respaldo."
+      "Liquidez sin control transaccional. Mucho volumen potencial, pero demasiado riesgo para bienes de ticket alto.",
+    points: ["Perfiles descartables", "Pago por fuera", "Fraude y no-show"]
   },
   {
-    label: "Pago protegido",
-    title: "La plata no viaja directo al vendedor",
+    title: "Marketplace corporativo",
     description:
-      "El dinero se inmoviliza, se sigue la entrega y solo se libera cuando el producto llega y el comprador tiene ventana de validacion."
+      "Infraestructura robusta, pero con costos y fricción que expulsan parte del usado de alto valor y la venta ocasional.",
+    points: ["Comisiones altas", "Experiencia genérica", "Menor flexibilidad C2C"]
   },
   {
-    label: "Costo justo",
-    title: "Comision pensada para usados, no para retail",
+    title: "La oportunidad",
     description:
-      "La plataforma se concentra en C2C de segunda mano y evita estructuras pesadas para sostener economics de 3% a 5%."
+      "Una categoría enorme de transacciones que hoy no suceden por falta de confianza, no por falta de demanda.",
+    points: ["Tecnología", "Fotografía", "Movilidad", "Premium resale"]
   }
 ];
 
-const securityDifferentials = [
+const trustStack = [
   {
-    title: "Identidad verificada",
+    eyebrow: "Identidad verificada",
+    title: "La transacción empieza con una persona real.",
     description:
-      "Solo operan cuentas con validación documental y biométrica aprobada."
+      "Publicar y comprar requiere validación documental y biométrica, reduciendo cuentas descartables, fraude y disputas sin respaldo."
   },
   {
-    title: "Seguro opcional",
+    eyebrow: "Fondos retenidos",
+    title: "El dinero no viaja directo al vendedor.",
     description:
-      "El comprador puede sumar micro-seguro en operaciones de mayor valor."
+      "La plataforma retiene y libera fondos según el estado de la operación, dejando trazabilidad clara para ambas partes."
   },
   {
-    title: "Encuentros seguros",
+    eyebrow: "Encuentro seguro",
+    title: "La coordinación también forma parte del producto.",
     description:
-      "La coordinación favorece puntos de encuentro controlados para reducir riesgo."
+      "El flujo contempla propuestas de franjas horarias, mensajería y puntos de encuentro controlados para bajar incertidumbre operativa."
   },
   {
-    title: "Dinero retenido",
+    eyebrow: "Seguro embebido",
+    title: "Protección opcional en el momento exacto de la compra.",
     description:
-      "Los fondos quedan protegidos hasta que la operación se concreta correctamente."
+      "En categorías de alto valor, el comprador puede sumar una cobertura específica sin salir del checkout."
   }
 ];
 
-const marketSignals = [
-  { value: "48 hs", label: "ventana de validacion post entrega" },
-  { value: "3-5%", label: "comision objetivo del marketplace" },
-  { value: "100%", label: "transacciones con identidad verificada" }
+const showcase = [
+  {
+    title: "Publicación asistida",
+    description:
+      "Carga de producto, moneda ARS o USD, cálculo visible del neto para el vendedor y medios seguros desde el primer paso.",
+    accent: "Seller UX"
+  },
+  {
+    title: "Checkout de confianza",
+    description:
+      "El comprador ve pago protegido, seguro opcional, condiciones de liberación y coordinación operativa dentro del mismo flujo.",
+    accent: "Buyer UX"
+  },
+  {
+    title: "Backoffice operativo",
+    description:
+      "Admin con control sobre usuarios, identidad, operaciones, escrow, pagos sandbox, pólizas y auditoría de eventos clave.",
+    accent: "Ops Console"
+  }
 ];
 
-const categories = [
-  "Tecnologia",
-  "Moda premium",
-  "Gaming",
-  "Hogar",
-  "Movilidad",
-  "Deportes"
+const insuranceFlow = [
+  "Cotización automática solo en categorías elegibles y tickets altos.",
+  "Selección opcional durante el checkout, sin desviar a otro canal.",
+  "Emisión después de confirmación de pago y soporte de reclamo trazable."
 ];
 
 const roadmap = [
   {
-    phase: "Fase 01",
-    title: "Confianza operacional",
+    phase: "Fase 1",
+    title: "Confianza transaccional",
     description:
-      "Registro, verificacion de identidad, reputacion y gobierno de riesgo como gate de toda operacion."
+      "Cerrar el núcleo: identidad, escrow, notificaciones, conciliación operativa y experiencia segura de compra/venta."
   },
   {
-    phase: "Fase 02",
-    title: "Marketplace con liquidez",
+    phase: "Fase 2",
+    title: "Densidad y partners",
     description:
-      "Catalogo, discovery por cercania, publicaciones asistidas por IA y pricing sugerido."
+      "Integrar pagos reales, storage productivo, proveedores de identidad y seguros, y activar oferta en verticales premium."
   },
   {
-    phase: "Fase 03",
-    title: "Checkout protegido",
-    description:
-      "Pago protegido, tracking integrado, liberacion de fondos y circuito formal de disputas."
-  },
-  {
-    phase: "Fase 04",
+    phase: "Fase 3",
     title: "Escala nacional",
     description:
-      "Orquestacion logistica, riesgo en tiempo real y expansion de categorias de alta demanda."
+      "Expandir red logística, acuerdos comerciales y capa de riesgo para convertir confianza en liquidez repetible."
   }
 ];
 
-const trustFlow = [
-  "Alta del usuario con identidad real y scoring inicial.",
-  "Publicacion guiada con IA, fotos limpias y precio sugerido.",
-  "Compra con prioridad por cercania y pago protegido.",
-  "Despacho trazable, confirmacion de entrega y liberacion de fondos."
-];
-
-const comparison = [
+const partnerTracks = [
   {
-    title: "Facebook Marketplace",
-    traits: ["Liquidez alta", "Sin pago protegido", "Alta exposicion a fraude"]
+    title: "Para inversores",
+    description:
+      "Estamos construyendo infraestructura de confianza para un mercado enorme, fragmentado y todavía mal servido en Argentina."
   },
   {
-    title: "Mercado Libre",
-    traits: ["Infra robusta", "Comision alta", "Friccion mayor para C2C casual"]
-  },
-  {
-    title: "libremercado",
-    traits: ["Identidad obligatoria", "Pago protegido nativo", "Economics pensados para usados"]
+    title: "Para proveedores",
+    description:
+      "La arquitectura ya contempla puntos de integración concretos para pagos, seguros, identidad, storage, mensajería y cloud."
   }
 ];
 
 export default function Home() {
   return (
     <main className="relative overflow-hidden">
-      <div className="absolute inset-x-0 top-0 -z-10 h-[620px] bg-[radial-gradient(circle_at_top,rgba(18,107,255,0.22),transparent_42%)]" />
-      <div className="absolute right-[-10%] top-16 -z-10 h-80 w-80 rounded-full bg-[rgba(45,179,255,0.18)] blur-3xl" />
-      <div className="absolute left-[-8%] top-72 -z-10 h-72 w-72 rounded-full bg-[rgba(18,107,255,0.14)] blur-3xl" />
+      <div className="absolute inset-x-0 top-0 -z-10 h-[680px] bg-[radial-gradient(circle_at_top,rgba(18,107,255,0.22),transparent_44%)]" />
+      <div className="absolute right-[-10%] top-20 -z-10 h-96 w-96 rounded-full bg-[rgba(45,179,255,0.16)] blur-3xl" />
+      <div className="absolute left-[-8%] top-[32rem] -z-10 h-80 w-80 rounded-full bg-[rgba(18,107,255,0.12)] blur-3xl" />
 
       <section className="mx-auto flex min-h-screen w-full max-w-7xl flex-col px-6 pb-16 pt-6 sm:px-10 lg:px-12">
         <header className="flex items-center justify-between py-4">
@@ -126,79 +130,67 @@ export default function Home() {
             </div>
             <div>
               <p className="text-lg font-semibold tracking-tight">libremercado</p>
-              <p className="text-sm text-[var(--muted)]">Marketplace C2C de confianza</p>
+              <p className="text-sm text-[var(--muted)]">Trust-tech para usados de alto valor</p>
             </div>
           </div>
 
           <nav className="hidden items-center gap-8 text-sm text-[var(--muted)] md:flex">
-            <a href="#trust">Confianza</a>
-            <a href="#arquitectura">Arquitectura</a>
-            <a href="#categorias">Categorias</a>
-            <a href="#roadmap">Roadmap</a>
+            <a href="#problema">Mercado</a>
+            <a href="#solucion">Solución</a>
+            <a href="#producto">Producto</a>
+            <a href="#vision">Visión</a>
             <Link
-              href="/signup"
+              href="/market"
               className="rounded-full bg-[var(--navy)] px-5 py-2.5 font-semibold text-white"
             >
-              Crear cuenta
+              Ver plataforma
             </Link>
           </nav>
         </header>
 
-        <div className="grid flex-1 items-center gap-10 py-10 lg:grid-cols-[1.1fr_0.9fr] lg:py-16">
+        <div className="grid flex-1 items-center gap-10 py-10 lg:grid-cols-[1.06fr_0.94fr] lg:py-16">
           <div className="space-y-8">
             <span className="inline-flex rounded-full border border-[var(--surface-border)] bg-white/80 px-4 py-2 text-sm font-medium text-[var(--brand-strong)] shadow-sm">
-              Argentina 2026 · confianza, escala y bajo costo
+              Infraestructura de confianza para el comercio C2C en Argentina
             </span>
 
             <div className="space-y-5">
               <h1
-                className="max-w-4xl text-5xl font-semibold leading-none tracking-[-0.04em] sm:text-6xl lg:text-7xl"
+                className="max-w-4xl text-5xl font-semibold leading-none tracking-[-0.05em] sm:text-6xl lg:text-7xl"
                 style={{ fontFamily: "var(--font-display)" }}
               >
-                El marketplace de usados que se siente grande desde el primer clic.
+                El mercado de usados de alto valor necesita menos miedo y mejor infraestructura.
               </h1>
               <p className="max-w-2xl text-lg leading-8 text-[var(--muted)] sm:text-xl">
-                libremercado toma lo mejor de los lideres del mercado, elimina
-                la friccion innecesaria y pone identidad validada, pago protegido y
-                logistica trazable en el centro del producto.
+                libremercado construye una capa de confianza entre comprador y
+                vendedor para destrabar transacciones que hoy no ocurren por
+                fraude, fricción o falta de garantías operativas.
               </p>
             </div>
 
             <div className="flex flex-wrap gap-3">
               <Link
-                href="/signup"
+                href="/market"
                 className="rounded-full bg-[var(--brand)] px-6 py-3.5 font-semibold text-white shadow-[0_14px_40px_rgba(18,107,255,0.25)] transition hover:bg-[var(--brand-strong)]"
               >
-                Crear cuenta segura
+                Ver producto funcionando
               </Link>
               <Link
-                href="/market"
+                href="/signup"
                 className="rounded-full border border-[var(--surface-border)] bg-white/85 px-6 py-3.5 font-semibold text-[var(--foreground)] backdrop-blur"
               >
-                Explorar market live
+                Crear cuenta
               </Link>
               <Link
                 href="/login"
                 className="rounded-full border border-[var(--surface-border)] bg-white/85 px-6 py-3.5 font-semibold text-[var(--foreground)] backdrop-blur"
               >
-                Iniciar sesión
-              </Link>
-              <Link
-                href="/admin"
-                className="rounded-full border border-[var(--surface-border)] bg-white/85 px-6 py-3.5 font-semibold text-[var(--foreground)] backdrop-blur"
-              >
-                Ver consola admin
-              </Link>
-              <Link
-                href="/account"
-                className="rounded-full border border-[var(--surface-border)] bg-white/85 px-6 py-3.5 font-semibold text-[var(--foreground)] backdrop-blur"
-              >
-                Mi cuenta
+                Ingresar
               </Link>
             </div>
 
             <div className="grid gap-4 sm:grid-cols-3">
-              {marketSignals.map((signal) => (
+              {heroSignals.map((signal) => (
                 <div
                   key={signal.label}
                   className="rounded-[1.5rem] border border-[var(--surface-border)] bg-white/80 p-5 shadow-[0_14px_40px_rgba(8,34,71,0.06)]"
@@ -211,90 +203,86 @@ export default function Home() {
           </div>
 
           <div className="relative">
-            <div className="absolute inset-x-12 top-8 h-56 rounded-full bg-[rgba(18,107,255,0.14)] blur-3xl" />
-            <div className="relative rounded-[2rem] border border-[rgba(255,255,255,0.7)] bg-[linear-gradient(180deg,rgba(8,34,71,0.98),rgba(9,41,87,0.94))] p-6 text-white shadow-[0_30px_100px_rgba(8,34,71,0.28)]">
-              <div className="flex items-center justify-between border-b border-white/10 pb-5">
+            <div className="absolute inset-x-10 top-10 h-64 rounded-full bg-[rgba(18,107,255,0.14)] blur-3xl" />
+            <div className="relative overflow-hidden rounded-[2.3rem] border border-[rgba(255,255,255,0.72)] bg-[linear-gradient(160deg,rgba(8,34,71,0.98),rgba(9,41,87,0.94)_58%,rgba(14,77,175,0.88))] p-6 text-white shadow-[0_30px_100px_rgba(8,34,71,0.28)]">
+              <div className="flex items-start justify-between">
                 <div>
-                  <p className="text-xs uppercase tracking-[0.35em] text-white/50">Trust OS</p>
+                  <p className="text-xs uppercase tracking-[0.35em] text-white/50">
+                    Trust-Tech Stack
+                  </p>
                   <h2
-                    className="mt-2 text-3xl font-semibold"
+                    className="mt-3 max-w-sm text-3xl font-semibold leading-tight"
                     style={{ fontFamily: "var(--font-display)" }}
                   >
-                    Operacion blindada para C2C.
+                    No es un clasificado. Es una operación diseñada para cerrarse mejor.
                   </h2>
                 </div>
                 <div className="rounded-full border border-white/15 bg-white/10 px-4 py-2 text-sm">
-                  Live stack
+                  High-value C2C
                 </div>
               </div>
 
-              <div className="grid gap-4 py-6">
-                {trustPillars.map((pillar) => (
+              <div className="mt-8 grid gap-4">
+                {trustStack.slice(0, 3).map((pillar) => (
                   <article
                     key={pillar.title}
-                    className="rounded-[1.5rem] border border-white/10 bg-white/6 p-5"
+                    className="rounded-[1.5rem] border border-white/10 bg-white/8 p-5"
                   >
                     <p className="text-xs uppercase tracking-[0.28em] text-[var(--accent)]">
-                      {pillar.label}
+                      {pillar.eyebrow}
                     </p>
                     <h3 className="mt-3 text-xl font-semibold">{pillar.title}</h3>
-                    <p className="mt-2 text-sm leading-6 text-white/70">{pillar.description}</p>
+                    <p className="mt-2 text-sm leading-6 text-white/72">{pillar.description}</p>
                   </article>
                 ))}
               </div>
 
-              <div className="grid gap-3 rounded-[1.5rem] border border-white/10 bg-white/5 p-5 sm:grid-cols-2">
-                <div>
-                  <p className="text-sm text-white/55">Prioridad de busqueda</p>
-                  <p className="mt-2 text-base font-medium">Cercania primero, escala despues</p>
-                </div>
-                <div>
-                  <p className="text-sm text-white/55">Disputas</p>
-                  <p className="mt-2 text-base font-medium">Trazabilidad + evidencia + arbitraje</p>
-                </div>
+              <div className="mt-5 rounded-[1.5rem] border border-white/10 bg-white/6 p-5">
+                <p className="text-sm text-white/60">Diferencial operativo</p>
+                <p className="mt-2 text-base font-medium">
+                  Seguro opcional, coordinación segura y trazabilidad de punta a punta.
+                </p>
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      <section id="trust" className="mx-auto w-full max-w-7xl px-6 py-8 sm:px-10 lg:px-12">
-        <div className="grid gap-6 rounded-[2rem] border border-[var(--surface-border)] bg-white/75 p-6 shadow-[0_18px_60px_rgba(8,34,71,0.06)] backdrop-blur lg:grid-cols-[0.8fr_1.2fr] lg:p-8">
-          <div className="space-y-4">
-            <p className="text-sm uppercase tracking-[0.35em] text-[var(--brand-strong)]">
-              Arquitectura de confianza
-            </p>
-            <h2
-              className="text-4xl font-semibold leading-tight"
-              style={{ fontFamily: "var(--font-display)" }}
-            >
-              La categoria ya no tolera clasificados sin control transaccional.
-            </h2>
-            <p className="text-base leading-7 text-[var(--muted)]">
-              Los grandes jugadores enseñaron dos cosas: la liquidez sin
-              seguridad escala fraude, y la seguridad sin eficiencia expulsa al
-              vendedor ocasional. libremercado nace exactamente en el medio.
+      <section id="problema" className="mx-auto w-full max-w-7xl px-6 py-8 sm:px-10 lg:px-12">
+        <div className="rounded-[2rem] border border-[var(--surface-border)] bg-white/78 p-8 shadow-[0_18px_60px_rgba(8,34,71,0.06)] backdrop-blur">
+          <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+            <div>
+              <p className="text-sm uppercase tracking-[0.35em] text-[var(--brand-strong)]">
+                La grieta del mercado
+              </p>
+              <h2
+                className="mt-3 max-w-3xl text-4xl font-semibold leading-tight"
+                style={{ fontFamily: "var(--font-display)" }}
+              >
+                Entre el “lejano oeste” y la burocracia cara hay un océano azul sin capturar.
+              </h2>
+            </div>
+            <p className="max-w-2xl text-base leading-7 text-[var(--muted)]">
+              Las operaciones premium entre personas existen, pero muchas no se concretan.
+              El freno no es la demanda: es la falta de un sistema confiable para cerrar.
             </p>
           </div>
 
-          <div className="grid gap-4 md:grid-cols-3">
-            {comparison.map((card) => (
+          <div className="mt-8 grid gap-4 lg:grid-cols-3">
+            {marketGap.map((card) => (
               <article
                 key={card.title}
-                className={`rounded-[1.5rem] border p-5 ${
-                  card.title === "libremercado"
-                    ? "border-[rgba(18,107,255,0.22)] bg-[linear-gradient(180deg,#f8fbff,#eaf2ff)]"
-                    : "border-[var(--surface-border)] bg-white"
-                }`}
+                className="rounded-[1.5rem] border border-[var(--surface-border)] bg-[linear-gradient(180deg,#ffffff,rgba(232,240,255,0.55))] p-6"
               >
-                <h3 className="text-lg font-semibold">{card.title}</h3>
-                <div className="mt-4 grid gap-2">
-                  {card.traits.map((trait) => (
+                <h3 className="text-xl font-semibold text-[var(--navy)]">{card.title}</h3>
+                <p className="mt-3 text-sm leading-6 text-[var(--muted)]">{card.description}</p>
+                <div className="mt-5 grid gap-2">
+                  {card.points.map((point) => (
                     <div
-                      key={trait}
+                      key={point}
                       className="rounded-full bg-[rgba(8,34,71,0.05)] px-3 py-2 text-sm text-[var(--muted)]"
                     >
-                      {trait}
+                      {point}
                     </div>
                   ))}
                 </div>
@@ -304,137 +292,170 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="mx-auto w-full max-w-7xl px-6 py-4 sm:px-10 lg:px-12">
+      <section
+        id="solucion"
+        className="mx-auto grid w-full max-w-7xl gap-6 px-6 py-8 sm:px-10 lg:grid-cols-[0.94fr_1.06fr] lg:px-12"
+      >
+        <div className="rounded-[2rem] border border-[var(--surface-border)] bg-[var(--navy)] p-8 text-white shadow-[0_24px_80px_rgba(8,34,71,0.18)]">
+          <p className="text-sm uppercase tracking-[0.35em] text-white/55">La solución</p>
+          <h2
+            className="mt-4 text-4xl font-semibold leading-tight"
+            style={{ fontFamily: "var(--font-display)" }}
+          >
+            Construimos infraestructura de confianza para bienes de alto valor.
+          </h2>
+          <p className="mt-4 text-base leading-7 text-white/72">
+            La tesis es simple: cuando identidad, pago, coordinación y cobertura
+            están dentro del mismo flujo, sube la probabilidad de cierre y baja
+            el costo psicológico de la operación.
+          </p>
+          <div className="mt-8 rounded-[1.5rem] border border-white/10 bg-white/5 p-5">
+            <p className="text-sm text-white/55">Qué defendemos</p>
+            <p className="mt-2 text-lg font-medium">
+              Confianza verificable, no solo reputación declarada.
+            </p>
+          </div>
+        </div>
+
+        <div className="grid gap-4">
+          {trustStack.map((pillar) => (
+            <article
+              key={pillar.title}
+              className="rounded-[1.5rem] border border-[var(--surface-border)] bg-white/82 p-6 shadow-[0_14px_40px_rgba(8,34,71,0.04)]"
+            >
+              <p className="text-xs uppercase tracking-[0.28em] text-[var(--accent)]">
+                {pillar.eyebrow}
+              </p>
+              <h3 className="mt-3 text-2xl font-semibold text-[var(--navy)]">{pillar.title}</h3>
+              <p className="mt-3 text-sm leading-6 text-[var(--muted)]">{pillar.description}</p>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section id="producto" className="mx-auto w-full max-w-7xl px-6 py-8 sm:px-10 lg:px-12">
         <div className="rounded-[2rem] border border-[var(--surface-border)] bg-[linear-gradient(180deg,#f8fbff,#eef5ff)] p-8 shadow-[0_18px_60px_rgba(8,34,71,0.05)]">
-          <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+          <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
             <div>
               <p className="text-sm uppercase tracking-[0.35em] text-[var(--brand-strong)]">
-                Diferenciales de seguridad
+                Product showcase
               </p>
               <h2
-                className="mt-3 text-3xl font-semibold leading-tight text-[var(--navy)]"
+                className="mt-3 text-4xl font-semibold leading-tight text-[var(--navy)]"
                 style={{ fontFamily: "var(--font-display)" }}
               >
-                Cuatro capas para vender y comprar con menos incertidumbre.
+                Un producto serio ya se ve distinto antes de escalar.
               </h2>
             </div>
-            <p className="max-w-2xl text-sm leading-7 text-[var(--muted)]">
-              No es solo un clasificado con chat: la plataforma combina identidad,
-              dinero protegido, cobertura opcional y coordinación más segura.
+            <p className="max-w-2xl text-base leading-7 text-[var(--muted)]">
+              El MVP no es solo una promesa visual: ya resuelve publicación, compra protegida,
+              coordinación, backoffice y operación de seguros en modo sandbox.
             </p>
           </div>
 
-          <div className="mt-8 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-            {securityDifferentials.map((item) => (
+          <div className="mt-8 grid gap-4 lg:grid-cols-3">
+            {showcase.map((item) => (
               <article
                 key={item.title}
-                className="rounded-[1.5rem] border border-[rgba(18,107,255,0.12)] bg-white p-5"
+                className="rounded-[1.75rem] border border-[rgba(18,107,255,0.12)] bg-white p-6"
               >
-                <p className="text-base font-semibold text-[var(--navy)]">
-                  {item.title}
-                </p>
-                <p className="mt-3 text-sm leading-6 text-[var(--muted)]">
-                  {item.description}
-                </p>
+                <div className="flex items-center justify-between">
+                  <span className="rounded-full bg-[var(--brand-soft)] px-3 py-1 text-xs font-semibold uppercase tracking-[0.25em] text-[var(--brand-strong)]">
+                    {item.accent}
+                  </span>
+                  <span className="h-3 w-3 rounded-full bg-[var(--brand)]" />
+                </div>
+                <div className="mt-6 rounded-[1.25rem] border border-[var(--surface-border)] bg-[linear-gradient(180deg,#f9fbff,#eef4ff)] p-4">
+                  <div className="grid gap-2">
+                    <div className="h-3 w-28 rounded-full bg-[rgba(18,107,255,0.18)]" />
+                    <div className="h-3 w-full rounded-full bg-[rgba(8,34,71,0.08)]" />
+                    <div className="h-3 w-4/5 rounded-full bg-[rgba(8,34,71,0.08)]" />
+                    <div className="mt-3 h-20 rounded-2xl bg-[linear-gradient(135deg,rgba(18,107,255,0.18),rgba(45,179,255,0.12))]" />
+                  </div>
+                </div>
+                <h3 className="mt-6 text-xl font-semibold text-[var(--navy)]">{item.title}</h3>
+                <p className="mt-3 text-sm leading-6 text-[var(--muted)]">{item.description}</p>
               </article>
             ))}
           </div>
         </div>
       </section>
 
-      <section
-        id="arquitectura"
-        className="mx-auto grid w-full max-w-7xl gap-6 px-6 py-8 sm:px-10 lg:grid-cols-[1fr_1fr] lg:px-12"
-      >
-        <div className="rounded-[2rem] border border-[var(--surface-border)] bg-[var(--navy)] p-8 text-white shadow-[0_24px_80px_rgba(8,34,71,0.18)]">
-          <p className="text-sm uppercase tracking-[0.35em] text-white/55">Flujo operativo</p>
-          <ol className="mt-6 grid gap-4">
-            {trustFlow.map((step, index) => (
-              <li
-                key={step}
-                className="rounded-[1.5rem] border border-white/10 bg-white/5 p-5"
-              >
-                <div className="flex items-start gap-4">
-                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-sm font-semibold text-[var(--navy)]">
-                    {index + 1}
-                  </span>
-                  <p className="pt-1 text-sm leading-7 text-white/78">{step}</p>
-                </div>
-              </li>
-            ))}
-          </ol>
-        </div>
-
-        <div id="categorias" className="space-y-6">
-          <div className="rounded-[2rem] border border-[var(--surface-border)] bg-white/80 p-8">
-            <p className="text-sm uppercase tracking-[0.35em] text-[var(--accent)]">
-              Categorias prioritarias
-            </p>
-            <div className="mt-6 flex flex-wrap gap-3">
-              {categories.map((category) => (
-                <span
-                  key={category}
-                  className="rounded-full border border-[rgba(18,107,255,0.15)] bg-[var(--brand-soft)] px-4 py-2 text-sm font-medium text-[var(--navy)]"
-                >
-                  {category}
-                </span>
-              ))}
-            </div>
-            <p className="mt-6 text-base leading-7 text-[var(--muted)]">
-              La entrada por categorias de ticket medio y alta rotacion permite
-              construir densidad, reputacion y repeticion antes de abrir el
-              abanico completo.
-            </p>
-          </div>
-
-          <div className="rounded-[2rem] border border-[var(--surface-border)] bg-[linear-gradient(180deg,#ffffff,#f0f6ff)] p-8">
+      <section className="mx-auto w-full max-w-7xl px-6 py-8 sm:px-10 lg:px-12">
+        <div className="grid gap-6 lg:grid-cols-[1.02fr_0.98fr]">
+          <div className="rounded-[2rem] border border-[var(--surface-border)] bg-white/82 p-8 shadow-[0_18px_60px_rgba(8,34,71,0.05)]">
             <p className="text-sm uppercase tracking-[0.35em] text-[var(--brand-strong)]">
-              Posicionamiento
+              Diferencial defendible
             </p>
-            <h3
-              className="mt-3 text-3xl font-semibold leading-tight"
+            <h2
+              className="mt-3 text-4xl font-semibold leading-tight"
               style={{ fontFamily: "var(--font-display)" }}
             >
-              Una experiencia de marketplace nacional con estetica de institucion.
-            </h3>
+              Embedded insurance en el punto exacto donde hoy se rompe la confianza.
+            </h2>
             <p className="mt-4 text-base leading-7 text-[var(--muted)]">
-              El tono visual apunta a confianza mas que a promo. Mucho aire,
-              bloques limpios, señal de infraestructura y una promesa simple:
-              comprar y vender usados sin entrar en terreno gris.
+              El seguro no aparece como add-on cosmético. Se ofrece solo cuando
+              el ticket y la categoría lo justifican, y se integra al flujo
+              transaccional con emisión y reclamo trazables.
             </p>
+            <ol className="mt-6 grid gap-3">
+              {insuranceFlow.map((step, index) => (
+                <li
+                  key={step}
+                  className="flex items-start gap-4 rounded-[1.25rem] border border-[var(--surface-border)] bg-[linear-gradient(180deg,#ffffff,#f5f9ff)] p-4"
+                >
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--navy)] text-sm font-semibold text-white">
+                    {index + 1}
+                  </span>
+                  <p className="pt-1 text-sm leading-6 text-[var(--muted)]">{step}</p>
+                </li>
+              ))}
+            </ol>
+          </div>
+
+          <div className="rounded-[2rem] border border-[rgba(18,107,255,0.16)] bg-[linear-gradient(180deg,#0c2d63,#123f8f)] p-8 text-white shadow-[0_24px_80px_rgba(8,34,71,0.18)]">
+            <p className="text-sm uppercase tracking-[0.35em] text-white/55">Seguridad visible</p>
+            <div className="mt-6 grid gap-4">
+              {[
+                "Identidad verificada",
+                "Posibilidad de asegurar la transacción",
+                "Puntos de encuentro seguros",
+                "Retención del dinero hasta cerrar la operación"
+              ].map((item) => (
+                <div
+                  key={item}
+                  className="rounded-[1.25rem] border border-white/10 bg-white/8 px-5 py-4 text-base font-medium"
+                >
+                  {item}
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </section>
 
-      <section className="mx-auto w-full max-w-7xl px-6 py-8 sm:px-10 lg:px-12">
-        <ProtectedPurchaseTerms title="Cancelación, disputa y liberación sin letra chica" />
-      </section>
-
-      <section className="mx-auto w-full max-w-7xl px-6 py-8 sm:px-10 lg:px-12">
-        <SafeOperationGuides />
-      </section>
-
-      <section id="roadmap" className="mx-auto w-full max-w-7xl px-6 py-8 pb-20 sm:px-10 lg:px-12">
+      <section id="vision" className="mx-auto w-full max-w-7xl px-6 py-8 pb-20 sm:px-10 lg:px-12">
         <div className="rounded-[2rem] border border-[var(--surface-border)] bg-white/80 p-8 shadow-[0_20px_70px_rgba(8,34,71,0.06)]">
           <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
             <div>
               <p className="text-sm uppercase tracking-[0.35em] text-[var(--brand-strong)]">
-                Roadmap MVP
+                Visión e integración
               </p>
               <h2
-                className="mt-3 text-4xl font-semibold"
+                className="mt-3 text-4xl font-semibold leading-tight"
                 style={{ fontFamily: "var(--font-display)" }}
               >
-                De producto confiable a red de alcance nacional.
+                Estamos construyendo una red nacional de confianza para comercio entre personas.
               </h2>
             </div>
-            <p className="max-w-xl text-base leading-7 text-[var(--muted)]">
-              El orden importa: primero confianza, despues liquidez, luego
-              checkout y finalmente escala de operaciones.
+            <p className="max-w-2xl text-base leading-7 text-[var(--muted)]">
+              La oportunidad no es solo captar oferta y demanda. Es convertirse en
+              la capa que ordena identidad, riesgo, pagos y cumplimiento en un
+              mercado históricamente informal.
             </p>
           </div>
 
-          <div className="mt-8 grid gap-4 lg:grid-cols-4">
+          <div className="mt-8 grid gap-4 lg:grid-cols-3">
             {roadmap.map((item) => (
               <article
                 key={item.phase}
@@ -447,6 +468,33 @@ export default function Home() {
                 <p className="mt-3 text-sm leading-6 text-[var(--muted)]">{item.description}</p>
               </article>
             ))}
+          </div>
+
+          <div className="mt-8 grid gap-4 lg:grid-cols-2">
+            {partnerTracks.map((track) => (
+              <article
+                key={track.title}
+                className="rounded-[1.5rem] border border-[rgba(18,107,255,0.12)] bg-[linear-gradient(180deg,#f8fbff,#eef5ff)] p-6"
+              >
+                <h3 className="text-2xl font-semibold text-[var(--navy)]">{track.title}</h3>
+                <p className="mt-3 text-sm leading-6 text-[var(--muted)]">{track.description}</p>
+              </article>
+            ))}
+          </div>
+
+          <div className="mt-8 flex flex-wrap gap-3">
+            <Link
+              href="/market"
+              className="rounded-full bg-[var(--brand)] px-6 py-3.5 font-semibold text-white shadow-[0_14px_40px_rgba(18,107,255,0.2)] transition hover:bg-[var(--brand-strong)]"
+            >
+              Recorrer el producto
+            </Link>
+            <Link
+              href="/signup"
+              className="rounded-full border border-[var(--surface-border)] bg-white px-6 py-3.5 font-semibold text-[var(--foreground)]"
+            >
+              Crear cuenta
+            </Link>
           </div>
         </div>
       </section>
