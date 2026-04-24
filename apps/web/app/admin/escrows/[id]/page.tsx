@@ -275,6 +275,12 @@ export default async function EscrowDetailPage({
                 >
                   Abrir póliza
                 </a>
+                <Link
+                  className="mt-3 inline-flex font-semibold underline"
+                  href={`/admin/insurance/${escrow.insurancePolicy.id}`}
+                >
+                  Operar desde admin
+                </Link>
               </div>
             </div>
           ) : null}

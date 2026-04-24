@@ -9,6 +9,7 @@ import { formatCurrency, formatDate } from "../../lib/format";
 import {
   reviewKycAction,
   runEscrowAction,
+  updateInsurancePolicyStatusAction,
   updatePlatformSettingsAction,
   updateListingStatusAction
 } from "./actions";
@@ -94,6 +95,41 @@ type Escrow = {
   seller: {
     firstName: string;
     lastName: string;
+  };
+};
+
+type InsurancePolicy = {
+  id: string;
+  status: string;
+  externalPolicyId: string;
+  premiumAmount: string;
+  coverageAmount: string;
+  policyUrl: string;
+  createdAt: string;
+  provider: {
+    id: string;
+    name: string;
+  };
+  escrow: {
+    id: string;
+    currency: "ARS" | "USD";
+    listing: {
+      id: string;
+      title: string;
+      category: string;
+    };
+    buyer: {
+      id: string;
+      firstName: string;
+      lastName: string;
+      email: string;
+    };
+    seller: {
+      id: string;
+      firstName: string;
+      lastName: string;
+      email: string;
+    };
   };
 };
 
@@ -254,11 +290,13 @@ type AdminSearchParams = {
   kycStatus?: string;
   listingStatus?: string;
   escrowStatus?: string;
+  insuranceStatus?: string;
   auditAction?: string;
   usersPage?: string;
   kycPage?: string;
   listingsPage?: string;
   escrowsPage?: string;
+  insurancePage?: string;
   auditPage?: string;
 };
 
@@ -287,7 +325,15 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
 
   const params: AdminSearchParams = await (searchParams ?? Promise.resolve({}));
   const query = params.q?.trim() ?? "";
-  const [overview, usersPage, verificationsPage, listingsPage, escrowsPage, auditLogsPage] = await Promise.all([
+  const [
+    overview,
+    usersPage,
+    verificationsPage,
+    listingsPage,
+    escrowsPage,
+    insurancePoliciesPage,
+    auditLogsPage
+  ] = await Promise.all([
     apiFetchWithToken<AdminOverview>("/admin/overview", token),
     apiFetchWithToken<PaginatedResponse<User>>(
       buildApiPath("/users", {
@@ -333,6 +379,17 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
       }),
       token
     ),
+    apiFetchWithToken<PaginatedResponse<InsurancePolicy>>(
+      buildApiPath("/insurance/policies", {
+        q: query,
+        status: params.insuranceStatus,
+        page: getPositivePage(params.insurancePage),
+        pageSize: 6,
+        sortBy: "createdAt",
+        sortOrder: "desc"
+      }),
+      token
+    ),
     apiFetchWithToken<PaginatedResponse<AuditLog>>(
       buildApiPath("/admin/audit-logs", {
         q: query,
@@ -349,6 +406,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
   const verifications = verificationsPage.items;
   const listings = listingsPage.items;
   const escrows = escrowsPage.items;
+  const insurancePolicies = insurancePoliciesPage.items;
   const auditLogs = auditLogsPage.items;
 
   const listingStatusCounts = overview.listings.byStatus;
@@ -701,6 +759,16 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
             <option value="DELIVERED">DELIVERED</option>
             <option value="DISPUTED">DISPUTED</option>
             <option value="RELEASED">RELEASED</option>
+          </select>
+          <select
+            className="rounded-2xl border border-[var(--surface-border)] bg-[#f8fbff] px-4 py-3 text-sm"
+            defaultValue={params.insuranceStatus ?? ""}
+            name="insuranceStatus"
+          >
+            <option value="">Seguros: todos</option>
+            <option value="PENDING">PENDING</option>
+            <option value="ACTIVE">ACTIVE</option>
+            <option value="CLAIMED">CLAIMED</option>
           </select>
           <button
             className="rounded-2xl bg-[var(--navy)] px-4 py-3 text-sm font-semibold text-white"
@@ -1093,6 +1161,141 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
               label="Escrows"
               meta={escrowsPage.meta}
               pageKey="escrowsPage"
+              params={params}
+            />
+          </div>
+
+          <div className="rounded-[1.75rem] border border-[var(--surface-border)] bg-white/80 p-6">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <h2 className="text-2xl font-semibold text-[var(--navy)]">
+                  Seguros embebidos
+                </h2>
+                <p className="mt-2 text-sm text-[var(--muted)]">
+                  Operación manual de pólizas para sandbox interno y QA pre-beta.
+                </p>
+              </div>
+              <span className="text-sm text-[var(--muted)]">
+                {insurancePoliciesPage.meta.total} resultados
+              </span>
+            </div>
+            <div className="mt-5 space-y-3">
+              {insurancePolicies.map((policy) => (
+                <article
+                  key={policy.id}
+                  className="rounded-[1.25rem] border border-[var(--surface-border)] bg-[#f8fbff] p-4"
+                >
+                  <div className="flex flex-wrap items-start justify-between gap-4">
+                    <div>
+                      <Link
+                        className="font-semibold text-[var(--navy)] transition hover:text-[var(--brand)]"
+                        href={`/admin/insurance/${policy.id}`}
+                      >
+                        {policy.escrow.listing.title}
+                      </Link>
+                      <p className="text-sm text-[var(--muted)]">
+                        {policy.provider.name} · {policy.externalPolicyId}
+                      </p>
+                      <p className="mt-1 text-sm text-[var(--muted)]">
+                        {policy.escrow.buyer.firstName} {policy.escrow.buyer.lastName} →{" "}
+                        {policy.escrow.seller.firstName} {policy.escrow.seller.lastName}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm font-semibold text-[var(--brand-strong)]">
+                        {policy.status}
+                      </p>
+                      <p className="text-sm text-[var(--muted)]">
+                        {formatDate(policy.createdAt)}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="mt-4 grid gap-2 text-sm text-[var(--muted)] md:grid-cols-3">
+                    <p>
+                      Prima:{" "}
+                      {formatCurrency(
+                        policy.premiumAmount,
+                        policy.escrow.currency
+                      )}
+                    </p>
+                    <p>
+                      Cobertura:{" "}
+                      {formatCurrency(
+                        policy.coverageAmount,
+                        policy.escrow.currency
+                      )}
+                    </p>
+                    <p>Escrow: {policy.escrow.id}</p>
+                  </div>
+
+                  <div className="mt-4 flex flex-wrap items-center gap-2">
+                    <Link
+                      className="rounded-full border border-[var(--surface-border)] bg-white px-3 py-2 text-xs font-semibold text-[var(--navy)]"
+                      href={`/admin/insurance/${policy.id}`}
+                    >
+                      Ver póliza
+                    </Link>
+                    <Link
+                      className="rounded-full border border-[var(--surface-border)] bg-white px-3 py-2 text-xs font-semibold text-[var(--navy)]"
+                      href={`/admin/escrows/${policy.escrow.id}`}
+                    >
+                      Ver escrow
+                    </Link>
+                    {policy.policyUrl ? (
+                      <a
+                        className="rounded-full border border-[rgba(5,150,105,0.18)] bg-[#ecfdf5] px-3 py-2 text-xs font-semibold text-[#047857]"
+                        href={policy.policyUrl}
+                        rel="noreferrer"
+                        target="_blank"
+                      >
+                        Abrir PDF/link
+                      </a>
+                    ) : null}
+                  </div>
+
+                  <ConfirmForm
+                    action={updateInsurancePolicyStatusAction}
+                    className="mt-4 flex flex-wrap gap-2"
+                  >
+                    <input name="policyId" type="hidden" value={policy.id} />
+                    <input name="returnTo" type="hidden" value="/admin" />
+                    <select
+                      className="rounded-full border border-[var(--surface-border)] bg-white px-3 py-2 text-xs"
+                      defaultValue={policy.status}
+                      name="status"
+                    >
+                      <option value="PENDING">PENDING</option>
+                      <option value="ACTIVE">ACTIVE</option>
+                      <option value="CLAIMED">CLAIMED</option>
+                    </select>
+                    <input
+                      className="min-w-52 flex-1 rounded-full border border-[var(--surface-border)] bg-white px-3 py-2 text-xs"
+                      defaultValue={policy.policyUrl}
+                      name="policyUrl"
+                      placeholder="https://poliza.example/..."
+                    />
+                    <SubmitButton
+                      className="rounded-full bg-[var(--navy)] px-3 py-2 text-xs font-semibold text-white"
+                      confirmMessage="¿Actualizar el estado de esta póliza?"
+                      pendingLabel="Guardando..."
+                    >
+                      Guardar póliza
+                    </SubmitButton>
+                  </ConfirmForm>
+                </article>
+              ))}
+
+              {insurancePolicies.length === 0 ? (
+                <div className="rounded-[1.25rem] border border-dashed border-[var(--surface-border)] bg-white p-5 text-sm text-[var(--muted)]">
+                  No hay pólizas para los filtros actuales.
+                </div>
+              ) : null}
+            </div>
+            <PaginationControls
+              label="Seguros"
+              meta={insurancePoliciesPage.meta}
+              pageKey="insurancePage"
               params={params}
             />
           </div>

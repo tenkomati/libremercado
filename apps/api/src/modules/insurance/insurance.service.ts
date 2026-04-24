@@ -9,6 +9,12 @@ import {
 import { Prisma, UserRole } from "@prisma/client";
 
 import { AuditService } from "../audit/audit.service";
+import {
+  getPagination,
+  getSafeSortBy,
+  getSortOrder,
+  makePaginationMeta
+} from "../common/pagination";
 import { EmailService } from "../email/email.service";
 import { ListingsService } from "../listings/listings.service";
 import { PrismaService } from "../prisma/prisma.service";
@@ -16,6 +22,8 @@ import { UsersService } from "../users/users.service";
 
 import { GetInsuranceQuoteDto } from "./dto/get-insurance-quote.dto";
 import { InsurancePolicyWebhookDto } from "./dto/insurance-policy-webhook.dto";
+import { ListInsurancePoliciesQueryDto } from "./dto/list-insurance-policies-query.dto";
+import { UpdateInsurancePolicyStatusDto } from "./dto/update-insurance-policy-status.dto";
 import {
   BaseInsuranceProvider
 } from "./providers/base-insurance-provider";
@@ -63,6 +71,141 @@ export class InsuranceService {
       },
       reason: quote.reason ?? null
     };
+  }
+
+  async listPolicies(query: ListInsurancePoliciesQueryDto) {
+    const pagination = getPagination(query);
+    const sortBy = getSafeSortBy(
+      query.sortBy,
+      ["createdAt", "updatedAt", "status", "premiumAmount", "coverageAmount"] as const,
+      "createdAt"
+    );
+    const where: Prisma.InsurancePolicyWhereInput = {
+      status: query.status,
+      provider: query.providerName
+        ? { name: { equals: query.providerName, mode: "insensitive" } }
+        : undefined,
+      ...(query.q
+        ? {
+            OR: [
+              { externalPolicyId: { contains: query.q, mode: "insensitive" } },
+              { escrowId: { contains: query.q, mode: "insensitive" } },
+              { provider: { name: { contains: query.q, mode: "insensitive" } } },
+              { escrow: { listing: { title: { contains: query.q, mode: "insensitive" } } } },
+              { escrow: { buyer: { email: { contains: query.q, mode: "insensitive" } } } },
+              { escrow: { seller: { email: { contains: query.q, mode: "insensitive" } } } }
+            ]
+          }
+        : {})
+    };
+
+    const [items, total] = await this.prisma.$transaction([
+      this.prisma.insurancePolicy.findMany({
+        where,
+        include: {
+          provider: true,
+          escrow: {
+            include: {
+              listing: {
+                select: {
+                  id: true,
+                  title: true,
+                  category: true
+                }
+              },
+              buyer: {
+                select: {
+                  id: true,
+                  firstName: true,
+                  lastName: true,
+                  email: true
+                }
+              },
+              seller: {
+                select: {
+                  id: true,
+                  firstName: true,
+                  lastName: true,
+                  email: true
+                }
+              }
+            }
+          }
+        },
+        orderBy: {
+          [sortBy]: getSortOrder(query.sortOrder)
+        },
+        skip: pagination.skip,
+        take: pagination.take
+      }),
+      this.prisma.insurancePolicy.count({ where })
+    ]);
+
+    return {
+      items,
+      meta: makePaginationMeta({
+        page: pagination.page,
+        pageSize: pagination.pageSize,
+        total
+      })
+    };
+  }
+
+  async getPolicyById(id: string) {
+    const policy = await this.prisma.insurancePolicy.findUnique({
+      where: { id },
+      include: {
+        provider: true,
+        escrow: {
+          include: {
+            listing: true,
+            buyer: true,
+            seller: true,
+            paymentIntents: {
+              orderBy: {
+                createdAt: "desc"
+              }
+            }
+          }
+        }
+      }
+    });
+
+    if (!policy) {
+      throw new NotFoundException(`Insurance policy ${id} not found`);
+    }
+
+    return policy;
+  }
+
+  async updatePolicyStatus(
+    id: string,
+    dto: UpdateInsurancePolicyStatusDto,
+    actor: { sub: string; role: UserRole }
+  ) {
+    const policy = await this.getPolicyById(id);
+    const updated = await this.prisma.insurancePolicy.update({
+      where: { id },
+      data: {
+        status: dto.status,
+        policyUrl: dto.policyUrl ?? policy.policyUrl
+      }
+    });
+
+    await this.auditService.logAction({
+      actorUserId: actor.sub,
+      actorRole: actor.role,
+      action: "INSURANCE_POLICY_STATUS_UPDATED",
+      resourceType: "insurance_policy",
+      resourceId: id,
+      metadata: {
+        previousStatus: policy.status,
+        nextStatus: dto.status,
+        policyUrl: updated.policyUrl
+      }
+    });
+
+    return updated;
   }
 
   async prepareCheckoutInsurance(listingId: string, buyerId: string) {

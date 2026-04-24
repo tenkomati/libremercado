@@ -155,6 +155,28 @@ export async function updatePlatformSettingsAction(formData: FormData) {
   }
 }
 
+export async function updateInsurancePolicyStatusAction(formData: FormData) {
+  try {
+    const policyId = String(formData.get("policyId"));
+    const status = String(formData.get("status"));
+    const policyUrl = String(formData.get("policyUrl") ?? "").trim();
+    const returnTo = String(formData.get("returnTo") ?? `/admin/insurance/${policyId}`);
+
+    await callAdminApi(`/insurance/policies/${policyId}/status`, "PATCH", {
+      status,
+      ...(policyUrl ? { policyUrl } : {})
+    });
+    redirectWithMessage("success", `Póliza movida a ${status}.`, returnTo);
+  } catch (error) {
+    if (isRedirectError(error)) throw error;
+    redirectWithMessage(
+      "error",
+      error instanceof Error ? error.message : "No se pudo actualizar la póliza.",
+      String(formData.get("returnTo") ?? "/admin")
+    );
+  }
+}
+
 export async function runEscrowAction(formData: FormData) {
   try {
     const escrowId = String(formData.get("escrowId"));

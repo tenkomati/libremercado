@@ -203,6 +203,10 @@ Criticidad: `P1`
 - [ ] `policy_id_externo`, `premium_amount`, `coverage_amount` y `policy_url` quedan persistidos.
 - [ ] `/account` muestra estado del seguro y link a póliza.
 - [ ] `/admin/escrows/:id` muestra estado del seguro y link a póliza.
+- [ ] `/admin` lista pólizas y permite filtrarlas por estado.
+- [ ] `/admin/insurance/:id` muestra prima, cobertura, pagos asociados y auditoría.
+- [ ] Cambio manual de estado desde admin persiste `PENDING` / `ACTIVE` / `CLAIMED`.
+- [ ] Cambio manual de URL de póliza desde admin queda visible en detalle y escrow.
 - [ ] Webhook de póliza firmado actualiza estado a `ACTIVE` o `CLAIMED`.
 - [ ] Webhook de póliza sin firma válida no actualiza nada.
 
