@@ -289,8 +289,10 @@ async function main() {
   await prisma.escrowMeetingProposal.deleteMany();
   await prisma.paymentEvent.deleteMany();
   await prisma.paymentIntent.deleteMany();
+  await prisma.insurancePolicy.deleteMany();
   await prisma.escrowEvent.deleteMany();
   await prisma.escrowTransaction.deleteMany();
+  await prisma.insuranceProvider.deleteMany();
   await prisma.listingImage.deleteMany();
   await prisma.listing.deleteMany();
   await prisma.kycVerification.deleteMany();
@@ -306,6 +308,14 @@ async function main() {
       fixedTransactionFee: new Prisma.Decimal("0.00"),
       defaultCurrency: CurrencyCode.ARS,
       allowUsdListings: true
+    }
+  });
+
+  await prisma.insuranceProvider.create({
+    data: {
+      name: "GenericInsurtech",
+      endpointApi: "https://api.generic-insurtech.example",
+      apiKey: "generic-insurtech-dev-key"
     }
   });
 

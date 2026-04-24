@@ -219,6 +219,25 @@ Implementado:
 - cancelación operativa mueve escrow a `REFUNDED`, pagos asociados a `REFUNDED` y vuelve la publicación a `PUBLISHED`
 - cada transición financiera crea eventos en `PaymentEvent`
 
+### Insurance
+
+- `POST /insurance/get-quote` -> autenticado
+- `POST /insurance/webhooks/:providerName` -> publico con firma HMAC obligatoria
+
+Implementado:
+
+- tablas `insurance_providers` e `insurance_policies`
+- `EscrowTransaction` ahora soporta `isInsured` e `insuranceFee`
+- script SQL equivalente para Supabase en `supabase/sql/20260423_embedded_insurance.sql`
+- base class `BaseInsuranceProvider`
+- implementación ejemplo `GenericInsurtechProvider`
+- lógica de umbrales por categoría y monto mínimo configurable
+- cálculo de prima configurable por porcentaje
+- emisión automática de póliza cuando el pago queda `FUNDS_HELD`
+- validación de identidad verificada antes de emitir cobertura
+- webhook de póliza para pasar estados `PENDING` / `ACTIVE` / `CLAIMED`
+- documento funcional en `EMBEDDED_INSURANCE_MODULE.md`
+
 ### Rate limiting / anti-abuso
 
 - módulo `RateLimitModule` con guard global y decorador `@RateLimit`

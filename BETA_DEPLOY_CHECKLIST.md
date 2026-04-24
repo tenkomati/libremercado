@@ -55,6 +55,10 @@ Este documento ordena los pasos necesarios para llevar LibreMercado a una beta s
 - [x] Publicaciones y ventas en ARS y USD.
 - [x] Registro interno de eventos financieros.
 - [ ] Pruebas de pago aprobado, rechazado, expirado y reembolsado.
+- [x] Base técnica para micro-seguro embebido en checkout.
+- [ ] Integrar proveedor real de micro-seguro.
+- [ ] Exponer checkbox/resumen de seguro en frontend checkout.
+- [ ] Mostrar póliza activa y URL en cuenta/admin.
 
 ## 3. Seguridad y Anti-Abuso
 
@@ -214,3 +218,4 @@ Este documento ordena los pasos necesarios para llevar LibreMercado a una beta s
 - 2026-04-23: se agrego onboarding breve comprador/vendedor con guias reutilizables en home, market, detalle de publicacion y `/account`.
 - 2026-04-23: se agrego `PlatformSettings` global administrable desde `/admin`: comprador 0%, vendedor 5%, publicar gratis, sin costo fijo, USD habilitado. Las publicaciones aceptan ARS/USD y el vendedor ve neto estimado antes de publicar/editar y en ventas.
 - 2026-04-23: se agrego capa neutral de adapters de pago con `PAYMENT_PROVIDER`, checkout externo configurable y webhook firmado HMAC en `POST /payments/webhooks/:provider`. El webhook normaliza eventos, evita duplicados por `providerEventId`, actualiza `PaymentIntent`, mueve escrow a `FUNDS_HELD`/`REFUNDED`/`DISPUTED` segun corresponda y notifica a comprador/vendedor.
+- 2026-04-23: se agrego el módulo base de seguros embebidos: tablas `insurance_providers` e `insurance_policies`, campos `is_insured` e `insurance_fee` en `EscrowTransaction`, endpoint `POST /insurance/get-quote`, webhook `POST /insurance/webhooks/:providerName`, service pattern con `BaseInsuranceProvider` + `GenericInsurtechProvider`, validación de identidad verificada para emisión y emisión automática de póliza cuando el pago pasa a `FUNDS_HELD`.

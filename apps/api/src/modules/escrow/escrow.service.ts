@@ -91,6 +91,7 @@ export class EscrowService {
       .div(100)
       .add(platformSettings.fixedTransactionFee);
     const netAmount = amount.sub(feeAmount);
+    const insuranceFee = new Prisma.Decimal(dto.insuranceFee ?? 0);
 
     return this.prisma.$transaction(async (tx) => {
       const escrow = await tx.escrowTransaction.create({
@@ -102,6 +103,8 @@ export class EscrowService {
           feePercentage: sellerCommissionPercentage,
           feeAmount,
           netAmount,
+          isInsured: dto.isInsured ?? false,
+          insuranceFee,
           currency: listing.currency,
           status: EscrowStatus.FUNDS_PENDING,
           shippingProvider: dto.shippingProvider,
@@ -119,7 +122,9 @@ export class EscrowService {
                     sellerCommissionPercentage.toString(),
                   fixedListingFee: platformSettings.fixedListingFee.toString(),
                   fixedTransactionFee:
-                    platformSettings.fixedTransactionFee.toString()
+                    platformSettings.fixedTransactionFee.toString(),
+                  isInsured: dto.isInsured ?? false,
+                  insuranceFee: insuranceFee.toString()
                 }
               },
             ]

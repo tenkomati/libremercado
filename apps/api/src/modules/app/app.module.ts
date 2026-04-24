@@ -4,6 +4,7 @@ import { ConfigModule } from "@nestjs/config";
 import { AuditModule } from "../audit/audit.module";
 import { AuthModule } from "../auth/auth.module";
 import { EscrowModule } from "../escrow/escrow.module";
+import { InsuranceModule } from "../insurance/insurance.module";
 import { KycModule } from "../kyc/kyc.module";
 import { ListingsModule } from "../listings/listings.module";
 import { PaymentsModule } from "../payments/payments.module";
@@ -26,6 +27,7 @@ import { AppController } from "./app.controller";
     AuditModule,
     UsersModule,
     KycModule,
+    InsuranceModule,
     ListingsModule,
     PaymentsModule,
     PlatformSettingsModule,

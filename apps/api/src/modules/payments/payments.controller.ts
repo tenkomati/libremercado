@@ -53,7 +53,8 @@ export class PaymentsController {
           metadata: {
             escrowId: paymentIntent.escrowId,
             provider: paymentIntent.provider,
-            amount: paymentIntent.amount.toString()
+            amount: paymentIntent.amount.toString(),
+            insuranceSelected: dto.insuranceSelected ?? false
           }
         });
 

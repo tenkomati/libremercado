@@ -140,6 +140,12 @@ enum PaymentStatus {
   FAILED
 }
 
+enum InsurancePolicyStatus {
+  PENDING
+  ACTIVE
+  CLAIMED
+}
+
 model User {
   id               String              @id @default(cuid())
   email            String              @unique
@@ -288,6 +294,8 @@ model EscrowTransaction {
   feePercentage       Decimal         @db.Decimal(5, 2)
   feeAmount           Decimal         @db.Decimal(12, 2)
   netAmount           Decimal         @db.Decimal(12, 2)
+  isInsured           Boolean         @default(false) @map("is_insured")
+  insuranceFee        Decimal         @default(0) @db.Decimal(12, 2) @map("insurance_fee")
   currency            CurrencyCode    @default(ARS)
   status              EscrowStatus    @default(FUNDS_HELD)
   shippingProvider    String
@@ -308,6 +316,7 @@ model EscrowTransaction {
   availabilitySlots   EscrowAvailabilitySlot[]
   messages            EscrowMessage[]
   paymentIntents      PaymentIntent[]
+  insurancePolicy     InsurancePolicy?
 
   @@index([buyerId, status])
   @@index([sellerId, status])
@@ -362,6 +371,38 @@ model PaymentEvent {
 
   @@index([paymentIntentId, createdAt])
   @@index([provider, providerEventId])
+}
+
+model InsuranceProvider {
+  id          String            @id @default(cuid())
+  name        String            @unique
+  endpointApi String            @map("endpoint_api")
+  apiKey      String            @map("api_key")
+  createdAt   DateTime          @default(now()) @map("created_at")
+  updatedAt   DateTime          @updatedAt @map("updated_at")
+  policies    InsurancePolicy[]
+
+  @@map("insurance_providers")
+}
+
+model InsurancePolicy {
+  id               String               @id @default(cuid())
+  escrowId         String               @unique @map("order_id")
+  providerId       String               @map("provider_id")
+  externalPolicyId String               @unique @map("policy_id_externo")
+  status           InsurancePolicyStatus @default(PENDING)
+  premiumAmount    Decimal              @db.Decimal(12, 2) @map("premium_amount")
+  coverageAmount   Decimal              @db.Decimal(12, 2) @map("coverage_amount")
+  policyUrl        String               @map("policy_url")
+  rawPayload       Json?                @map("raw_payload")
+  createdAt        DateTime             @default(now()) @map("created_at")
+  updatedAt        DateTime             @updatedAt @map("updated_at")
+  escrow           EscrowTransaction    @relation(fields: [escrowId], references: [id], onDelete: Cascade)
+  provider         InsuranceProvider    @relation(fields: [providerId], references: [id], onDelete: Restrict)
+
+  @@index([providerId, status])
+  @@index([status, createdAt])
+  @@map("insurance_policies")
 }
 
 model EscrowDeliveryProposal {

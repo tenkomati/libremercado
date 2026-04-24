@@ -1,4 +1,4 @@
-import { IsOptional, IsString, Length } from "class-validator";
+import { IsBoolean, IsNumber, IsOptional, IsString, Length, Min } from "class-validator";
 
 export class CreateEscrowDto {
   @IsString()
@@ -15,4 +15,13 @@ export class CreateEscrowDto {
   @IsString()
   @Length(2, 120)
   shippingTrackingCode?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  isInsured?: boolean;
+
+  @IsOptional()
+  @IsNumber({ maxDecimalPlaces: 2 })
+  @Min(0)
+  insuranceFee?: number;
 }

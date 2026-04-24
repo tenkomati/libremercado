@@ -17,6 +17,7 @@ import {
 
 import { EmailService } from "../email/email.service";
 import { EscrowService } from "../escrow/escrow.service";
+import { InsuranceService } from "../insurance/insurance.service";
 import { PrismaService } from "../prisma/prisma.service";
 
 import { CreateCheckoutDto } from "./dto/create-checkout.dto";
@@ -33,20 +34,26 @@ export class PaymentsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly escrowService: EscrowService,
+    private readonly insuranceService: InsuranceService,
     private readonly emailService: EmailService
   ) {}
 
   async createCheckout(dto: CreateCheckoutDto, buyerId: string) {
+    const insuranceQuote = dto.insuranceSelected
+      ? await this.insuranceService.prepareCheckoutInsurance(dto.listingId, buyerId)
+      : null;
     const escrow = await this.escrowService.createEscrow({
       listingId: dto.listingId,
       buyerId,
-      shippingProvider: dto.shippingProvider ?? "Entrega protegida libremercado"
+      shippingProvider: dto.shippingProvider ?? "Entrega protegida libremercado",
+      isInsured: Boolean(insuranceQuote),
+      insuranceFee: insuranceQuote ? Number(insuranceQuote.pricing.premiumAmount) : 0
     });
 
     const adapter = this.getConfiguredAdapter();
     const checkout = adapter.createCheckout({
       escrowId: escrow.id,
-      amount: escrow.amount,
+      amount: escrow.amount.add(escrow.insuranceFee),
       feeAmount: escrow.feeAmount,
       netAmount: escrow.netAmount,
       currency: escrow.currency
@@ -59,7 +66,7 @@ export class PaymentsService {
         sellerId: escrow.sellerId,
         provider: adapter.provider,
         status: PaymentStatus.PAYMENT_PENDING,
-        amount: escrow.amount,
+        amount: escrow.amount.add(escrow.insuranceFee),
         feeAmount: escrow.feeAmount,
         netAmount: escrow.netAmount,
         currency: escrow.currency,
@@ -88,7 +95,9 @@ export class PaymentsService {
           userId: escrow.buyerId,
           type: NotificationType.PAYMENT_UPDATED,
           title: "Pago protegido iniciado",
-          body: "Creamos la intención de pago. Cuando el pago se apruebe, los fondos quedarán protegidos.",
+          body: insuranceQuote
+            ? "Creamos la intención de pago con micro-seguro. Cuando el pago se apruebe, emitiremos la póliza."
+            : "Creamos la intención de pago. Cuando el pago se apruebe, los fondos quedarán protegidos.",
           resourceType: "payment_intent",
           resourceId: paymentIntent.id
         },
@@ -107,7 +116,9 @@ export class PaymentsService {
       {
         userId: escrow.buyerId,
         title: "Pago protegido iniciado",
-        body: "Creamos la intención de pago. Cuando el pago se apruebe, los fondos quedarán protegidos.",
+        body: insuranceQuote
+          ? "Creamos la intención de pago con micro-seguro. Cuando el pago se apruebe, emitiremos la póliza."
+          : "Creamos la intención de pago. Cuando el pago se apruebe, los fondos quedarán protegidos.",
         resourceType: "payment_intent",
         resourceId: paymentIntent.id
       },
@@ -262,6 +273,8 @@ export class PaymentsService {
       }
     ]);
 
+    await this.insuranceService.issuePolicyForEscrow(paymentIntent.escrowId);
+
     return updatedPaymentIntent;
   }
 
@@ -306,6 +319,10 @@ export class PaymentsService {
       dto.provider,
       normalized
     );
+
+    if (normalized.status === PaymentStatus.FUNDS_HELD) {
+      await this.insuranceService.issuePolicyForEscrow(paymentIntent.escrowId);
+    }
 
     await this.notifyPaymentWebhookUpdate(updated, normalized.status);
 

@@ -1,4 +1,4 @@
-import { IsOptional, IsString, Length } from "class-validator";
+import { IsBoolean, IsOptional, IsString, Length } from "class-validator";
 
 export class CreateCheckoutDto {
   @IsString()
@@ -8,4 +8,8 @@ export class CreateCheckoutDto {
   @IsString()
   @Length(2, 80)
   shippingProvider?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  insuranceSelected?: boolean;
 }

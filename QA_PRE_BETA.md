@@ -178,12 +178,34 @@ Criticidad: `P0`
 - [ ] Webhook `DISPUTED` mueve escrow a `DISPUTED`.
 - [ ] Compra en ARS conserva moneda, monto, comision y neto vendedor correctos.
 - [ ] Compra en USD conserva moneda, monto, comision y neto vendedor correctos.
+- [ ] Si el comprador elige seguro, el `PaymentIntent.amount` incluye `insurance_fee`.
 - [ ] Publicacion queda reservada/no disponible para otra compra.
 - [ ] Email/log de fondos protegidos se emite para comprador y vendedor.
 
 Criterio de aceptacion:
 
 - La compra queda protegida y visible para ambas partes, con estado financiero auditable.
+
+## Flujo 4C - Seguro Embebido
+
+Criticidad: `P1`
+
+- [ ] Endpoint `POST /insurance/get-quote` responde solo para usuarios autenticados.
+- [ ] Categoría no elegible no ofrece seguro.
+- [ ] Monto inferior al umbral no ofrece seguro.
+- [ ] Categoría elegible y monto alto devuelve prima y cobertura.
+- [ ] Usuario sin identidad aprobada no puede emitir seguro aunque vea cotización.
+- [ ] Checkout con `insuranceSelected=true` guarda `is_insured=true` en escrow.
+- [ ] Checkout con seguro guarda `insurance_fee` en escrow.
+- [ ] Pago confirmado emite póliza automáticamente.
+- [ ] Se crea registro en `insurance_policies`.
+- [ ] `policy_id_externo`, `premium_amount`, `coverage_amount` y `policy_url` quedan persistidos.
+- [ ] Webhook de póliza firmado actualiza estado a `ACTIVE` o `CLAIMED`.
+- [ ] Webhook de póliza sin firma válida no actualiza nada.
+
+Criterio de aceptacion:
+
+- El seguro se ofrece solo donde tiene sentido, se cobra dentro del checkout y la póliza nace únicamente cuando el pago queda realmente protegido.
 
 ## Flujo 4B - Comisiones y Moneda Admin
 
