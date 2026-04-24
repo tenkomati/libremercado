@@ -209,10 +209,11 @@ Criticidad: `P1`
 - [ ] Cambio manual de URL de póliza desde admin queda visible en detalle y escrow.
 - [ ] Comprador puede abrir reclamo de seguro desde `/account` cuando la póliza está `ACTIVE`.
 - [ ] Reclamo desde `/account` persiste `rawPayload.claim` con motivo, detalle y teléfono.
-- [ ] Reclamo desde `/account` permite adjuntar evidencias por URL.
+- [ ] Reclamo desde `/account` permite adjuntar evidencias con upload real.
 - [ ] Reclamo desde `/account` mueve la póliza a `CLAIMED`.
 - [ ] `/account` y `/admin/insurance/:id` muestran el detalle del reclamo abierto.
 - [ ] `/account` y `/admin/insurance/:id` muestran links de evidencia del reclamo.
+- [ ] `POST /api/uploads/insurance-claim-image` respeta límite de tamaño, rate limit y formatos permitidos.
 - [ ] Admin puede resolver el reclamo como `APPROVED` o `REJECTED`.
 - [ ] Resolución `REJECTED` devuelve la póliza a `ACTIVE`.
 - [ ] Resolución queda persistida dentro de `rawPayload.claim.resolution`.

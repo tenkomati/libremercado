@@ -247,6 +247,8 @@ Implementado:
 - el reclamo ahora soporta `evidenceUrls` para beta y se muestran tanto en `/account` como en `/admin/insurance/:id`
 - `PATCH /insurance/policies/:id/claim/resolve` permite resolución operativa manual desde admin
 - resolución `APPROVED` mantiene póliza en `CLAIMED`; resolución `REJECTED` devuelve la póliza a `ACTIVE`
+- `POST /api/uploads/insurance-claim-image` sube evidencias reales al mismo storage local/S3 usado por KYC y listings
+- `/account` ya usa uploader real de imágenes para reclamos en vez de pegar links manualmente
 
 ### Rate limiting / anti-abuso
 

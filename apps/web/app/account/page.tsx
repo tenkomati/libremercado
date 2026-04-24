@@ -11,6 +11,7 @@ import { ProtectedPurchaseTerms } from "../components/protected-purchase-terms";
 import { SafeOperationGuides } from "../components/safe-operation-guides";
 
 import { AvailabilitySlotForm } from "./availability-slot-form";
+import { InsuranceClaimEvidenceUpload } from "./insurance-claim-evidence-upload";
 import {
   confirmEscrowDeliveryAction,
   createMeetingProposalAction,
@@ -458,14 +459,7 @@ function InsuranceClaimPanel({
               placeholder="+54 9 ..."
             />
           </label>
-          <label className="grid gap-1 text-xs font-semibold text-[var(--navy)]">
-            Evidencias (links)
-            <textarea
-              className="min-h-24 rounded-2xl border border-[var(--surface-border)] bg-[#f8fbff] px-3 py-2"
-              name="evidenceUrls"
-              placeholder={"Pegá hasta 10 links, uno por línea.\nEj: https://..."}
-            />
-          </label>
+          <InsuranceClaimEvidenceUpload />
           <button
             className="rounded-full bg-[#9f1239] px-4 py-3 text-sm font-semibold text-white"
             type="submit"

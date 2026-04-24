@@ -2,7 +2,7 @@ import { createHash, createHmac, randomUUID } from "node:crypto";
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 
-type StorageFolder = "kyc" | "listings";
+type StorageFolder = "kyc" | "listings" | "claims";
 
 type StoreMediaInput = {
   body: Buffer;
