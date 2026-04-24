@@ -4,9 +4,10 @@ import {
   BadRequestException,
   Injectable,
   NotFoundException,
+  ForbiddenException,
   UnauthorizedException
 } from "@nestjs/common";
-import { Prisma, UserRole } from "@prisma/client";
+import { NotificationType, Prisma, UserRole } from "@prisma/client";
 
 import { AuditService } from "../audit/audit.service";
 import {
@@ -20,6 +21,7 @@ import { ListingsService } from "../listings/listings.service";
 import { PrismaService } from "../prisma/prisma.service";
 import { UsersService } from "../users/users.service";
 
+import { CreateInsuranceClaimDto } from "./dto/create-insurance-claim.dto";
 import { GetInsuranceQuoteDto } from "./dto/get-insurance-quote.dto";
 import { InsurancePolicyWebhookDto } from "./dto/insurance-policy-webhook.dto";
 import { ListInsurancePoliciesQueryDto } from "./dto/list-insurance-policies-query.dto";
@@ -149,6 +151,108 @@ export class InsuranceService {
         total
       })
     };
+  }
+
+  async submitClaim(
+    id: string,
+    dto: CreateInsuranceClaimDto,
+    actor: { sub: string; role: UserRole }
+  ) {
+    const policy = await this.getPolicyById(id);
+    const isAdminLike = actor.role === UserRole.ADMIN || actor.role === UserRole.OPS;
+
+    if (!isAdminLike && policy.escrow.buyerId !== actor.sub) {
+      throw new ForbiddenException(
+        "Solo el comprador titular puede iniciar un reclamo del seguro."
+      );
+    }
+
+    if (policy.status !== "ACTIVE" && policy.status !== "CLAIMED") {
+      throw new BadRequestException(
+        "La póliza debe estar activa para abrir un reclamo."
+      );
+    }
+
+    const previousPayload = this.asJsonObject(policy.rawPayload);
+    const previousClaim = this.readClaim(previousPayload);
+    const claimPayload = {
+      status: "OPEN",
+      reason: dto.reason,
+      details: dto.details,
+      contactPhone:
+        dto.contactPhone?.trim() ||
+        policy.escrow.buyer.phone ||
+        null,
+      openedAt: previousClaim?.openedAt ?? new Date().toISOString(),
+      openedByUserId: previousClaim?.openedByUserId ?? actor.sub,
+      updatedAt: new Date().toISOString()
+    } satisfies Prisma.JsonObject;
+
+    const updated = await this.prisma.insurancePolicy.update({
+      where: { id },
+      data: {
+        status: "CLAIMED",
+        rawPayload: {
+          ...previousPayload,
+          claim: claimPayload
+        }
+      }
+    });
+
+    await this.auditService.logAction({
+      actorUserId: actor.sub,
+      actorRole: actor.role,
+      action: "INSURANCE_CLAIM_OPENED",
+      resourceType: "insurance_policy",
+      resourceId: id,
+      metadata: {
+        reason: dto.reason,
+        contactPhone: claimPayload.contactPhone,
+        escrowId: policy.escrowId,
+        previousStatus: policy.status,
+        nextStatus: "CLAIMED"
+      }
+    });
+
+    await this.prisma.userNotification.createMany({
+      data: [
+        {
+          userId: policy.escrow.buyerId,
+          type: NotificationType.PAYMENT_UPDATED,
+          title: "Reclamo de seguro enviado",
+          body: `Recibimos tu reclamo para ${policy.escrow.listing.title}. El equipo operativo lo revisará.`,
+          resourceType: "insurance_policy",
+          resourceId: updated.id
+        },
+        {
+          userId: policy.escrow.sellerId,
+          type: NotificationType.PAYMENT_UPDATED,
+          title: "Se abrió un reclamo de seguro",
+          body: `La operación de ${policy.escrow.listing.title} tiene un reclamo de seguro en revisión.`,
+          resourceType: "insurance_policy",
+          resourceId: updated.id
+        }
+      ]
+    });
+
+    await this.emailService.sendBulkNotificationEmails([
+      {
+        userId: policy.escrow.buyerId,
+        title: "Recibimos tu reclamo del micro-seguro",
+        body: `Tu reclamo para ${policy.escrow.listing.title} quedó registrado con motivo: ${dto.reason}.`,
+        resourceType: "insurance_policy",
+        resourceId: updated.id
+      },
+      {
+        userId: policy.escrow.sellerId,
+        title: "Hay un reclamo de seguro en una operación",
+        body: `La operación de ${policy.escrow.listing.title} pasó a revisión de seguro.`,
+        resourceType: "insurance_policy",
+        resourceId: updated.id
+      }
+    ]);
+
+    return updated;
   }
 
   async getPolicyById(id: string) {
@@ -444,5 +548,23 @@ export class InsuranceService {
   ) {
     const value = headers[name] ?? headers[name.toLowerCase()];
     return Array.isArray(value) ? value[0] : value;
+  }
+
+  private asJsonObject(value: Prisma.JsonValue | null | undefined) {
+    if (!value || typeof value !== "object" || Array.isArray(value)) {
+      return {} as Prisma.JsonObject;
+    }
+
+    return value as Prisma.JsonObject;
+  }
+
+  private readClaim(payload: Prisma.JsonObject) {
+    const claim = payload.claim;
+
+    if (!claim || typeof claim !== "object" || Array.isArray(claim)) {
+      return null;
+    }
+
+    return claim as Prisma.JsonObject;
   }
 }

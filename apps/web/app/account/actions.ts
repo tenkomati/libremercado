@@ -462,6 +462,33 @@ export async function openEscrowDisputeAction(formData: FormData) {
   redirectWithMessage(returnTo, "success", "Disputa abierta. Soporte revisará la operación.");
 }
 
+export async function submitInsuranceClaimAction(formData: FormData) {
+  const { token } = await getSessionToken();
+  const policyId = String(formData.get("policyId"));
+  const returnTo = "/account";
+
+  const response = await fetch(`${API_URL}/insurance/policies/${policyId}/claim`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      reason: formData.get("reason"),
+      details: formData.get("details"),
+      contactPhone: formData.get("contactPhone") || undefined
+    }),
+    cache: "no-store"
+  });
+
+  if (!response.ok) {
+    redirectWithMessage(returnTo, "error", await getApiError(response));
+  }
+
+  revalidatePath("/account");
+  redirectWithMessage(returnTo, "success", "Reclamo de seguro enviado.");
+}
+
 export async function createDeliveryProposalAction(formData: FormData) {
   const { token } = await getSessionToken();
   const escrowId = String(formData.get("escrowId"));

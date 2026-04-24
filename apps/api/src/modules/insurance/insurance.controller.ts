@@ -19,6 +19,7 @@ import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
 import { RolesGuard } from "../auth/guards/roles.guard";
 import { RateLimit } from "../rate-limit/rate-limit.decorator";
 
+import { CreateInsuranceClaimDto } from "./dto/create-insurance-claim.dto";
 import { GetInsuranceQuoteDto } from "./dto/get-insurance-quote.dto";
 import { InsurancePolicyWebhookDto } from "./dto/insurance-policy-webhook.dto";
 import { ListInsurancePoliciesQueryDto } from "./dto/list-insurance-policies-query.dto";
@@ -37,6 +38,17 @@ export class InsuranceController {
     @CurrentUser() user: { sub: string; role: UserRole }
   ) {
     return this.insuranceService.getQuote(dto, user.sub);
+  }
+
+  @Post("policies/:id/claim")
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @RateLimit({ keyPrefix: "insurance-claim", limit: 20, windowSeconds: 3600 })
+  submitClaim(
+    @Param("id") id: string,
+    @Body() dto: CreateInsuranceClaimDto,
+    @CurrentUser() user: { sub: string; role: UserRole }
+  ) {
+    return this.insuranceService.submitClaim(id, dto, user);
   }
 
   @Get("policies")

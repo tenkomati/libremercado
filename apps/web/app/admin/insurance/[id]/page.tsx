@@ -76,6 +76,15 @@ type InsurancePolicyDetail = {
   };
 };
 
+type InsuranceClaim = {
+  status?: string;
+  reason?: string;
+  details?: string;
+  contactPhone?: string | null;
+  openedAt?: string;
+  updatedAt?: string;
+};
+
 type AuditLog = {
   id: string;
   action: string;
@@ -130,6 +139,14 @@ export default async function InsurancePolicyDetailPage({
 
   const policyAuditLogs = auditLogs.items.filter(
     (log) => log.resourceType === "insurance_policy" && log.resourceId === id
+  );
+  const claim = (
+    policy.rawPayload &&
+    typeof policy.rawPayload === "object" &&
+    !Array.isArray(policy.rawPayload) &&
+    "claim" in policy.rawPayload
+      ? (policy.rawPayload.claim as InsuranceClaim | undefined)
+      : undefined
   );
 
   return (
@@ -294,6 +311,30 @@ export default async function InsurancePolicyDetailPage({
               </p>
             </div>
           </div>
+
+          {claim ? (
+            <div className="rounded-[1.75rem] border border-[var(--surface-border)] bg-white/80 p-6">
+              <div className="flex items-center justify-between gap-4">
+                <h2 className="text-2xl font-semibold text-[var(--navy)]">
+                  Reclamo del seguro
+                </h2>
+                <span className="text-sm text-[#9f1239]">
+                  {claim.status ?? "OPEN"}
+                </span>
+              </div>
+              <div className="mt-5 rounded-[1.25rem] bg-[#fff1f2] p-4 text-sm text-[#9f1239]">
+                <p className="font-semibold">{claim.reason ?? "Motivo no informado"}</p>
+                <p className="mt-2">{claim.details ?? "Sin detalle adicional."}</p>
+                <p className="mt-2">
+                  Contacto: {claim.contactPhone ?? "Sin teléfono informado"}
+                </p>
+                <p className="mt-1">Abierto: {formatDate(claim.openedAt)}</p>
+                <p className="mt-1">
+                  Última actualización: {formatDate(claim.updatedAt ?? claim.openedAt)}
+                </p>
+              </div>
+            </div>
+          ) : null}
 
           <div className="rounded-[1.75rem] border border-[var(--surface-border)] bg-white/80 p-6">
             <div className="flex items-center justify-between gap-4">

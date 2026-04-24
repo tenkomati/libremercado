@@ -241,6 +241,9 @@ Implementado:
 - `/account` y `/admin/escrows/:id` muestran estado de seguro, prima y link a póliza cuando existe
 - `/admin` ahora lista pólizas con filtros operativos y permite mover estado manualmente para sandbox interno
 - nueva ficha `/admin/insurance/:id` con detalle de póliza, pagos asociados, auditoría y operación manual sin proveedor real
+- `POST /insurance/policies/:id/claim` permite abrir reclamo manual sin provider real
+- `/account` ya permite al comprador iniciar un reclamo de siniestro sobre pólizas `ACTIVE`
+- el reclamo queda persistido en `rawPayload.claim`, mueve la póliza a `CLAIMED`, genera auditoría y notificaciones
 
 ### Rate limiting / anti-abuso
 

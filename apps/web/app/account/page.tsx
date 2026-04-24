@@ -22,6 +22,7 @@ import {
   respondDeliveryProposalAction,
   selectAvailabilitySlotAction,
   sendEscrowMessageAction,
+  submitInsuranceClaimAction,
   updateProfileAction
 } from "./actions";
 
@@ -116,6 +117,16 @@ type InsurancePolicy = {
   externalPolicyId: string;
   premiumAmount: string;
   coverageAmount: string;
+  rawPayload?: {
+    claim?: {
+      status?: string;
+      reason?: string;
+      details?: string;
+      contactPhone?: string | null;
+      openedAt?: string;
+      updatedAt?: string;
+    };
+  } | null;
   provider: {
     id: string;
     name: string;
@@ -332,6 +343,96 @@ function getOpenSlots(slots: AvailabilitySlot[]) {
 
 function canOpenDispute(status: string) {
   return ["FUNDS_HELD", "SHIPPED", "DELIVERED"].includes(status);
+}
+
+function InsuranceClaimPanel({
+  policy,
+  escrowId,
+  phone,
+  canSubmit
+}: {
+  policy: InsurancePolicy;
+  escrowId: string;
+  phone: string | null;
+  canSubmit: boolean;
+}) {
+  const claim = policy.rawPayload?.claim;
+  const claimOpen = policy.status === "CLAIMED" || Boolean(claim);
+
+  return (
+    <div className="mt-4 rounded-[1.25rem] border border-[rgba(18,107,255,0.12)] bg-white p-4">
+      <p className="text-sm font-semibold text-[var(--navy)]">
+        Reclamo del micro-seguro
+      </p>
+      <p className="mt-1 text-xs leading-5 text-[var(--muted)]">
+        Si hubo robo, estafa o un incidente cubierto, dejá el caso registrado
+        desde acá para que operaciones lo siga manualmente en beta.
+      </p>
+
+      {claimOpen ? (
+        <div className="mt-4 rounded-2xl border border-[rgba(220,38,38,0.12)] bg-[#fff1f2] p-4 text-sm text-[#9f1239]">
+          <p className="font-semibold">
+            Reclamo {claim?.status ?? "OPEN"} · {claim?.reason ?? "Motivo no informado"}
+          </p>
+          <p className="mt-1">{claim?.details ?? "Sin detalle adicional."}</p>
+          <p className="mt-1">
+            Contacto: {claim?.contactPhone ?? phone ?? "Sin teléfono informado"}
+          </p>
+          <p className="mt-1">
+            Abierto: {formatDateTime(claim?.openedAt ?? null)}
+          </p>
+          <p className="mt-1">
+            Última actualización: {formatDateTime(claim?.updatedAt ?? claim?.openedAt ?? null)}
+          </p>
+        </div>
+      ) : null}
+
+      {canSubmit && !claimOpen ? (
+        <form action={submitInsuranceClaimAction} className="mt-4 grid gap-3">
+          <input name="policyId" type="hidden" value={policy.id} />
+          <input name="escrowId" type="hidden" value={escrowId} />
+          <label className="grid gap-1 text-xs font-semibold text-[var(--navy)]">
+            Motivo
+            <select
+              className="rounded-2xl border border-[var(--surface-border)] bg-[#f8fbff] px-3 py-2"
+              defaultValue="robo"
+              name="reason"
+              required
+            >
+              <option value="robo">Robo</option>
+              <option value="estafa">Estafa</option>
+              <option value="producto-no-recibido">Producto no recibido</option>
+              <option value="otro-incidente">Otro incidente cubierto</option>
+            </select>
+          </label>
+          <label className="grid gap-1 text-xs font-semibold text-[var(--navy)]">
+            Qué pasó
+            <textarea
+              className="min-h-28 rounded-2xl border border-[var(--surface-border)] bg-[#f8fbff] px-3 py-2"
+              name="details"
+              placeholder="Contanos qué pasó, cuándo ocurrió y cualquier dato útil para revisar el caso."
+              required
+            />
+          </label>
+          <label className="grid gap-1 text-xs font-semibold text-[var(--navy)]">
+            Teléfono de contacto
+            <input
+              className="rounded-2xl border border-[var(--surface-border)] bg-[#f8fbff] px-3 py-2"
+              defaultValue={phone ?? ""}
+              name="contactPhone"
+              placeholder="+54 9 ..."
+            />
+          </label>
+          <button
+            className="rounded-full bg-[#9f1239] px-4 py-3 text-sm font-semibold text-white"
+            type="submit"
+          >
+            Enviar reclamo
+          </button>
+        </form>
+      ) : null}
+    </div>
+  );
 }
 
 function MeetingPlanner({
@@ -1288,6 +1389,14 @@ export default async function AccountPage({ searchParams }: AccountPageProps) {
                           </a>
                         </div>
                       ) : null}
+                      {escrow.insurancePolicy ? (
+                        <InsuranceClaimPanel
+                          canSubmit={escrow.insurancePolicy.status === "ACTIVE"}
+                          escrowId={escrow.id}
+                          phone={user.phone}
+                          policy={escrow.insurancePolicy}
+                        />
+                      ) : null}
                     </section>
 
                     <section className="rounded-2xl bg-white p-4">
@@ -1461,6 +1570,14 @@ export default async function AccountPage({ searchParams }: AccountPageProps) {
                               Ver póliza
                             </a>
                           </div>
+                        ) : null}
+                        {escrow.insurancePolicy?.rawPayload?.claim ? (
+                          <InsuranceClaimPanel
+                            canSubmit={false}
+                            escrowId={escrow.id}
+                            phone={user.phone}
+                            policy={escrow.insurancePolicy}
+                          />
                         ) : null}
                       </section>
 
