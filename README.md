@@ -43,6 +43,27 @@ npm run prisma:migrate:deploy:staging --workspace @libremercado/api
 Antes de ejecutar migraciones reales, crear `.env.staging`, usar un usuario
 dedicado `prisma` en Supabase y validar backups/rate limiting/storage externo.
 
+## Cloud Run mock
+
+Si el dominio todavía no está definido, el repo ya queda listo para publicar una
+beta técnica con las URLs nativas de Cloud Run usando mocks para pagos, seguros,
+emails y storage.
+
+Archivos:
+
+- `CLOUD_RUN_MOCK_DEPLOY.md`
+- `cloudrun/api.mock.env.yaml`
+- `cloudrun/web.mock.env.yaml`
+- `scripts/cloudrun/deploy-api.sh`
+- `scripts/cloudrun/deploy-web.sh`
+
+Importante:
+
+- este modo usa `PAYMENT_PROVIDER=SANDBOX`
+- mantiene `EMAIL_PROVIDER=log`
+- deja `MEDIA_STORAGE_DRIVER=local`, que en Cloud Run es efímero
+- conviene `max-instances=1` hasta conectar storage y Redis reales
+
 ## Storage de imágenes
 
 Por defecto, los uploads de publicaciones y verificación de identidad se guardan

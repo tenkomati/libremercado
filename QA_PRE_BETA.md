@@ -7,6 +7,11 @@ Smoke automático disponible:
 - `npm run smoke:predeploy`
 - guía: `SMOKE_PREDEPLOY.md`
 
+Modo Cloud Run mock disponible:
+
+- guía: `CLOUD_RUN_MOCK_DEPLOY.md`
+- si se usa `MEDIA_STORAGE_DRIVER=local`, validar sabiendo que los uploads son efímeros
+
 ## Estado
 
 - [ ] QA completo aprobado para beta cerrada

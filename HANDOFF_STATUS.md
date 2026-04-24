@@ -252,6 +252,21 @@ Implementado:
 - script ejecutable `scripts/smoke-predeploy.mjs` cubre health, auth, admin, upload, listing, checkout, sandbox approve, póliza, claim y resolución
 - comando root: `npm run smoke:predeploy`
 - documento operativo: `SMOKE_PREDEPLOY.md`
+- paquete Cloud Run mock listo:
+  - `CLOUD_RUN_MOCK_DEPLOY.md`
+  - `cloudrun/api.mock.env.yaml`
+  - `cloudrun/web.mock.env.yaml`
+  - `scripts/cloudrun/deploy-api.sh`
+  - `scripts/cloudrun/deploy-web.sh`
+- `apps/web` ahora arranca en `0.0.0.0:$PORT`, compatible con Cloud Run
+- modo recomendado mientras proveedores sigan mock:
+  - `PAYMENT_PROVIDER=SANDBOX`
+  - `EMAIL_PROVIDER=log`
+  - `MEDIA_STORAGE_DRIVER=local`
+  - `max-instances=1`
+- limitación explícita del modo mock en Cloud Run:
+  - uploads locales efímeros
+  - rate limiting distribuido no garantizado sin `REDIS_URL`
 
 ### Rate limiting / anti-abuso
 

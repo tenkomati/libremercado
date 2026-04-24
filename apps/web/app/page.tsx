@@ -24,6 +24,29 @@ const trustPillars = [
   }
 ];
 
+const securityDifferentials = [
+  {
+    title: "Identidad verificada",
+    description:
+      "Solo operan cuentas con validación documental y biométrica aprobada."
+  },
+  {
+    title: "Seguro opcional",
+    description:
+      "El comprador puede sumar micro-seguro en operaciones de mayor valor."
+  },
+  {
+    title: "Encuentros seguros",
+    description:
+      "La coordinación favorece puntos de encuentro controlados para reducir riesgo."
+  },
+  {
+    title: "Dinero retenido",
+    description:
+      "Los fondos quedan protegidos hasta que la operación se concreta correctamente."
+  }
+];
+
 const marketSignals = [
   { value: "48 hs", label: "ventana de validacion post entrega" },
   { value: "3-5%", label: "comision objetivo del marketplace" },
@@ -275,6 +298,44 @@ export default function Home() {
                     </div>
                   ))}
                 </div>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="mx-auto w-full max-w-7xl px-6 py-4 sm:px-10 lg:px-12">
+        <div className="rounded-[2rem] border border-[var(--surface-border)] bg-[linear-gradient(180deg,#f8fbff,#eef5ff)] p-8 shadow-[0_18px_60px_rgba(8,34,71,0.05)]">
+          <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+            <div>
+              <p className="text-sm uppercase tracking-[0.35em] text-[var(--brand-strong)]">
+                Diferenciales de seguridad
+              </p>
+              <h2
+                className="mt-3 text-3xl font-semibold leading-tight text-[var(--navy)]"
+                style={{ fontFamily: "var(--font-display)" }}
+              >
+                Cuatro capas para vender y comprar con menos incertidumbre.
+              </h2>
+            </div>
+            <p className="max-w-2xl text-sm leading-7 text-[var(--muted)]">
+              No es solo un clasificado con chat: la plataforma combina identidad,
+              dinero protegido, cobertura opcional y coordinación más segura.
+            </p>
+          </div>
+
+          <div className="mt-8 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            {securityDifferentials.map((item) => (
+              <article
+                key={item.title}
+                className="rounded-[1.5rem] border border-[rgba(18,107,255,0.12)] bg-white p-5"
+              >
+                <p className="text-base font-semibold text-[var(--navy)]">
+                  {item.title}
+                </p>
+                <p className="mt-3 text-sm leading-6 text-[var(--muted)]">
+                  {item.description}
+                </p>
               </article>
             ))}
           </div>
