@@ -25,6 +25,7 @@ import { CreateInsuranceClaimDto } from "./dto/create-insurance-claim.dto";
 import { GetInsuranceQuoteDto } from "./dto/get-insurance-quote.dto";
 import { InsurancePolicyWebhookDto } from "./dto/insurance-policy-webhook.dto";
 import { ListInsurancePoliciesQueryDto } from "./dto/list-insurance-policies-query.dto";
+import { ResolveInsuranceClaimDto } from "./dto/resolve-insurance-claim.dto";
 import { UpdateInsurancePolicyStatusDto } from "./dto/update-insurance-policy-status.dto";
 import {
   BaseInsuranceProvider
@@ -175,6 +176,7 @@ export class InsuranceService {
 
     const previousPayload = this.asJsonObject(policy.rawPayload);
     const previousClaim = this.readClaim(previousPayload);
+    const evidenceUrls = this.parseEvidenceUrls(dto.evidenceUrls);
     const claimPayload = {
       status: "OPEN",
       reason: dto.reason,
@@ -185,7 +187,8 @@ export class InsuranceService {
         null,
       openedAt: previousClaim?.openedAt ?? new Date().toISOString(),
       openedByUserId: previousClaim?.openedByUserId ?? actor.sub,
-      updatedAt: new Date().toISOString()
+      updatedAt: new Date().toISOString(),
+      evidenceUrls
     } satisfies Prisma.JsonObject;
 
     const updated = await this.prisma.insurancePolicy.update({
@@ -208,6 +211,7 @@ export class InsuranceService {
       metadata: {
         reason: dto.reason,
         contactPhone: claimPayload.contactPhone,
+        evidenceCount: evidenceUrls.length,
         escrowId: policy.escrowId,
         previousStatus: policy.status,
         nextStatus: "CLAIMED"
@@ -247,6 +251,113 @@ export class InsuranceService {
         userId: policy.escrow.sellerId,
         title: "Hay un reclamo de seguro en una operación",
         body: `La operación de ${policy.escrow.listing.title} pasó a revisión de seguro.`,
+        resourceType: "insurance_policy",
+        resourceId: updated.id
+      }
+    ]);
+
+    return updated;
+  }
+
+  async resolveClaim(
+    id: string,
+    dto: ResolveInsuranceClaimDto,
+    actor: { sub: string; role: UserRole }
+  ) {
+    const policy = await this.getPolicyById(id);
+    const previousPayload = this.asJsonObject(policy.rawPayload);
+    const claim = this.readClaim(previousPayload);
+
+    if (!claim) {
+      throw new BadRequestException(
+        "No existe un reclamo abierto para esta póliza."
+      );
+    }
+
+    const nextStatus =
+      dto.outcome === "REJECTED" ? "ACTIVE" : "CLAIMED";
+    const updatedClaim = {
+      ...claim,
+      status: dto.outcome,
+      updatedAt: new Date().toISOString(),
+      resolution: {
+        outcome: dto.outcome,
+        notes: dto.resolutionNotes,
+        decidedAt: new Date().toISOString(),
+        decidedByUserId: actor.sub
+      }
+    } satisfies Prisma.JsonObject;
+
+    const updated = await this.prisma.insurancePolicy.update({
+      where: { id },
+      data: {
+        status: nextStatus,
+        rawPayload: {
+          ...previousPayload,
+          claim: updatedClaim
+        }
+      }
+    });
+
+    await this.auditService.logAction({
+      actorUserId: actor.sub,
+      actorRole: actor.role,
+      action: "INSURANCE_CLAIM_RESOLVED",
+      resourceType: "insurance_policy",
+      resourceId: id,
+      metadata: {
+        outcome: dto.outcome,
+        escrowId: policy.escrowId,
+        nextStatus,
+        resolutionNotes: dto.resolutionNotes
+      }
+    });
+
+    await this.prisma.userNotification.createMany({
+      data: [
+        {
+          userId: policy.escrow.buyerId,
+          type: NotificationType.PAYMENT_UPDATED,
+          title:
+            dto.outcome === "APPROVED"
+              ? "Tu reclamo de seguro fue aprobado"
+              : "Tu reclamo de seguro fue rechazado",
+          body:
+            dto.outcome === "APPROVED"
+              ? `El reclamo de ${policy.escrow.listing.title} fue aprobado y queda en seguimiento operativo.`
+              : `El reclamo de ${policy.escrow.listing.title} fue rechazado y la póliza vuelve a estado activo.`,
+          resourceType: "insurance_policy",
+          resourceId: updated.id
+        },
+        {
+          userId: policy.escrow.sellerId,
+          type: NotificationType.PAYMENT_UPDATED,
+          title: "Se resolvió un reclamo de seguro",
+          body: `La operación de ${policy.escrow.listing.title} tiene resolución de reclamo: ${dto.outcome}.`,
+          resourceType: "insurance_policy",
+          resourceId: updated.id
+        }
+      ]
+    });
+
+    await this.emailService.sendBulkNotificationEmails([
+      {
+        userId: policy.escrow.buyerId,
+        title:
+          dto.outcome === "APPROVED"
+            ? "Reclamo de micro-seguro aprobado"
+            : "Reclamo de micro-seguro rechazado",
+        body:
+          dto.outcome === "APPROVED"
+            ? `Tu reclamo para ${policy.escrow.listing.title} fue aprobado.`
+            : `Tu reclamo para ${policy.escrow.listing.title} fue rechazado.`,
+        resourceType: "insurance_policy",
+        resourceId: updated.id
+      },
+      {
+        userId: policy.escrow.sellerId,
+        title: "Reclamo de seguro resuelto",
+        body: `Se resolvió el reclamo de seguro para ${policy.escrow.listing.title} con resultado ${dto.outcome}.`,
         resourceType: "insurance_policy",
         resourceId: updated.id
       }
@@ -566,5 +677,17 @@ export class InsuranceService {
     }
 
     return claim as Prisma.JsonObject;
+  }
+
+  private parseEvidenceUrls(value?: string) {
+    if (!value) {
+      return [];
+    }
+
+    return value
+      .split(/\r?\n|,/)
+      .map((item) => item.trim())
+      .filter(Boolean)
+      .slice(0, 10);
   }
 }

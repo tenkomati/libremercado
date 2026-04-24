@@ -177,6 +177,28 @@ export async function updateInsurancePolicyStatusAction(formData: FormData) {
   }
 }
 
+export async function resolveInsuranceClaimAction(formData: FormData) {
+  try {
+    const policyId = String(formData.get("policyId"));
+    const outcome = String(formData.get("outcome"));
+    const resolutionNotes = String(formData.get("resolutionNotes"));
+    const returnTo = String(formData.get("returnTo") ?? `/admin/insurance/${policyId}`);
+
+    await callAdminApi(`/insurance/policies/${policyId}/claim/resolve`, "PATCH", {
+      outcome,
+      resolutionNotes
+    });
+    redirectWithMessage("success", `Reclamo resuelto como ${outcome}.`, returnTo);
+  } catch (error) {
+    if (isRedirectError(error)) throw error;
+    redirectWithMessage(
+      "error",
+      error instanceof Error ? error.message : "No se pudo resolver el reclamo.",
+      String(formData.get("returnTo") ?? "/admin")
+    );
+  }
+}
+
 export async function runEscrowAction(formData: FormData) {
   try {
     const escrowId = String(formData.get("escrowId"));

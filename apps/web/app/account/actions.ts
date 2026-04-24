@@ -476,7 +476,8 @@ export async function submitInsuranceClaimAction(formData: FormData) {
     body: JSON.stringify({
       reason: formData.get("reason"),
       details: formData.get("details"),
-      contactPhone: formData.get("contactPhone") || undefined
+      contactPhone: formData.get("contactPhone") || undefined,
+      evidenceUrls: formData.get("evidenceUrls") || undefined
     }),
     cache: "no-store"
   });

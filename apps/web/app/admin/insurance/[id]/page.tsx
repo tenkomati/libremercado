@@ -6,7 +6,10 @@ import { apiFetchWithToken } from "../../../../lib/api";
 import { canAccessAdmin, verifySessionToken } from "../../../../lib/auth";
 import { formatCurrency, formatDate } from "../../../../lib/format";
 
-import { updateInsurancePolicyStatusAction } from "../../actions";
+import {
+  resolveInsuranceClaimAction,
+  updateInsurancePolicyStatusAction
+} from "../../actions";
 import { ConfirmForm, SubmitButton } from "../../form-controls";
 
 type InsurancePolicyDetailPageProps = {
@@ -83,6 +86,12 @@ type InsuranceClaim = {
   contactPhone?: string | null;
   openedAt?: string;
   updatedAt?: string;
+  evidenceUrls?: string[];
+  resolution?: {
+    outcome?: string;
+    notes?: string;
+    decidedAt?: string;
+  };
 };
 
 type AuditLog = {
@@ -325,6 +334,21 @@ export default async function InsurancePolicyDetailPage({
               <div className="mt-5 rounded-[1.25rem] bg-[#fff1f2] p-4 text-sm text-[#9f1239]">
                 <p className="font-semibold">{claim.reason ?? "Motivo no informado"}</p>
                 <p className="mt-2">{claim.details ?? "Sin detalle adicional."}</p>
+                {claim.evidenceUrls?.length ? (
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {claim.evidenceUrls.map((url) => (
+                      <a
+                        key={url}
+                        className="rounded-full border border-[rgba(159,18,57,0.14)] bg-white px-3 py-1 text-xs font-semibold text-[#9f1239]"
+                        href={url}
+                        rel="noreferrer"
+                        target="_blank"
+                      >
+                        Abrir evidencia
+                      </a>
+                    ))}
+                  </div>
+                ) : null}
                 <p className="mt-2">
                   Contacto: {claim.contactPhone ?? "Sin teléfono informado"}
                 </p>
@@ -332,6 +356,17 @@ export default async function InsurancePolicyDetailPage({
                 <p className="mt-1">
                   Última actualización: {formatDate(claim.updatedAt ?? claim.openedAt)}
                 </p>
+                {claim.resolution ? (
+                  <div className="mt-3 rounded-[1rem] bg-white p-3">
+                    <p className="font-semibold">
+                      Resolución {claim.resolution.outcome ?? "sin estado"}
+                    </p>
+                    <p className="mt-1">{claim.resolution.notes ?? "Sin notas."}</p>
+                    <p className="mt-1">
+                      Resuelto: {formatDate(claim.resolution.decidedAt)}
+                    </p>
+                  </div>
+                ) : null}
               </div>
             </div>
           ) : null}
@@ -457,6 +492,49 @@ export default async function InsurancePolicyDetailPage({
               </SubmitButton>
             </ConfirmForm>
           </div>
+
+          {claim && !claim.resolution ? (
+            <div className="rounded-[1.75rem] border border-[var(--surface-border)] bg-white/80 p-6">
+              <h2 className="text-2xl font-semibold text-[var(--navy)]">
+                Resolver reclamo
+              </h2>
+              <p className="mt-2 text-sm leading-6 text-[var(--muted)]">
+                Beta manual: aprobá si el caso queda validado operativamente o rechazá si no corresponde cobertura.
+              </p>
+
+              <ConfirmForm action={resolveInsuranceClaimAction} className="mt-5 grid gap-3">
+                <input name="policyId" type="hidden" value={policy.id} />
+                <input name="returnTo" type="hidden" value={currentPath} />
+                <label className="grid gap-2 text-sm font-medium text-[var(--navy)]">
+                  Resultado
+                  <select
+                    className="rounded-2xl border border-[var(--surface-border)] bg-[#f8fbff] px-4 py-3"
+                    defaultValue="APPROVED"
+                    name="outcome"
+                  >
+                    <option value="APPROVED">APPROVED</option>
+                    <option value="REJECTED">REJECTED</option>
+                  </select>
+                </label>
+                <label className="grid gap-2 text-sm font-medium text-[var(--navy)]">
+                  Notas de resolución
+                  <textarea
+                    className="min-h-28 rounded-2xl border border-[var(--surface-border)] bg-[#f8fbff] px-4 py-3"
+                    name="resolutionNotes"
+                    placeholder="Dejá criterio, evidencia revisada y próximo paso operativo."
+                    required
+                  />
+                </label>
+                <SubmitButton
+                  className="rounded-2xl bg-[#9f1239] px-4 py-3 text-sm font-semibold text-white"
+                  confirmMessage="¿Resolver este reclamo ahora?"
+                  pendingLabel="Resolviendo..."
+                >
+                  Resolver reclamo
+                </SubmitButton>
+              </ConfirmForm>
+            </div>
+          ) : null}
 
           <div className="rounded-[1.75rem] border border-[var(--surface-border)] bg-white/80 p-6">
             <h2 className="text-2xl font-semibold text-[var(--navy)]">

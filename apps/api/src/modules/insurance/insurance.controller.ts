@@ -23,6 +23,7 @@ import { CreateInsuranceClaimDto } from "./dto/create-insurance-claim.dto";
 import { GetInsuranceQuoteDto } from "./dto/get-insurance-quote.dto";
 import { InsurancePolicyWebhookDto } from "./dto/insurance-policy-webhook.dto";
 import { ListInsurancePoliciesQueryDto } from "./dto/list-insurance-policies-query.dto";
+import { ResolveInsuranceClaimDto } from "./dto/resolve-insurance-claim.dto";
 import { UpdateInsurancePolicyStatusDto } from "./dto/update-insurance-policy-status.dto";
 import { InsuranceService } from "./insurance.service";
 
@@ -49,6 +50,17 @@ export class InsuranceController {
     @CurrentUser() user: { sub: string; role: UserRole }
   ) {
     return this.insuranceService.submitClaim(id, dto, user);
+  }
+
+  @Patch("policies/:id/claim/resolve")
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.OPS)
+  resolveClaim(
+    @Param("id") id: string,
+    @Body() dto: ResolveInsuranceClaimDto,
+    @CurrentUser() user: { sub: string; role: UserRole }
+  ) {
+    return this.insuranceService.resolveClaim(id, dto, user);
   }
 
   @Get("policies")

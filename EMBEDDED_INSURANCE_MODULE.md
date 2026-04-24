@@ -116,5 +116,5 @@ integración se apoya sobre esa entidad en vez de crear una orden paralela.
 
 - Conectar provider real de seguros.
 - Mover `api_key` fuera de lectura directa en consola admin si después se expone UI.
-- Agregar evidencias adjuntas para reclamos de siniestro.
 - Agregar tests de quote, emisión y webhook de póliza.
+- Reemplazar evidencias por URL por upload real con storage firmado y metadata antifraude.

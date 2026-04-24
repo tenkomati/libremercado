@@ -125,6 +125,12 @@ type InsurancePolicy = {
       contactPhone?: string | null;
       openedAt?: string;
       updatedAt?: string;
+      evidenceUrls?: string[];
+      resolution?: {
+        outcome?: string;
+        notes?: string;
+        decidedAt?: string;
+      };
     };
   } | null;
   provider: {
@@ -375,6 +381,24 @@ function InsuranceClaimPanel({
             Reclamo {claim?.status ?? "OPEN"} · {claim?.reason ?? "Motivo no informado"}
           </p>
           <p className="mt-1">{claim?.details ?? "Sin detalle adicional."}</p>
+          {claim?.evidenceUrls?.length ? (
+            <div className="mt-2">
+              <p className="font-semibold">Evidencias</p>
+              <div className="mt-1 flex flex-wrap gap-2">
+                {claim.evidenceUrls.map((url) => (
+                  <a
+                    key={url}
+                    className="rounded-full border border-[rgba(159,18,57,0.14)] bg-white px-3 py-1 text-xs font-semibold text-[#9f1239]"
+                    href={url}
+                    rel="noreferrer"
+                    target="_blank"
+                  >
+                    Abrir evidencia
+                  </a>
+                ))}
+              </div>
+            </div>
+          ) : null}
           <p className="mt-1">
             Contacto: {claim?.contactPhone ?? phone ?? "Sin teléfono informado"}
           </p>
@@ -384,6 +408,17 @@ function InsuranceClaimPanel({
           <p className="mt-1">
             Última actualización: {formatDateTime(claim?.updatedAt ?? claim?.openedAt ?? null)}
           </p>
+          {claim?.resolution ? (
+            <div className="mt-3 rounded-2xl bg-white p-3 text-[#7f1d1d]">
+              <p className="font-semibold">
+                Resolución {claim.resolution.outcome ?? "sin estado"}
+              </p>
+              <p className="mt-1">{claim.resolution.notes ?? "Sin notas."}</p>
+              <p className="mt-1">
+                Resuelto: {formatDateTime(claim.resolution.decidedAt ?? null)}
+              </p>
+            </div>
+          ) : null}
         </div>
       ) : null}
 
@@ -421,6 +456,14 @@ function InsuranceClaimPanel({
               defaultValue={phone ?? ""}
               name="contactPhone"
               placeholder="+54 9 ..."
+            />
+          </label>
+          <label className="grid gap-1 text-xs font-semibold text-[var(--navy)]">
+            Evidencias (links)
+            <textarea
+              className="min-h-24 rounded-2xl border border-[var(--surface-border)] bg-[#f8fbff] px-3 py-2"
+              name="evidenceUrls"
+              placeholder={"Pegá hasta 10 links, uno por línea.\nEj: https://..."}
             />
           </label>
           <button

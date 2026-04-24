@@ -244,6 +244,9 @@ Implementado:
 - `POST /insurance/policies/:id/claim` permite abrir reclamo manual sin provider real
 - `/account` ya permite al comprador iniciar un reclamo de siniestro sobre pólizas `ACTIVE`
 - el reclamo queda persistido en `rawPayload.claim`, mueve la póliza a `CLAIMED`, genera auditoría y notificaciones
+- el reclamo ahora soporta `evidenceUrls` para beta y se muestran tanto en `/account` como en `/admin/insurance/:id`
+- `PATCH /insurance/policies/:id/claim/resolve` permite resolución operativa manual desde admin
+- resolución `APPROVED` mantiene póliza en `CLAIMED`; resolución `REJECTED` devuelve la póliza a `ACTIVE`
 
 ### Rate limiting / anti-abuso
 

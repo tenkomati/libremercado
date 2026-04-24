@@ -13,4 +13,9 @@ export class CreateInsuranceClaimDto {
   @IsString()
   @Length(6, 40)
   contactPhone?: string;
+
+  @IsOptional()
+  @IsString()
+  @Length(0, 3000)
+  evidenceUrls?: string;
 }
