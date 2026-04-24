@@ -249,6 +249,9 @@ Implementado:
 - resolución `APPROVED` mantiene póliza en `CLAIMED`; resolución `REJECTED` devuelve la póliza a `ACTIVE`
 - `POST /api/uploads/insurance-claim-image` sube evidencias reales al mismo storage local/S3 usado por KYC y listings
 - `/account` ya usa uploader real de imágenes para reclamos en vez de pegar links manualmente
+- script ejecutable `scripts/smoke-predeploy.mjs` cubre health, auth, admin, upload, listing, checkout, sandbox approve, póliza, claim y resolución
+- comando root: `npm run smoke:predeploy`
+- documento operativo: `SMOKE_PREDEPLOY.md`
 
 ### Rate limiting / anti-abuso
 

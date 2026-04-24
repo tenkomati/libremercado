@@ -2,6 +2,11 @@
 
 Este documento define las pruebas manuales y semi-tecnicas necesarias antes de abrir una beta cerrada. La prioridad es validar confianza operativa: registro, identidad, publicacion, compra protegida, entrega, pagos sandbox, admin y anti-abuso basico.
 
+Smoke automático disponible:
+
+- `npm run smoke:predeploy`
+- guía: `SMOKE_PREDEPLOY.md`
+
 ## Estado
 
 - [ ] QA completo aprobado para beta cerrada
