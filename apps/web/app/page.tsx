@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 const heroSignals = [
-  { value: "MVP activo", label: "marketplace, checkout protegido y backoffice operando" },
+  { value: "5% máx.", label: "comisión vendedora simple, sin costo fijo por publicar" },
   { value: "4 capas", label: "identidad, fondos retenidos, seguro y encuentro seguro" },
   { value: "ARS + USD", label: "economics pensados para usados premium en Argentina" }
 ];
@@ -23,7 +23,12 @@ const marketGap = [
     title: "La oportunidad",
     description:
       "Una categoría enorme de transacciones que hoy no suceden por falta de confianza, no por falta de demanda.",
-    points: ["Tecnología", "Fotografía", "Movilidad", "Premium resale"]
+    points: [
+      "Comisiones super bajas",
+      "4 capas de seguridad",
+      "Seguro opcional embebido",
+      "Fondos retenidos hasta validar la operación"
+    ]
   }
 ];
 
@@ -51,27 +56,6 @@ const trustStack = [
     title: "Protección opcional en el momento exacto de la compra.",
     description:
       "En categorías de alto valor, el comprador puede sumar una cobertura específica sin salir del checkout."
-  }
-];
-
-const showcase = [
-  {
-    title: "Publicación asistida",
-    description:
-      "Carga de producto, moneda ARS o USD, cálculo visible del neto para el vendedor y medios seguros desde el primer paso.",
-    accent: "Seller UX"
-  },
-  {
-    title: "Checkout de confianza",
-    description:
-      "El comprador ve pago protegido, seguro opcional, condiciones de liberación y coordinación operativa dentro del mismo flujo.",
-    accent: "Buyer UX"
-  },
-  {
-    title: "Backoffice operativo",
-    description:
-      "Admin con control sobre usuarios, identidad, operaciones, escrow, pagos sandbox, pólizas y auditoría de eventos clave.",
-    accent: "Ops Console"
   }
 ];
 
@@ -137,7 +121,6 @@ export default function Home() {
           <nav className="hidden items-center gap-8 text-sm text-[var(--muted)] md:flex">
             <a href="#problema">Mercado</a>
             <a href="#solucion">Solución</a>
-            <a href="#producto">Producto</a>
             <a href="#vision">Visión</a>
             <Link
               href="/market"
@@ -286,54 +269,6 @@ export default function Home() {
                     </div>
                   ))}
                 </div>
-              </article>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section id="producto" className="mx-auto w-full max-w-7xl px-6 py-8 sm:px-10 lg:px-12">
-        <div className="rounded-[2rem] border border-[var(--surface-border)] bg-[linear-gradient(180deg,#f8fbff,#eef5ff)] p-8 shadow-[0_18px_60px_rgba(8,34,71,0.05)]">
-          <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-            <div>
-              <p className="text-sm uppercase tracking-[0.35em] text-[var(--brand-strong)]">
-                Product showcase
-              </p>
-              <h2
-                className="mt-3 text-4xl font-semibold leading-tight text-[var(--navy)]"
-                style={{ fontFamily: "var(--font-display)" }}
-              >
-                Un producto serio ya se ve distinto antes de escalar.
-              </h2>
-            </div>
-            <p className="max-w-2xl text-base leading-7 text-[var(--muted)]">
-              El MVP no es solo una promesa visual: ya resuelve publicación, compra protegida,
-              coordinación, backoffice y operación de seguros en modo sandbox.
-            </p>
-          </div>
-
-          <div className="mt-8 grid gap-4 lg:grid-cols-3">
-            {showcase.map((item) => (
-              <article
-                key={item.title}
-                className="rounded-[1.75rem] border border-[rgba(18,107,255,0.12)] bg-white p-6"
-              >
-                <div className="flex items-center justify-between">
-                  <span className="rounded-full bg-[var(--brand-soft)] px-3 py-1 text-xs font-semibold uppercase tracking-[0.25em] text-[var(--brand-strong)]">
-                    {item.accent}
-                  </span>
-                  <span className="h-3 w-3 rounded-full bg-[var(--brand)]" />
-                </div>
-                <div className="mt-6 rounded-[1.25rem] border border-[var(--surface-border)] bg-[linear-gradient(180deg,#f9fbff,#eef4ff)] p-4">
-                  <div className="grid gap-2">
-                    <div className="h-3 w-28 rounded-full bg-[rgba(18,107,255,0.18)]" />
-                    <div className="h-3 w-full rounded-full bg-[rgba(8,34,71,0.08)]" />
-                    <div className="h-3 w-4/5 rounded-full bg-[rgba(8,34,71,0.08)]" />
-                    <div className="mt-3 h-20 rounded-2xl bg-[linear-gradient(135deg,rgba(18,107,255,0.18),rgba(45,179,255,0.12))]" />
-                  </div>
-                </div>
-                <h3 className="mt-6 text-xl font-semibold text-[var(--navy)]">{item.title}</h3>
-                <p className="mt-3 text-sm leading-6 text-[var(--muted)]">{item.description}</p>
               </article>
             ))}
           </div>
