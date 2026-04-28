@@ -4,6 +4,8 @@ import path from "node:path";
 const rootDir = path.resolve(path.dirname(new URL(import.meta.url).pathname), "../..");
 const allowPlaceholders = process.argv.includes("--example");
 const target = process.argv.find((arg) => ["api", "web", "all"].includes(arg)) ?? "all";
+const fileArgIndex = process.argv.indexOf("--file");
+const customFile = fileArgIndex >= 0 ? process.argv[fileArgIndex + 1] : undefined;
 
 const files = {
   api: path.join(rootDir, "cloudrun", "api.mock.env.yaml"),
@@ -199,7 +201,8 @@ const warnings = [];
 const parsed = {};
 
 for (const selection of selections) {
-  parsed[selection] = readYamlEnv(files[selection]);
+  const filePath = customFile && target !== "all" ? path.resolve(customFile) : files[selection];
+  parsed[selection] = readYamlEnv(filePath);
 }
 
 if (parsed.api) {

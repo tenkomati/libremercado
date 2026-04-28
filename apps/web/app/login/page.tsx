@@ -48,19 +48,19 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
           <div className="flex flex-wrap gap-3">
             <Link
               href="/"
-              className="rounded-full border border-[var(--surface-border)] bg-white px-5 py-3 font-semibold"
+              className="button-secondary"
             >
               Volver al home
             </Link>
             <Link
               href="/market"
-              className="rounded-full border border-[var(--surface-border)] bg-white px-5 py-3 font-semibold"
+              className="button-secondary"
             >
               Ver market
             </Link>
             <Link
               href={`/signup?next=${encodeURIComponent(nextPath)}`}
-              className="rounded-full bg-[var(--brand)] px-5 py-3 font-semibold text-white"
+              className="button-primary"
             >
               Crear cuenta
             </Link>

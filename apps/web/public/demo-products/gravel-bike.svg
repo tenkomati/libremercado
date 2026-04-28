@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 900">
+  <rect width="1200" height="900" fill="#eef5ff"/>
+  <circle cx="330" cy="620" r="150" fill="none" stroke="#203b63" stroke-width="24"/>
+  <circle cx="840" cy="620" r="150" fill="none" stroke="#203b63" stroke-width="24"/>
+  <path d="M330 620 L510 430 L640 620 L430 620 Z" fill="none" stroke="#1a4f8b" stroke-width="24"/>
+  <path d="M510 430 L670 430 L840 620" fill="none" stroke="#1a4f8b" stroke-width="24"/>
+  <path d="M640 620 L710 500" fill="none" stroke="#1a4f8b" stroke-width="24"/>
+  <text x="140" y="180" fill="#17325f" font-family="Arial, sans-serif" font-size="62" font-weight="700">Bicicleta gravel</text>
+  <text x="140" y="240" fill="#4f6893" font-family="Arial, sans-serif" font-size="32">Aluminio · rodado 28</text>
+</svg>

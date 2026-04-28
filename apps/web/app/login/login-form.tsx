@@ -89,7 +89,7 @@ export function LoginForm() {
       ) : null}
 
       <button
-        className="mt-6 w-full rounded-full bg-[var(--brand)] px-5 py-3.5 font-semibold text-white transition hover:bg-[var(--brand-strong)] disabled:cursor-not-allowed disabled:opacity-70"
+        className="button-primary mt-6 w-full disabled:cursor-not-allowed disabled:opacity-70"
         disabled={isPending}
         type="submit"
       >

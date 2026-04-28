@@ -171,19 +171,19 @@ export default function Home() {
             <div className="flex flex-wrap gap-3">
               <Link
                 href="/market"
-                className="rounded-full bg-[var(--brand)] px-6 py-3.5 font-semibold text-white shadow-[0_14px_40px_rgba(18,107,255,0.25)] transition hover:bg-[var(--brand-strong)]"
+                className="button-primary shadow-[0_14px_40px_rgba(8,34,71,0.18)]"
               >
                 Ver producto funcionando
               </Link>
               <Link
                 href="/signup"
-                className="rounded-full border border-[var(--surface-border)] bg-white/85 px-6 py-3.5 font-semibold text-[var(--foreground)] backdrop-blur"
+                className="button-primary"
               >
                 Crear cuenta
               </Link>
               <Link
                 href="/login"
-                className="rounded-full border border-[var(--surface-border)] bg-white/85 px-6 py-3.5 font-semibold text-[var(--foreground)] backdrop-blur"
+                className="button-secondary"
               >
                 Ingresar
               </Link>
@@ -289,47 +289,6 @@ export default function Home() {
               </article>
             ))}
           </div>
-        </div>
-      </section>
-
-      <section
-        id="solucion"
-        className="mx-auto grid w-full max-w-7xl gap-6 px-6 py-8 sm:px-10 lg:grid-cols-[0.94fr_1.06fr] lg:px-12"
-      >
-        <div className="rounded-[2rem] border border-[var(--surface-border)] bg-[var(--navy)] p-8 text-white shadow-[0_24px_80px_rgba(8,34,71,0.18)]">
-          <p className="text-sm uppercase tracking-[0.35em] text-white/55">La solución</p>
-          <h2
-            className="mt-4 text-4xl font-semibold leading-tight"
-            style={{ fontFamily: "var(--font-display)" }}
-          >
-            Construimos infraestructura de confianza para bienes de alto valor.
-          </h2>
-          <p className="mt-4 text-base leading-7 text-white/72">
-            La tesis es simple: cuando identidad, pago, coordinación y cobertura
-            están dentro del mismo flujo, sube la probabilidad de cierre y baja
-            el costo psicológico de la operación.
-          </p>
-          <div className="mt-8 rounded-[1.5rem] border border-white/10 bg-white/5 p-5">
-            <p className="text-sm text-white/55">Qué defendemos</p>
-            <p className="mt-2 text-lg font-medium">
-              Confianza verificable, no solo reputación declarada.
-            </p>
-          </div>
-        </div>
-
-        <div className="grid gap-4">
-          {trustStack.map((pillar) => (
-            <article
-              key={pillar.title}
-              className="rounded-[1.5rem] border border-[var(--surface-border)] bg-white/82 p-6 shadow-[0_14px_40px_rgba(8,34,71,0.04)]"
-            >
-              <p className="text-xs uppercase tracking-[0.28em] text-[var(--accent)]">
-                {pillar.eyebrow}
-              </p>
-              <h3 className="mt-3 text-2xl font-semibold text-[var(--navy)]">{pillar.title}</h3>
-              <p className="mt-3 text-sm leading-6 text-[var(--muted)]">{pillar.description}</p>
-            </article>
-          ))}
         </div>
       </section>
 

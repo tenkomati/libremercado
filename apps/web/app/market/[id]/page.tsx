@@ -3,10 +3,18 @@ import { cookies } from "next/headers";
 
 import { apiFetch } from "../../../lib/api";
 import { AUTH_COOKIE_NAME, verifySessionToken } from "../../../lib/auth";
-import { formatCurrency, formatDate } from "../../../lib/format";
+import { formatCurrency } from "../../../lib/format";
+import { INTERNAL_API_URL } from "../../../lib/internal-api-url";
 import { getPlatformSettings, calculateSellerNetAmount } from "../../../lib/platform-settings";
+import { formatPublicUserCode } from "../../../lib/public-ids";
+import {
+  getKycStatusLabel,
+  getListingConditionLabel,
+  getListingStatusLabel
+} from "../../../lib/status-labels";
 import { getProtectedPurchaseSummary } from "../../../lib/protected-purchase-terms";
 import { ProtectedPurchaseTerms } from "../../components/protected-purchase-terms";
+import { ReputationStars } from "../../components/reputation-stars";
 import { SafeOperationGuides } from "../../components/safe-operation-guides";
 
 import { createProtectedPurchaseAction } from "./actions";
@@ -39,10 +47,7 @@ type ListingDetail = {
   locationProvince: string;
   seller: {
     id: string;
-    firstName: string;
-    lastName: string;
-    city: string;
-    province: string;
+    publicSerial: number;
     kycStatus: string;
     reputationScore: string;
   };
@@ -74,7 +79,7 @@ async function getSession() {
 
 async function getInsuranceQuote(listingId: string, token: string) {
   const response = await fetch(
-    `${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001"}/insurance/get-quote`,
+    `${INTERNAL_API_URL}/insurance/get-quote`,
     {
       method: "POST",
       cache: "no-store",
@@ -134,13 +139,13 @@ export default async function ListingDetailPage({
       <div className="flex flex-wrap items-center gap-3">
         <Link
           href="/market"
-          className="rounded-full border border-[var(--surface-border)] bg-white px-4 py-2 text-sm font-semibold"
+          className="button-secondary px-4 py-2 text-sm"
         >
           Volver al market
         </Link>
         <Link
           href="/signup"
-          className="rounded-full border border-[var(--surface-border)] bg-white px-4 py-2 text-sm font-semibold"
+          className="button-primary px-4 py-2 text-sm"
         >
           Crear cuenta
         </Link>
@@ -190,10 +195,10 @@ export default async function ListingDetailPage({
           <section className="rounded-[2rem] border border-[var(--surface-border)] bg-white/88 p-7 shadow-[0_20px_70px_rgba(8,34,71,0.07)]">
             <div className="flex flex-wrap gap-2">
               <span className="rounded-full bg-[var(--brand-soft)] px-3 py-1 text-xs font-semibold text-[var(--brand-strong)]">
-                {listing.status}
+                {getListingStatusLabel(listing.status)}
               </span>
               <span className="rounded-full bg-[#f5f9ff] px-3 py-1 text-xs font-semibold text-[var(--navy)]">
-                {listing.condition}
+                {getListingConditionLabel(listing.condition)}
               </span>
             </div>
 
@@ -252,13 +257,13 @@ export default async function ListingDetailPage({
             {!session ? (
               <div className="mt-7 grid gap-3 sm:grid-cols-2">
                 <Link
-                  className="rounded-full bg-[var(--brand)] px-5 py-4 text-center font-semibold text-white"
+                  className="button-primary text-center"
                   href={`/login?next=/market/${listing.id}`}
                 >
                   Iniciar sesión para comprar
                 </Link>
                 <Link
-                  className="rounded-full border border-[var(--surface-border)] bg-white px-5 py-4 text-center font-semibold text-[var(--navy)]"
+                  className="button-primary text-center"
                   href={`/signup?next=/market/${listing.id}`}
                 >
                   Crear cuenta
@@ -283,27 +288,29 @@ export default async function ListingDetailPage({
 
           <section className="rounded-[2rem] border border-[var(--surface-border)] bg-[linear-gradient(180deg,#f8fbff,#eaf2ff)] p-6">
             <h2 className="text-xl font-semibold text-[var(--navy)]">
-              Vendedor verificado
+              Datos protegidos del vendedor
             </h2>
             <div className="mt-4 rounded-[1.5rem] bg-white p-5">
-              <p className="text-lg font-semibold text-[var(--navy)]">
-                {listing.seller.firstName} {listing.seller.lastName}
-              </p>
-              <p className="mt-1 text-sm text-[var(--muted)]">
-                {listing.seller.city}, {listing.seller.province}
-              </p>
               <div className="mt-4 grid gap-2 text-sm text-[var(--navy)]">
                 <div className="flex justify-between">
+                  <span>ID vendedor</span>
+                  <strong>{formatPublicUserCode(listing.seller.publicSerial)}</strong>
+                </div>
+                <div className="flex justify-between">
                   <span>Identidad</span>
-                  <strong>{listing.seller.kycStatus}</strong>
+                  <strong>{getKycStatusLabel(listing.seller.kycStatus)}</strong>
                 </div>
                 <div className="flex justify-between">
+                  <span>Condición</span>
+                  <strong>{getListingConditionLabel(listing.condition)}</strong>
+                </div>
+                <div className="flex items-center justify-between gap-3">
                   <span>Reputación</span>
-                  <strong>{listing.seller.reputationScore}</strong>
-                </div>
-                <div className="flex justify-between">
-                  <span>Publicado</span>
-                  <strong>{formatDate(listing.publishedAt)}</strong>
+                  <ReputationStars
+                    score={listing.seller.reputationScore}
+                    sizeClassName="text-sm"
+                    textClassName="text-xs text-[var(--muted)]"
+                  />
                 </div>
               </div>
             </div>

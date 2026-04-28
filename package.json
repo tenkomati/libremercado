@@ -10,6 +10,11 @@
   "scripts": {
     "dev": "npm run dev:stop && concurrently --kill-others-on-fail --names web,api --prefix-colors blue,green \"npm run dev:web\" \"npm run dev:api\"",
     "dev:stop": "sh scripts/stop-dev-ports.sh",
+    "docker:up": "docker compose up --build -d",
+    "docker:down": "docker compose down",
+    "docker:reset": "docker compose down -v",
+    "docker:seed": "docker compose --profile tools run --rm seed",
+    "docker:logs": "docker compose logs -f web api",
     "dev:web": "npm run dev --workspace @libremercado/web",
     "dev:api": "npm run start:dev --workspace @libremercado/api",
     "build": "npm run build --workspaces --if-present",

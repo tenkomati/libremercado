@@ -10,3 +10,4 @@ npm-debug.log*
 *.tsbuildinfo
 apps/web/public/uploads/*
 !apps/web/public/uploads/.gitkeep
+cloudrun/*.local.env.yaml

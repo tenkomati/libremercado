@@ -5,8 +5,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 
 import { AUTH_COOKIE_NAME, verifySessionToken } from "../../lib/auth";
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
+import { INTERNAL_API_URL } from "../../lib/internal-api-url";
 
 async function getSessionToken() {
   const token = (await cookies()).get(AUTH_COOKIE_NAME)?.value;
@@ -53,7 +52,7 @@ export async function createListingAction(formData: FormData) {
   const returnTo = "/account/listings/new";
   const imageUrl = String(formData.get("imageUrl") ?? "").trim();
 
-  const response = await fetch(`${API_URL}/listings`, {
+  const response = await fetch(`${INTERNAL_API_URL}/listings`, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${token}`,
@@ -89,7 +88,7 @@ export async function updateProfileAction(formData: FormData) {
   const { token, session } = await getSessionToken();
   const returnTo = "/account";
 
-  const response = await fetch(`${API_URL}/users/${session.sub}/profile`, {
+  const response = await fetch(`${INTERNAL_API_URL}/users/${session.sub}/profile`, {
     method: "PATCH",
     headers: {
       Authorization: `Bearer ${token}`,
@@ -123,7 +122,7 @@ export async function changePasswordAction(formData: FormData) {
     redirectWithMessage(returnTo, "error", "La nueva contraseña y la confirmación no coinciden.");
   }
 
-  const response = await fetch(`${API_URL}/users/${session.sub}/password`, {
+  const response = await fetch(`${INTERNAL_API_URL}/users/${session.sub}/password`, {
     method: "PATCH",
     headers: {
       Authorization: `Bearer ${token}`,
@@ -153,7 +152,7 @@ export async function createKycVerificationAction(formData: FormData) {
   const biometricConsentAt = String(formData.get("biometricConsentAt") ?? "").trim();
   const reviewerNotes = String(formData.get("reviewerNotes") ?? "").trim();
 
-  const response = await fetch(`${API_URL}/kyc/verifications`, {
+  const response = await fetch(`${INTERNAL_API_URL}/kyc/verifications`, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${token}`,
@@ -188,7 +187,7 @@ export async function updateOwnListingAction(formData: FormData) {
   const returnTo = `/account/listings/${listingId}`;
   const imageUrl = String(formData.get("imageUrl") ?? "").trim();
 
-  const response = await fetch(`${API_URL}/listings/${listingId}`, {
+  const response = await fetch(`${INTERNAL_API_URL}/listings/${listingId}`, {
     method: "PATCH",
     headers: {
       Authorization: `Bearer ${token}`,
@@ -224,7 +223,7 @@ export async function updateOwnListingStatusAction(formData: FormData) {
   const status = String(formData.get("status"));
   const returnTo = `/account/listings/${listingId}`;
 
-  const response = await fetch(`${API_URL}/listings/${listingId}`, {
+  const response = await fetch(`${INTERNAL_API_URL}/listings/${listingId}`, {
     method: "PATCH",
     headers: {
       Authorization: `Bearer ${token}`,
@@ -249,7 +248,7 @@ export async function createMeetingProposalAction(formData: FormData) {
   const escrowId = String(formData.get("escrowId"));
   const returnTo = "/account";
 
-  const response = await fetch(`${API_URL}/escrows/${escrowId}/meeting-proposals`, {
+  const response = await fetch(`${INTERNAL_API_URL}/escrows/${escrowId}/meeting-proposals`, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${token}`,
@@ -282,7 +281,7 @@ export async function respondMeetingProposalAction(formData: FormData) {
   const returnTo = "/account";
 
   const response = await fetch(
-    `${API_URL}/escrows/${escrowId}/meeting-proposals/${proposalId}/respond`,
+    `${INTERNAL_API_URL}/escrows/${escrowId}/meeting-proposals/${proposalId}/respond`,
     {
       method: "PATCH",
       headers: {
@@ -314,7 +313,7 @@ export async function createAvailabilitySlotAction(formData: FormData) {
   const escrowId = String(formData.get("escrowId"));
   const returnTo = "/account";
 
-  const response = await fetch(`${API_URL}/escrows/${escrowId}/availability-slots`, {
+  const response = await fetch(`${INTERNAL_API_URL}/escrows/${escrowId}/availability-slots`, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${token}`,
@@ -342,7 +341,7 @@ export async function selectAvailabilitySlotAction(formData: FormData) {
   const returnTo = "/account";
 
   const response = await fetch(
-    `${API_URL}/escrows/${escrowId}/availability-slots/${slotId}/select`,
+    `${INTERNAL_API_URL}/escrows/${escrowId}/availability-slots/${slotId}/select`,
     {
       method: "PATCH",
       headers: {
@@ -369,7 +368,7 @@ export async function sendEscrowMessageAction(formData: FormData) {
   const escrowId = String(formData.get("escrowId"));
   const returnTo = "/account";
 
-  const response = await fetch(`${API_URL}/escrows/${escrowId}/messages`, {
+  const response = await fetch(`${INTERNAL_API_URL}/escrows/${escrowId}/messages`, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${token}`,
@@ -395,7 +394,7 @@ export async function markEscrowShippedAction(formData: FormData) {
   const trackingCode = String(formData.get("trackingCode") ?? "").trim();
   const returnTo = "/account";
 
-  const response = await fetch(`${API_URL}/escrows/${escrowId}/ship`, {
+  const response = await fetch(`${INTERNAL_API_URL}/escrows/${escrowId}/ship`, {
     method: "PATCH",
     headers: {
       Authorization: `Bearer ${token}`,
@@ -420,7 +419,7 @@ export async function confirmEscrowDeliveryAction(formData: FormData) {
   const escrowId = String(formData.get("escrowId"));
   const returnTo = "/account";
 
-  const response = await fetch(`${API_URL}/escrows/${escrowId}/confirm-delivery`, {
+  const response = await fetch(`${INTERNAL_API_URL}/escrows/${escrowId}/confirm-delivery`, {
     method: "PATCH",
     headers: {
       Authorization: `Bearer ${token}`,
@@ -442,7 +441,7 @@ export async function openEscrowDisputeAction(formData: FormData) {
   const escrowId = String(formData.get("escrowId"));
   const returnTo = "/account";
 
-  const response = await fetch(`${API_URL}/escrows/${escrowId}/dispute`, {
+  const response = await fetch(`${INTERNAL_API_URL}/escrows/${escrowId}/dispute`, {
     method: "PATCH",
     headers: {
       Authorization: `Bearer ${token}`,
@@ -467,7 +466,7 @@ export async function submitInsuranceClaimAction(formData: FormData) {
   const policyId = String(formData.get("policyId"));
   const returnTo = "/account";
 
-  const response = await fetch(`${API_URL}/insurance/policies/${policyId}/claim`, {
+  const response = await fetch(`${INTERNAL_API_URL}/insurance/policies/${policyId}/claim`, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${token}`,
@@ -495,7 +494,7 @@ export async function createDeliveryProposalAction(formData: FormData) {
   const escrowId = String(formData.get("escrowId"));
   const returnTo = "/account";
 
-  const response = await fetch(`${API_URL}/escrows/${escrowId}/delivery-proposals`, {
+  const response = await fetch(`${INTERNAL_API_URL}/escrows/${escrowId}/delivery-proposals`, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${token}`,
@@ -524,7 +523,7 @@ export async function respondDeliveryProposalAction(formData: FormData) {
   const returnTo = "/account";
 
   const response = await fetch(
-    `${API_URL}/escrows/${escrowId}/delivery-proposals/${proposalId}/respond`,
+    `${INTERNAL_API_URL}/escrows/${escrowId}/delivery-proposals/${proposalId}/respond`,
     {
       method: "PATCH",
       headers: {

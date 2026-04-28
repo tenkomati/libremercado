@@ -5,17 +5,18 @@ PROJECT_ID="${PROJECT_ID:?Set PROJECT_ID}"
 REGION="${REGION:-southamerica-east1}"
 SERVICE_NAME="${WEB_SERVICE_NAME:-libremercado-web}"
 REPOSITORY="${ARTIFACT_REPOSITORY:-libremercado}"
-IMAGE="us-docker.pkg.dev/${PROJECT_ID}/${REPOSITORY}/${SERVICE_NAME}"
+ARTIFACT_REGION="${ARTIFACT_REGION:-southamerica-east1}"
+IMAGE="${ARTIFACT_REGION}-docker.pkg.dev/${PROJECT_ID}/${REPOSITORY}/${SERVICE_NAME}"
 ENV_FILE="${WEB_ENV_FILE:-cloudrun/web.mock.env.yaml}"
 
 echo "Validating Web env file: ${ENV_FILE}"
-node scripts/cloudrun/validate-mock-env.mjs web
+node scripts/cloudrun/validate-mock-env.mjs web --file "${ENV_FILE}"
 
 echo "Building Web image: ${IMAGE}"
 gcloud builds submit \
   --project "${PROJECT_ID}" \
-  --tag "${IMAGE}" \
-  --file apps/web/Dockerfile \
+  --config cloudbuild.web.yaml \
+  --substitutions "_IMAGE=${IMAGE}" \
   .
 
 echo "Deploying Web service: ${SERVICE_NAME}"

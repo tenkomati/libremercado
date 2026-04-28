@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 900">
+  <rect width="1200" height="900" fill="#eef5ff"/>
+  <rect x="500" y="100" width="200" height="700" rx="80" fill="#253a5d"/>
+  <circle cx="600" cy="450" r="180" fill="#0f274d"/>
+  <circle cx="600" cy="450" r="132" fill="#dce8ff"/>
+  <circle cx="600" cy="450" r="108" fill="#17325f"/>
+  <path d="M600 360 L650 450 L600 520 L550 450 Z" fill="#8cb4ff"/>
+  <text x="130" y="190" fill="#17325f" font-family="Arial, sans-serif" font-size="62" font-weight="700">Garmin Fenix 7</text>
+  <text x="130" y="250" fill="#4f6893" font-family="Arial, sans-serif" font-size="32">Sapphire Solar · multideporte</text>
+</svg>

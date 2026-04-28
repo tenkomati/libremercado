@@ -5,9 +5,24 @@ import { redirect } from "next/navigation";
 import { apiFetchWithToken } from "../../lib/api";
 import { AUTH_COOKIE_NAME, verifySessionToken } from "../../lib/auth";
 import { formatCurrency, formatDate, formatDateTime } from "../../lib/format";
+import { formatPublicOrderNumber, formatPublicUserCode } from "../../lib/public-ids";
+import {
+  getAvailabilitySlotStatusLabel,
+  getEscrowPaymentStatusLabel,
+  getEscrowShippingStatusLabel,
+  getDeliveryProposalStatusLabel,
+  getInsuranceClaimStatusLabel,
+  getInsurancePolicyStatusLabel,
+  getKycStatusLabel,
+  getListingConditionLabel,
+  getListingStatusLabel,
+  getMeetingProposalStatusLabel,
+  getUserStatusLabel
+} from "../../lib/status-labels";
 
 import { LogoutButton } from "../admin/logout-button";
 import { ProtectedPurchaseTerms } from "../components/protected-purchase-terms";
+import { ReputationStars } from "../components/reputation-stars";
 import { SafeOperationGuides } from "../components/safe-operation-guides";
 
 import { AvailabilitySlotForm } from "./availability-slot-form";
@@ -111,6 +126,15 @@ type EscrowEvent = {
   createdAt: string;
 };
 
+type OrderHistoryEntry = {
+  id: string;
+  scope: "PAYMENT" | "SHIPPING";
+  fromStatus: string | null;
+  toStatus: string;
+  note: string | null;
+  createdAt: string;
+};
+
 type InsurancePolicy = {
   id: string;
   status: string;
@@ -174,11 +198,14 @@ type AccountUser = {
   }>;
   buyerEscrows: Array<{
     id: string;
+    publicSerial: number;
     amount: string;
     feePercentage: string;
     feeAmount: string;
     netAmount: string;
     currency: "ARS" | "USD";
+    paymentStatus: string;
+    shippingStatus: string | null;
     status: string;
     isInsured: boolean;
     insuranceFee: string;
@@ -187,21 +214,25 @@ type AccountUser = {
     disputeReason: string | null;
     createdAt: string;
     listing: { id: string; title: string };
-    seller: { id: string; firstName: string; lastName: string };
+    seller: { id: string; publicSerial: number; kycStatus: string };
     meetingProposals: MeetingProposal[];
     deliveryProposals: DeliveryProposal[];
     availabilitySlots: AvailabilitySlot[];
     messages: EscrowMessage[];
     events: EscrowEvent[];
+    orderHistory: OrderHistoryEntry[];
     insurancePolicy: InsurancePolicy | null;
   }>;
   sellerEscrows: Array<{
     id: string;
+    publicSerial: number;
     amount: string;
     feePercentage: string;
     feeAmount: string;
     netAmount: string;
     currency: "ARS" | "USD";
+    paymentStatus: string;
+    shippingStatus: string | null;
     status: string;
     isInsured: boolean;
     insuranceFee: string;
@@ -210,12 +241,13 @@ type AccountUser = {
     disputeReason: string | null;
     createdAt: string;
     listing: { id: string; title: string };
-    buyer: { id: string; firstName: string; lastName: string };
+    buyer: { id: string; publicSerial: number; kycStatus: string };
     meetingProposals: MeetingProposal[];
     deliveryProposals: DeliveryProposal[];
     availabilitySlots: AvailabilitySlot[];
     messages: EscrowMessage[];
     events: EscrowEvent[];
+    orderHistory: OrderHistoryEntry[];
     insurancePolicy: InsurancePolicy | null;
   }>;
   kycVerifications: Array<{
@@ -244,8 +276,12 @@ async function getAccount() {
     redirect("/login?next=/account");
   }
 
-  const user = await apiFetchWithToken<AccountUser>(`/users/${session.sub}`, token);
-  return { token, user };
+  try {
+    const user = await apiFetchWithToken<AccountUser>(`/users/${session.sub}`, token);
+    return { token, user };
+  } catch {
+    redirect("/login?next=/account");
+  }
 }
 
 async function getMeetingSuggestions(token: string, escrowId: string) {
@@ -269,49 +305,39 @@ function StatusPill({ label }: { label: string }) {
 }
 
 function getPaymentStatusLabel(status: string) {
-  const labels: Record<string, string> = {
-    CANCELLED: "Pago cancelado",
-    DELIVERED: "Pago recibido",
-    DISPUTED: "Pago retenido",
-    FUNDS_HELD: "Pago recibido",
-    FUNDS_PENDING: "Pago pendiente",
-    REFUNDED: "Pago reembolsado",
-    RELEASED: "Pago liberado",
-    SHIPPED: "Pago recibido"
-  };
-
-  return labels[status] ?? status;
+  return getEscrowPaymentStatusLabel(status);
 }
 
-function getShippingStatusLabel(status: string) {
-  const labels: Record<string, string> = {
-    CANCELLED: "Envío cancelado",
-    DELIVERED: "Entregado",
-    DISPUTED: "Entrega en revisión",
-    FUNDS_HELD: "Pendiente de envío",
-    FUNDS_PENDING: "Pendiente de pago",
-    REFUNDED: "Sin envío activo",
-    RELEASED: "Entregado",
-    SHIPPED: "En camino"
-  };
+function getShippingStatusLabel(status: string | null, paymentStatus?: string) {
+  if (!status) {
+    return paymentStatus === "PAYMENT_PENDING" ? "Pendiente de pago" : "A definir";
+  }
 
-  return labels[status] ?? status;
+  return getEscrowShippingStatusLabel(status);
 }
 
-function getDeliveryTypeLabel(status: string) {
-  if (status === "FUNDS_HELD") {
-    return "A coordinar";
+function getDeliveryTypeLabel(
+  shippingStatus: string | null,
+  shippingProvider: string | null,
+  acceptedMethod?: DeliveryProposal["method"]
+) {
+  if (acceptedMethod) {
+    return getDeliveryMethodLabel(acceptedMethod);
   }
 
-  if (status === "SHIPPED" || status === "DELIVERED" || status === "RELEASED") {
-    return "Mensajería / correo";
+  if (
+    shippingStatus === "WAITING_MEETING" ||
+    shippingStatus === "AT_MEETING_POINT" ||
+    shippingStatus === "QR_CONFIRMED"
+  ) {
+    return "Encuentro seguro";
   }
 
-  if (status === "DISPUTED") {
-    return "En revisión";
+  if (shippingProvider?.trim()) {
+    return "Correo / operador logístico";
   }
 
-  return "Pendiente";
+  return "A coordinar";
 }
 
 function getDeliveryMethodLabel(method: DeliveryProposal["method"]) {
@@ -348,8 +374,71 @@ function getOpenSlots(slots: AvailabilitySlot[]) {
   return slots.filter((slot) => slot.status === "OPEN");
 }
 
-function canOpenDispute(status: string) {
-  return ["FUNDS_HELD", "SHIPPED", "DELIVERED"].includes(status);
+function canOpenDispute(paymentStatus: string, shippingStatus: string | null) {
+  if (paymentStatus === "DISPUTED") {
+    return false;
+  }
+
+  if (paymentStatus !== "PAYMENT_RECEIVED") {
+    return false;
+  }
+
+  return shippingStatus !== null;
+}
+
+function getRelevantOrderHistory(entries: OrderHistoryEntry[], scope: OrderHistoryEntry["scope"]) {
+  return entries.filter((entry) => entry.scope === scope);
+}
+
+function getReviewEventLabel(type: string) {
+  const labels: Record<string, string> = {
+    DISPUTED: "En disputa",
+    RELEASED: "Pago liberado",
+    REFUNDED: "Pago reembolsado",
+    CANCELLED: "Pago cancelado"
+  };
+
+  return labels[type] ?? type;
+}
+
+function OrderHistoryPanel({
+  entries,
+  title
+}: {
+  entries: OrderHistoryEntry[];
+  title: string;
+}) {
+  if (entries.length === 0) {
+    return null;
+  }
+
+  return (
+    <div className="mt-4 rounded-2xl border border-[rgba(18,107,255,0.12)] bg-[#f8fbff] p-4">
+      <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--brand-strong)]">
+        {title}
+      </p>
+      <div className="mt-3 grid gap-2">
+        {entries.map((entry) => {
+          const nextLabel =
+            entry.scope === "PAYMENT"
+              ? getEscrowPaymentStatusLabel(entry.toStatus)
+              : getEscrowShippingStatusLabel(entry.toStatus);
+
+          return (
+            <article className="rounded-2xl bg-white p-3 text-sm" key={entry.id}>
+              <p className="font-semibold text-[var(--navy)]">{nextLabel}</p>
+              <p className="mt-1 text-xs text-[var(--muted)]">
+                {formatDateTime(entry.createdAt)}
+              </p>
+              {entry.note ? (
+                <p className="mt-2 text-xs leading-5 text-[var(--muted)]">{entry.note}</p>
+              ) : null}
+            </article>
+          );
+        })}
+      </div>
+    </div>
+  );
 }
 
 function InsuranceClaimPanel({
@@ -379,7 +468,7 @@ function InsuranceClaimPanel({
       {claimOpen ? (
         <div className="mt-4 rounded-2xl border border-[rgba(220,38,38,0.12)] bg-[#fff1f2] p-4 text-sm text-[#9f1239]">
           <p className="font-semibold">
-            Reclamo {claim?.status ?? "OPEN"} · {claim?.reason ?? "Motivo no informado"}
+            Reclamo {getInsuranceClaimStatusLabel(claim?.status ?? "OPEN")} · {claim?.reason ?? "Motivo no informado"}
           </p>
           <p className="mt-1">{claim?.details ?? "Sin detalle adicional."}</p>
           {claim?.evidenceUrls?.length ? (
@@ -550,7 +639,7 @@ function MeetingPlanner({
                         : ""}
                     </p>
                   </div>
-                  <StatusPill label={slot.status} />
+                  <StatusPill label={getAvailabilitySlotStatusLabel(slot.status)} />
                 </div>
                 {role === "buyer" && slot.status === "OPEN" ? (
                   <form action={selectAvailabilitySlotAction} className="mt-3 flex flex-wrap gap-2">
@@ -602,7 +691,7 @@ function MeetingPlanner({
                       {proposal.createdBy.firstName} {proposal.createdBy.lastName}
                     </p>
                   </div>
-                  <StatusPill label={proposal.status} />
+                  <StatusPill label={getMeetingProposalStatusLabel(proposal.status)} />
                 </div>
 
                 {canRespond ? (
@@ -724,8 +813,16 @@ function MessagesPanel({
   );
 }
 
-function DisputePanel({ escrowId, status }: { escrowId: string; status: string }) {
-  if (!canOpenDispute(status)) {
+function DisputePanel({
+  escrowId,
+  paymentStatus,
+  shippingStatus
+}: {
+  escrowId: string;
+  paymentStatus: string;
+  shippingStatus: string | null;
+}) {
+  if (!canOpenDispute(paymentStatus, shippingStatus)) {
     return null;
   }
 
@@ -757,24 +854,24 @@ function DisputePanel({ escrowId, status }: { escrowId: string; status: string }
 function DisputeStatusPanel({
   disputeReason,
   events,
-  status
+  paymentStatus
 }: {
   disputeReason: string | null;
   events: EscrowEvent[];
-  status: string;
+  paymentStatus: string;
 }) {
   const relevantEvents = events.filter((event) =>
     ["DISPUTED", "RELEASED", "REFUNDED", "CANCELLED"].includes(event.type)
   );
 
-  if (status !== "DISPUTED" && !disputeReason && relevantEvents.length === 0) {
+  if (paymentStatus !== "DISPUTED" && !disputeReason && relevantEvents.length === 0) {
     return null;
   }
 
   const title =
-    status === "DISPUTED"
+    paymentStatus === "DISPUTED"
       ? "Operación en revisión"
-      : status === "RELEASED" || status === "REFUNDED"
+      : paymentStatus === "PAYMENT_RELEASED" || paymentStatus === "PAYMENT_REFUNDED"
         ? "Disputa resuelta"
         : "Historial de revisión";
 
@@ -786,7 +883,7 @@ function DisputeStatusPanel({
       {disputeReason ? (
         <p className="mt-3 text-sm leading-6 text-[#7f1d1d]">{disputeReason}</p>
       ) : null}
-      {status === "DISPUTED" ? (
+      {paymentStatus === "DISPUTED" ? (
         <p className="mt-2 text-xs leading-5 text-[var(--muted)]">
           Soporte está revisando mensajes, evidencia y trazabilidad. Los fondos quedan retenidos
           hasta resolución.
@@ -796,7 +893,7 @@ function DisputeStatusPanel({
         <div className="mt-3 grid gap-2">
           {relevantEvents.map((event) => (
             <article className="rounded-2xl bg-white p-3 text-xs" key={event.id}>
-              <p className="font-semibold text-[var(--navy)]">{event.type}</p>
+              <p className="font-semibold text-[var(--navy)]">{getReviewEventLabel(event.type)}</p>
               <p className="mt-1 text-[var(--muted)]">{formatDateTime(event.createdAt)}</p>
               {event.payload ? (
                 <p className="mt-2 leading-5 text-[var(--muted)]">
@@ -817,25 +914,43 @@ function DisputeStatusPanel({
 
 function BuyerDeliveryActions({
   escrowId,
-  status
+  paymentStatus,
+  shippingStatus
 }: {
   escrowId: string;
-  status: string;
+  paymentStatus: string;
+  shippingStatus: string | null;
 }) {
-  if (status !== "SHIPPED") {
+  if (paymentStatus !== "PAYMENT_RECEIVED" || !shippingStatus) {
+    return null;
+  }
+
+  const isMeetingFlow =
+    shippingStatus === "WAITING_MEETING" || shippingStatus === "AT_MEETING_POINT";
+
+  const canConfirm =
+    shippingStatus === "IN_TRANSIT" ||
+    shippingStatus === "READY_FOR_PICKUP" ||
+    shippingStatus === "WAITING_MEETING" ||
+    shippingStatus === "AT_MEETING_POINT";
+
+  if (!canConfirm) {
     return null;
   }
 
   return (
     <form action={confirmEscrowDeliveryAction} className="mt-4 rounded-2xl border border-[rgba(5,150,105,0.18)] bg-[#f0fdf4] p-4">
       <input name="escrowId" type="hidden" value={escrowId} />
-      <p className="text-sm font-semibold text-[#065f46]">¿Ya recibiste el producto?</p>
+      <p className="text-sm font-semibold text-[#065f46]">
+        {isMeetingFlow ? "¿Ya verificaste el producto en el punto de encuentro?" : "¿Ya recibiste el producto?"}
+      </p>
       <p className="mt-1 text-xs leading-5 text-[#047857]">
-        Confirmá solo si el producto fue entregado. Los fondos quedarán listos
-        para liberación operativa.
+        {isMeetingFlow
+          ? "Confirmá solo después de revisar el producto. Esta acción deja la entrega confirmada y libera el pago."
+          : "Confirmá solo si el producto fue entregado. Después corre el plazo operativo antes de liberar el pago."}
       </p>
       <button className="mt-3 rounded-full bg-[#059669] px-4 py-2 text-xs font-semibold text-white" type="submit">
-        Confirmar entrega
+        {isMeetingFlow ? "Confirmar por QR / entrega presencial" : "Confirmar entrega"}
       </button>
     </form>
   );
@@ -843,30 +958,44 @@ function BuyerDeliveryActions({
 
 function SellerShippingActions({
   escrowId,
-  status
+  paymentStatus,
+  shippingStatus
 }: {
   escrowId: string;
-  status: string;
+  paymentStatus: string;
+  shippingStatus: string | null;
 }) {
-  if (status !== "FUNDS_HELD") {
+  if (paymentStatus !== "PAYMENT_RECEIVED") {
     return null;
   }
+
+  const canStartDelivery =
+    shippingStatus === "WAITING_DISPATCH" || shippingStatus === "WAITING_MEETING";
+
+  if (!canStartDelivery) {
+    return null;
+  }
+
+  const isMeetingFlow = shippingStatus === "WAITING_MEETING";
 
   return (
     <form action={markEscrowShippedAction} className="mt-4 rounded-2xl border border-[rgba(18,107,255,0.14)] bg-[#f8fbff] p-4">
       <input name="escrowId" type="hidden" value={escrowId} />
-      <p className="text-sm font-semibold text-[var(--navy)]">Marcar entrega en camino</p>
+      <p className="text-sm font-semibold text-[var(--navy)]">
+        {isMeetingFlow ? "Marcar llegada al punto de encuentro" : "Marcar despacho / envío en curso"}
+      </p>
       <p className="mt-1 text-xs leading-5 text-[var(--muted)]">
-        Usalo cuando ya despachaste por correo/mensajería o cuando la entrega
-        presencial quedó efectivamente iniciada.
+        {isMeetingFlow
+          ? "Usalo cuando ya llegaste al punto seguro y la operación está lista para verificarse presencialmente."
+          : "Usalo cuando el paquete ya fue entregado al correo o cuando la mensajería inició el traslado."}
       </p>
       <input
         className="mt-3 w-full rounded-full border border-[var(--surface-border)] bg-white px-3 py-2 text-xs"
         name="trackingCode"
-        placeholder="Código de seguimiento opcional"
+        placeholder={isMeetingFlow ? "Referencia opcional" : "Código de seguimiento opcional"}
       />
       <button className="mt-3 rounded-full bg-[var(--navy)] px-4 py-2 text-xs font-semibold text-white" type="submit">
-        Marcar como enviado
+        {isMeetingFlow ? "Marcar llegada" : "Marcar como enviado"}
       </button>
     </form>
   );
@@ -907,7 +1036,7 @@ function DeliveryProposalPanel({
                       {proposal.createdBy.firstName} {proposal.createdBy.lastName}
                     </p>
                   </div>
-                  <StatusPill label={proposal.status} />
+                  <StatusPill label={getDeliveryProposalStatusLabel(proposal.status)} />
                 </div>
 
                 {canRespond ? (
@@ -984,7 +1113,7 @@ export default async function AccountPage({ searchParams }: AccountPageProps) {
       error?: string;
     }>
   ]);
-  const activeMeetingStatuses = ["FUNDS_HELD", "SHIPPED", "DELIVERED"];
+  const activeMeetingStatuses = ["WAITING_MEETING", "AT_MEETING_POINT"];
   const pendingActions = [
     ...(user.kycStatus === "APPROVED"
       ? []
@@ -1022,11 +1151,19 @@ export default async function AccountPage({ searchParams }: AccountPageProps) {
         });
       }
 
-      if (escrow.status === "SHIPPED") {
+      if (
+        escrow.paymentStatus === "PAYMENT_RECEIVED" &&
+        ["IN_TRANSIT", "READY_FOR_PICKUP", "WAITING_MEETING", "AT_MEETING_POINT"].includes(
+          escrow.shippingStatus ?? ""
+        )
+      ) {
         actions.push({
           href: `#purchase-${escrow.id}`,
           label: `Confirmar entrega de ${escrow.listing.title}`,
-          detail: "El vendedor marcó el envío como en camino."
+          detail:
+            escrow.shippingStatus === "WAITING_MEETING" || escrow.shippingStatus === "AT_MEETING_POINT"
+              ? "La operación presencial está lista para verificarse."
+              : "El vendedor marcó el envío como en curso."
         });
       }
 
@@ -1036,7 +1173,7 @@ export default async function AccountPage({ searchParams }: AccountPageProps) {
       const actions = [];
 
       if (
-        activeMeetingStatuses.includes(escrow.status) &&
+        activeMeetingStatuses.includes(escrow.shippingStatus ?? "") &&
         getOpenSlots(escrow.availabilitySlots).length === 0
       ) {
         actions.push({
@@ -1046,7 +1183,10 @@ export default async function AccountPage({ searchParams }: AccountPageProps) {
         });
       }
 
-      if (escrow.status === "FUNDS_HELD") {
+      if (
+        escrow.paymentStatus === "PAYMENT_RECEIVED" &&
+        ["WAITING_DISPATCH", "WAITING_MEETING"].includes(escrow.shippingStatus ?? "")
+      ) {
         actions.push({
           href: `#sale-${escrow.id}`,
           label: `Marcar envío de ${escrow.listing.title}`,
@@ -1102,11 +1242,11 @@ export default async function AccountPage({ searchParams }: AccountPageProps) {
             </p>
           </div>
           <div className="flex flex-wrap gap-3">
-            <Link href="/market" className="rounded-full border border-white/15 bg-white/10 px-5 py-3 font-semibold">
+            <Link href="/market" className="button-secondary">
               Ver market
             </Link>
             <LogoutButton />
-            <Link href="/account/listings/new" className="rounded-full border border-white bg-white px-5 py-3 font-semibold text-[#082247] shadow-sm">
+            <Link href="/account/listings/new" className="button-primary">
               Publicar producto
             </Link>
           </div>
@@ -1137,9 +1277,9 @@ export default async function AccountPage({ searchParams }: AccountPageProps) {
               <p>{user.phone ?? "Sin teléfono cargado"}</p>
               <p>{user.city}, {user.province}</p>
               <div className="flex flex-wrap gap-2 pt-2">
-                <StatusPill label={user.status} />
-                <StatusPill label={`Identidad ${user.kycStatus}`} />
-                <StatusPill label={`score ${user.reputationScore}`} />
+                <StatusPill label={getUserStatusLabel(user.status)} />
+                <StatusPill label={`Identidad ${getKycStatusLabel(user.kycStatus)}`} />
+                <ReputationStars score={user.reputationScore} />
               </div>
             </div>
 
@@ -1301,6 +1441,10 @@ export default async function AccountPage({ searchParams }: AccountPageProps) {
               ) : null}
             </div>
           </div>
+
+          <div className="rounded-[1.75rem] border border-[var(--surface-border)] bg-white/85 p-6">
+            <ProtectedPurchaseTerms compact title="Compra protegida" />
+          </div>
         </aside>
 
         <div className="space-y-6">
@@ -1318,13 +1462,13 @@ export default async function AccountPage({ searchParams }: AccountPageProps) {
                 >
                   <div className="flex items-start justify-between gap-3">
                     <p className="font-semibold text-[var(--navy)]">{listing.title}</p>
-                    <StatusPill label={listing.status} />
+                    <StatusPill label={getListingStatusLabel(listing.status)} />
                   </div>
                   <p className="mt-3 text-xl font-semibold text-[var(--brand-strong)]">
                     {formatCurrency(listing.price, listing.currency)}
                   </p>
                   <p className="mt-2 text-xs text-[var(--muted)]">
-                    {listing.category} · {listing.condition} · {formatDate(listing.createdAt)}
+                    {listing.category} · {getListingConditionLabel(listing.condition)} · {formatDate(listing.createdAt)}
                   </p>
                 </Link>
               ))}
@@ -1339,6 +1483,8 @@ export default async function AccountPage({ searchParams }: AccountPageProps) {
             <div className="mt-5 grid gap-3">
               {user.buyerEscrows.map((escrow) => {
                 const acceptedDelivery = getAcceptedDeliveryProposal(escrow.deliveryProposals);
+                const showDeliveryMethodBlock = escrow.shippingStatus === "WAITING_DISPATCH";
+                const showMeetingPlanner = escrow.shippingStatus === "WAITING_MEETING";
 
                 return (
                 <details
@@ -1354,8 +1500,8 @@ export default async function AccountPage({ searchParams }: AccountPageProps) {
                       </p>
                     </div>
                     <div className="flex flex-wrap gap-2 text-right">
-                      <StatusPill label={getPaymentStatusLabel(escrow.status)} />
-                      <StatusPill label={getShippingStatusLabel(escrow.status)} />
+                      <StatusPill label={getPaymentStatusLabel(escrow.paymentStatus)} />
+                      <StatusPill label={getShippingStatusLabel(escrow.shippingStatus, escrow.paymentStatus)} />
                     </div>
                   </summary>
 
@@ -1370,12 +1516,16 @@ export default async function AccountPage({ searchParams }: AccountPageProps) {
                           {escrow.listing.title}
                         </p>
                         <p>
-                          <span className="font-semibold text-[var(--navy)]">ID vendedor:</span>{" "}
-                          {escrow.seller.id}
+                          <span className="font-semibold text-[var(--navy)]">Número de operación:</span>{" "}
+                          {formatPublicOrderNumber(escrow.publicSerial)}
                         </p>
                         <p>
-                          <span className="font-semibold text-[var(--navy)]">Vendedor:</span>{" "}
-                          {escrow.seller.firstName} {escrow.seller.lastName}
+                          <span className="font-semibold text-[var(--navy)]">ID vendedor:</span>{" "}
+                          {formatPublicUserCode(escrow.seller.publicSerial)}
+                        </p>
+                        <p>
+                          <span className="font-semibold text-[var(--navy)]">Identidad:</span>{" "}
+                          {getKycStatusLabel(escrow.seller.kycStatus)}
                         </p>
                         <p>
                           <span className="font-semibold text-[var(--navy)]">Precio:</span>{" "}
@@ -1395,7 +1545,7 @@ export default async function AccountPage({ searchParams }: AccountPageProps) {
                         </p>
                         <p>
                           <span className="font-semibold text-[var(--navy)]">Estado del pago:</span>{" "}
-                          {getPaymentStatusLabel(escrow.status)}
+                          {getPaymentStatusLabel(escrow.paymentStatus)}
                         </p>
                         <p>
                           <span className="font-semibold text-[var(--navy)]">Micro-seguro:</span>{" "}
@@ -1411,7 +1561,7 @@ export default async function AccountPage({ searchParams }: AccountPageProps) {
                       {escrow.insurancePolicy ? (
                         <div className="mt-4 rounded-2xl border border-[rgba(5,150,105,0.14)] bg-[#f0fdf4] p-4 text-sm text-[#065f46]">
                           <p className="font-semibold">
-                            Póliza {escrow.insurancePolicy.status} · {escrow.insurancePolicy.provider.name}
+                            Póliza {getInsurancePolicyStatusLabel(escrow.insurancePolicy.status)} · {escrow.insurancePolicy.provider.name}
                           </p>
                           <p className="mt-1">
                             Cobertura: {formatCurrency(escrow.insurancePolicy.coverageAmount, escrow.currency)}
@@ -1445,13 +1595,15 @@ export default async function AccountPage({ searchParams }: AccountPageProps) {
                           <div className="mt-3 grid gap-2 text-sm text-[var(--muted)]">
                             <p>
                               <span className="font-semibold text-[var(--navy)]">Tipo pactado:</span>{" "}
-                              {acceptedDelivery
-                                ? getDeliveryMethodLabel(acceptedDelivery.method)
-                                : getDeliveryTypeLabel(escrow.status)}
+                              {getDeliveryTypeLabel(
+                                escrow.shippingStatus,
+                                escrow.shippingProvider,
+                                acceptedDelivery?.method
+                              )}
                             </p>
                             <p>
                               <span className="font-semibold text-[var(--navy)]">Estado:</span>{" "}
-                              {getShippingStatusLabel(escrow.status)}
+                              {getShippingStatusLabel(escrow.shippingStatus, escrow.paymentStatus)}
                             </p>
                             <p>
                               <span className="font-semibold text-[var(--navy)]">Seguimiento:</span>{" "}
@@ -1472,40 +1624,60 @@ export default async function AccountPage({ searchParams }: AccountPageProps) {
                         </form>
                       </div>
 
-                      <DeliveryProposalPanel
-                        currentUserId={user.id}
-                        escrowId={escrow.id}
-                        proposals={escrow.deliveryProposals}
-                        role="buyer"
+                      {showDeliveryMethodBlock ? (
+                        <DeliveryProposalPanel
+                          currentUserId={user.id}
+                          escrowId={escrow.id}
+                          proposals={escrow.deliveryProposals}
+                          role="buyer"
+                        />
+                      ) : null}
+
+                      {showMeetingPlanner ? (
+                        <MeetingPlanner
+                          currentUserId={user.id}
+                          defaultCity={user.city}
+                          defaultProvince={user.province}
+                          escrowId={escrow.id}
+                          role="buyer"
+                          proposals={escrow.meetingProposals}
+                          suggestions={[]}
+                          availabilitySlots={escrow.availabilitySlots}
+                        />
+                      ) : null}
+
+                      <OrderHistoryPanel
+                        entries={getRelevantOrderHistory(escrow.orderHistory, "SHIPPING")}
+                        title="Historial de envío"
                       />
 
-                      <MeetingPlanner
-                        currentUserId={user.id}
-                        defaultCity={user.city}
-                        defaultProvince={user.province}
+                      <BuyerDeliveryActions
                         escrowId={escrow.id}
-                        role="buyer"
-                        proposals={escrow.meetingProposals}
-                        suggestions={[]}
-                        availabilitySlots={escrow.availabilitySlots}
+                        paymentStatus={escrow.paymentStatus}
+                        shippingStatus={escrow.shippingStatus}
                       />
-
-                      <BuyerDeliveryActions escrowId={escrow.id} status={escrow.status} />
                     </section>
 
                     <section className="rounded-2xl bg-white p-4">
                       <MessagesPanel escrowId={escrow.id} messages={escrow.messages} />
                     </section>
 
-                    <ProtectedPurchaseTerms compact title="Reglas de esta compra protegida" />
+                    <OrderHistoryPanel
+                      entries={getRelevantOrderHistory(escrow.orderHistory, "PAYMENT")}
+                      title="Historial de pago"
+                    />
 
                     <DisputeStatusPanel
                       disputeReason={escrow.disputeReason}
                       events={escrow.events}
-                      status={escrow.status}
+                      paymentStatus={escrow.paymentStatus}
                     />
 
-                    <DisputePanel escrowId={escrow.id} status={escrow.status} />
+                    <DisputePanel
+                      escrowId={escrow.id}
+                      paymentStatus={escrow.paymentStatus}
+                      shippingStatus={escrow.shippingStatus}
+                    />
                   </div>
                 </details>
                 );
@@ -1521,6 +1693,8 @@ export default async function AccountPage({ searchParams }: AccountPageProps) {
             <div className="mt-5 grid gap-3">
               {user.sellerEscrows.map((escrow) => {
                 const acceptedDelivery = getAcceptedDeliveryProposal(escrow.deliveryProposals);
+                const showDeliveryMethodBlock = escrow.shippingStatus === "WAITING_DISPATCH";
+                const showMeetingPlanner = escrow.shippingStatus === "WAITING_MEETING";
 
                 return (
                   <details
@@ -1536,8 +1710,8 @@ export default async function AccountPage({ searchParams }: AccountPageProps) {
                         </p>
                       </div>
                       <div className="flex flex-wrap gap-2 text-right">
-                        <StatusPill label={getPaymentStatusLabel(escrow.status)} />
-                        <StatusPill label={getShippingStatusLabel(escrow.status)} />
+                        <StatusPill label={getPaymentStatusLabel(escrow.paymentStatus)} />
+                        <StatusPill label={getShippingStatusLabel(escrow.shippingStatus, escrow.paymentStatus)} />
                       </div>
                     </summary>
 
@@ -1552,12 +1726,16 @@ export default async function AccountPage({ searchParams }: AccountPageProps) {
                             {escrow.listing.title}
                           </p>
                           <p>
-                            <span className="font-semibold text-[var(--navy)]">ID comprador:</span>{" "}
-                            {escrow.buyer.id}
+                            <span className="font-semibold text-[var(--navy)]">Número de operación:</span>{" "}
+                            {formatPublicOrderNumber(escrow.publicSerial)}
                           </p>
                           <p>
-                            <span className="font-semibold text-[var(--navy)]">Comprador:</span>{" "}
-                            {escrow.buyer.firstName} {escrow.buyer.lastName}
+                            <span className="font-semibold text-[var(--navy)]">ID comprador:</span>{" "}
+                            {formatPublicUserCode(escrow.buyer.publicSerial)}
+                          </p>
+                          <p>
+                            <span className="font-semibold text-[var(--navy)]">Identidad:</span>{" "}
+                            {getKycStatusLabel(escrow.buyer.kycStatus)}
                           </p>
                           <p>
                             <span className="font-semibold text-[var(--navy)]">Precio:</span>{" "}
@@ -1577,7 +1755,7 @@ export default async function AccountPage({ searchParams }: AccountPageProps) {
                           </p>
                           <p>
                             <span className="font-semibold text-[var(--navy)]">Estado del pago:</span>{" "}
-                            {getPaymentStatusLabel(escrow.status)}
+                            {getPaymentStatusLabel(escrow.paymentStatus)}
                           </p>
                           <p>
                             <span className="font-semibold text-[var(--navy)]">Micro-seguro:</span>{" "}
@@ -1593,7 +1771,7 @@ export default async function AccountPage({ searchParams }: AccountPageProps) {
                         {escrow.insurancePolicy ? (
                           <div className="mt-4 rounded-2xl border border-[rgba(5,150,105,0.14)] bg-[#f0fdf4] p-4 text-sm text-[#065f46]">
                             <p className="font-semibold">
-                              Póliza {escrow.insurancePolicy.status} · {escrow.insurancePolicy.provider.name}
+                              Póliza {getInsurancePolicyStatusLabel(escrow.insurancePolicy.status)} · {escrow.insurancePolicy.provider.name}
                             </p>
                             <p className="mt-1">
                               Cobertura: {formatCurrency(escrow.insurancePolicy.coverageAmount, escrow.currency)}
@@ -1625,13 +1803,15 @@ export default async function AccountPage({ searchParams }: AccountPageProps) {
                         <div className="mt-3 grid gap-2 text-sm text-[var(--muted)]">
                           <p>
                             <span className="font-semibold text-[var(--navy)]">Tipo pactado:</span>{" "}
-                            {acceptedDelivery
-                              ? getDeliveryMethodLabel(acceptedDelivery.method)
-                              : getDeliveryTypeLabel(escrow.status)}
+                            {getDeliveryTypeLabel(
+                              escrow.shippingStatus,
+                              escrow.shippingProvider,
+                              acceptedDelivery?.method
+                            )}
                           </p>
                           <p>
                             <span className="font-semibold text-[var(--navy)]">Estado:</span>{" "}
-                            {getShippingStatusLabel(escrow.status)}
+                            {getShippingStatusLabel(escrow.shippingStatus, escrow.paymentStatus)}
                           </p>
                           <p>
                             <span className="font-semibold text-[var(--navy)]">Seguimiento:</span>{" "}
@@ -1639,40 +1819,60 @@ export default async function AccountPage({ searchParams }: AccountPageProps) {
                           </p>
                         </div>
 
-                        <DeliveryProposalPanel
-                          currentUserId={user.id}
-                          escrowId={escrow.id}
-                          proposals={escrow.deliveryProposals}
-                          role="seller"
+                        {showDeliveryMethodBlock ? (
+                          <DeliveryProposalPanel
+                            currentUserId={user.id}
+                            escrowId={escrow.id}
+                            proposals={escrow.deliveryProposals}
+                            role="seller"
+                          />
+                        ) : null}
+
+                        <OrderHistoryPanel
+                          entries={getRelevantOrderHistory(escrow.orderHistory, "SHIPPING")}
+                          title="Historial de envío"
                         />
 
-                        <SellerShippingActions escrowId={escrow.id} status={escrow.status} />
-
-                        <MeetingPlanner
-                          currentUserId={user.id}
-                          defaultCity={user.city}
-                          defaultProvince={user.province}
+                        <SellerShippingActions
                           escrowId={escrow.id}
-                          role="seller"
-                          proposals={escrow.meetingProposals}
-                          suggestions={suggestionsByEscrowId[escrow.id] ?? []}
-                          availabilitySlots={escrow.availabilitySlots}
+                          paymentStatus={escrow.paymentStatus}
+                          shippingStatus={escrow.shippingStatus}
                         />
+
+                        {showMeetingPlanner ? (
+                          <MeetingPlanner
+                            currentUserId={user.id}
+                            defaultCity={user.city}
+                            defaultProvince={user.province}
+                            escrowId={escrow.id}
+                            role="seller"
+                            proposals={escrow.meetingProposals}
+                            suggestions={suggestionsByEscrowId[escrow.id] ?? []}
+                            availabilitySlots={escrow.availabilitySlots}
+                          />
+                        ) : null}
                       </section>
 
                       <section className="rounded-2xl bg-white p-4">
                         <MessagesPanel escrowId={escrow.id} messages={escrow.messages} />
                       </section>
 
-                      <ProtectedPurchaseTerms compact title="Reglas de esta venta protegida" />
+                      <OrderHistoryPanel
+                        entries={getRelevantOrderHistory(escrow.orderHistory, "PAYMENT")}
+                        title="Historial de pago"
+                      />
 
                       <DisputeStatusPanel
                         disputeReason={escrow.disputeReason}
                         events={escrow.events}
-                        status={escrow.status}
+                        paymentStatus={escrow.paymentStatus}
                       />
 
-                      <DisputePanel escrowId={escrow.id} status={escrow.status} />
+                      <DisputePanel
+                        escrowId={escrow.id}
+                        paymentStatus={escrow.paymentStatus}
+                        shippingStatus={escrow.shippingStatus}
+                      />
                     </div>
                   </details>
                 );

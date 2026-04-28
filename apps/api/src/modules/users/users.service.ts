@@ -114,6 +114,7 @@ export class UsersService {
         buyerEscrows: {
           select: {
             id: true,
+            publicSerial: true,
             amount: true,
             feePercentage: true,
             feeAmount: true,
@@ -121,6 +122,8 @@ export class UsersService {
             isInsured: true,
             insuranceFee: true,
             currency: true,
+            paymentStatus: true,
+            shippingStatus: true,
             status: true,
             shippingProvider: true,
             shippingTrackingCode: true,
@@ -135,8 +138,10 @@ export class UsersService {
             seller: {
               select: {
                 id: true,
+                publicSerial: true,
                 firstName: true,
-                lastName: true
+                lastName: true,
+                kycStatus: true
               }
             },
             meetingProposals: {
@@ -204,6 +209,11 @@ export class UsersService {
               take: 20
             },
             events: {
+              orderBy: {
+                createdAt: "asc"
+              }
+            },
+            orderHistory: {
               orderBy: {
                 createdAt: "asc"
               }
@@ -226,6 +236,7 @@ export class UsersService {
         sellerEscrows: {
           select: {
             id: true,
+            publicSerial: true,
             amount: true,
             feePercentage: true,
             feeAmount: true,
@@ -233,6 +244,8 @@ export class UsersService {
             isInsured: true,
             insuranceFee: true,
             currency: true,
+            paymentStatus: true,
+            shippingStatus: true,
             status: true,
             shippingProvider: true,
             shippingTrackingCode: true,
@@ -247,8 +260,10 @@ export class UsersService {
             buyer: {
               select: {
                 id: true,
+                publicSerial: true,
                 firstName: true,
-                lastName: true
+                lastName: true,
+                kycStatus: true
               }
             },
             meetingProposals: {
@@ -316,6 +331,11 @@ export class UsersService {
               take: 20
             },
             events: {
+              orderBy: {
+                createdAt: "asc"
+              }
+            },
+            orderHistory: {
               orderBy: {
                 createdAt: "asc"
               }

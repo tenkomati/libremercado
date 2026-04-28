@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 900">
+  <rect width="1200" height="900" fill="#eef7ff"/>
+  <ellipse cx="600" cy="770" rx="250" ry="60" fill="#d7e5fb"/>
+  <rect x="470" y="180" width="260" height="250" rx="70" fill="#203b63"/>
+  <rect x="430" y="390" width="340" height="110" rx="55" fill="#2d527f"/>
+  <rect x="540" y="500" width="120" height="120" rx="30" fill="#203b63"/>
+  <rect x="500" y="610" width="24" height="110" rx="12" fill="#1b2d4a"/>
+  <rect x="676" y="610" width="24" height="110" rx="12" fill="#1b2d4a"/>
+  <rect x="418" y="620" width="24" height="92" rx="12" fill="#1b2d4a"/>
+  <rect x="758" y="620" width="24" height="92" rx="12" fill="#1b2d4a"/>
+  <text x="150" y="170" fill="#17325f" font-family="Arial, sans-serif" font-size="62" font-weight="700">Silla ergonómica mesh</text>
+  <text x="150" y="230" fill="#4c648e" font-family="Arial, sans-serif" font-size="32">Home office · apoyo lumbar</text>
+</svg>

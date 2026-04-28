@@ -2,15 +2,14 @@ import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
 import { AUTH_COOKIE_NAME } from "../../../../lib/auth";
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
+import { INTERNAL_API_URL } from "../../../../lib/internal-api-url";
 
 export async function POST() {
   const cookieStore = await cookies();
   const token = cookieStore.get(AUTH_COOKIE_NAME)?.value;
 
   if (token) {
-    await fetch(`${API_URL}/auth/logout`, {
+    await fetch(`${INTERNAL_API_URL}/auth/logout`, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${token}`

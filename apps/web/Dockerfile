@@ -1,8 +1,7 @@
 FROM node:22-alpine AS deps
 WORKDIR /app
-COPY package.json package-lock.json ./
-COPY apps/web/package.json apps/web/package.json
-RUN npm install
+COPY . .
+RUN npm install --workspaces --include-workspace-root
 
 FROM node:22-alpine AS builder
 WORKDIR /app
@@ -18,4 +17,4 @@ COPY --from=builder /app/apps/web/public ./apps/web/public
 COPY --from=builder /app/apps/web/package.json ./apps/web/package.json
 COPY --from=builder /app/node_modules ./node_modules
 EXPOSE 3000
-CMD ["npm", "run", "start", "--workspace", "@libremercado/web"]
+CMD ["sh", "-c", "cd /app/apps/web && /app/node_modules/.bin/next start -H 0.0.0.0 -p ${PORT:-3000}"]

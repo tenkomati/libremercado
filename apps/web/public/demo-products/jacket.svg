@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 900">
+  <rect width="1200" height="900" fill="#edf4ff"/>
+  <path d="M410 160 L520 90 L680 90 L790 160 L860 380 L760 450 L720 760 L480 760 L440 450 L340 380 Z" fill="#1d3d6d"/>
+  <rect x="560" y="120" width="80" height="610" rx="20" fill="#0f274d"/>
+  <rect x="455" y="470" width="120" height="18" rx="9" fill="#7ea7f8"/>
+  <rect x="625" y="470" width="120" height="18" rx="9" fill="#7ea7f8"/>
+  <text x="150" y="180" fill="#17325f" font-family="Arial, sans-serif" font-size="62" font-weight="700">Campera Patagonia</text>
+  <text x="150" y="240" fill="#4f6893" font-family="Arial, sans-serif" font-size="32">Impermeable · talle M</text>
+</svg>

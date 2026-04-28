@@ -20,6 +20,9 @@ import { RateLimit } from "../rate-limit/rate-limit.decorator";
 
 import { CreateListingDto } from "./dto/create-listing.dto";
 import { ListListingsQueryDto } from "./dto/list-listings-query.dto";
+import { PublishListingDraftDto } from "./dto/publish-listing-draft.dto";
+import { SearchCatalogDto } from "./dto/search-catalog.dto";
+import { UpdateListingDraftDto } from "./dto/update-listing-draft.dto";
 import { UpdateListingStatusDto } from "./dto/update-listing-status.dto";
 import { UpdateListingDto } from "./dto/update-listing.dto";
 import { ListingsService } from "./listings.service";
@@ -48,6 +51,49 @@ export class ListingsController {
   @Get()
   listListings(@Query() query: ListListingsQueryDto) {
     return this.listingsService.listListings(query);
+  }
+
+  @Post("catalog/search")
+  @RateLimit({ keyPrefix: "listing-catalog-search", limit: 120, windowSeconds: 3600 })
+  searchCatalog(@Body() dto: SearchCatalogDto) {
+    return this.listingsService.searchCatalog(dto);
+  }
+
+  @Get("drafts/active")
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  getActiveDraft(@CurrentUser() user: { sub: string }) {
+    return this.listingsService.getOrCreateActiveDraft(user.sub);
+  }
+
+  @Get("drafts/:id")
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  getDraft(
+    @Param("id") id: string,
+    @CurrentUser() user: { sub: string }
+  ) {
+    return this.listingsService.getDraftById(id, user.sub);
+  }
+
+  @Patch("drafts/:id")
+  @RateLimit({ keyPrefix: "listing-draft-update", limit: 200, windowSeconds: 3600 })
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  updateDraft(
+    @Param("id") id: string,
+    @Body() dto: UpdateListingDraftDto,
+    @CurrentUser() user: { sub: string }
+  ) {
+    return this.listingsService.updateDraft(id, user.sub, dto);
+  }
+
+  @Post("drafts/:id/publish")
+  @RateLimit({ keyPrefix: "listing-draft-publish", limit: 20, windowSeconds: 3600 })
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  publishDraft(
+    @Param("id") id: string,
+    @Body() dto: PublishListingDraftDto,
+    @CurrentUser() user: { sub: string }
+  ) {
+    return this.listingsService.publishDraft(id, user.sub, dto);
   }
 
   @Get(":id")

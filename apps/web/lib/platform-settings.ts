@@ -34,3 +34,21 @@ export function calculateSellerNetAmount(
     netAmount: Math.max(price - totalFee, 0)
   };
 }
+
+export function calculateListingPriceFromTargetNet(
+  targetNetAmount: number,
+  settings: Pick<
+    PlatformSettings,
+    "sellerCommissionPercentage" | "fixedTransactionFee"
+  >
+) {
+  const commissionPercentage = Number(settings.sellerCommissionPercentage);
+  const fixedTransactionFee = Number(settings.fixedTransactionFee);
+  const divisor = 1 - commissionPercentage / 100;
+
+  if (divisor <= 0) {
+    return targetNetAmount;
+  }
+
+  return Number(((targetNetAmount + fixedTransactionFee) / divisor).toFixed(2));
+}

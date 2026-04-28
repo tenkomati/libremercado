@@ -1,11 +1,10 @@
 import { NextResponse } from "next/server";
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
+import { INTERNAL_API_URL } from "../../../../../lib/internal-api-url";
 
 export async function POST(request: Request) {
   const body = await request.json();
 
-  const response = await fetch(`${API_URL}/auth/password-reset/request`, {
+  const response = await fetch(`${INTERNAL_API_URL}/auth/password-reset/request`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json"

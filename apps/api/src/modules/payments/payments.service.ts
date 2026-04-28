@@ -7,9 +7,12 @@ import {
   UnauthorizedException
 } from "@nestjs/common";
 import {
+  EscrowPaymentStatus,
+  EscrowShippingStatus,
   EscrowEventType,
   EscrowStatus,
   NotificationType,
+  OrderStatusScope,
   PaymentProvider,
   PaymentStatus,
   Prisma
@@ -217,6 +220,10 @@ export class PaymentsService {
       await tx.escrowTransaction.update({
         where: { id: paymentIntent.escrowId },
         data: {
+          paymentStatus: EscrowPaymentStatus.PAYMENT_RECEIVED,
+          shippingStatus: this.getInitialShippingStatus(
+            updated.escrow.shippingProvider
+          ),
           status: EscrowStatus.FUNDS_HELD,
           events: {
             create: {
@@ -228,6 +235,22 @@ export class PaymentsService {
                 currency: paymentIntent.currency
               }
             }
+          },
+          orderHistory: {
+            create: [
+              {
+                scope: OrderStatusScope.PAYMENT,
+                fromStatus: EscrowPaymentStatus.PAYMENT_PENDING,
+                toStatus: EscrowPaymentStatus.PAYMENT_RECEIVED,
+                note: "Pago sandbox aprobado"
+              },
+              {
+                scope: OrderStatusScope.SHIPPING,
+                fromStatus: null,
+                toStatus: this.getInitialShippingStatus(updated.escrow.shippingProvider),
+                note: "Operación lista para entrega"
+              }
+            ]
           }
         }
       });
@@ -337,7 +360,9 @@ export class PaymentsService {
   private getPaymentIntentInclude() {
     return {
       escrow: {
-        include: {
+        select: {
+          id: true,
+          shippingProvider: true,
           listing: {
             select: {
               id: true,
@@ -556,7 +581,12 @@ export class PaymentsService {
 
   private async applyEscrowStatusFromPayment(
     tx: Prisma.TransactionClient,
-    paymentIntent: { escrowId: string; amount: Prisma.Decimal; currency: string },
+    paymentIntent: {
+      escrowId: string;
+      amount: Prisma.Decimal;
+      currency: string;
+      shippingProvider?: string | null;
+    },
     provider: PaymentProvider,
     webhook: NormalizedPaymentWebhook
   ) {
@@ -564,6 +594,10 @@ export class PaymentsService {
       await tx.escrowTransaction.update({
         where: { id: paymentIntent.escrowId },
         data: {
+          paymentStatus: EscrowPaymentStatus.PAYMENT_RECEIVED,
+          shippingStatus: this.getInitialShippingStatus(
+            paymentIntent.shippingProvider ?? "Entrega protegida libremercado"
+          ),
           status: EscrowStatus.FUNDS_HELD,
           events: {
             create: {
@@ -576,6 +610,24 @@ export class PaymentsService {
                 currency: paymentIntent.currency
               }
             }
+          },
+          orderHistory: {
+            create: [
+              {
+                scope: OrderStatusScope.PAYMENT,
+                fromStatus: EscrowPaymentStatus.PAYMENT_PENDING,
+                toStatus: EscrowPaymentStatus.PAYMENT_RECEIVED,
+                note: "Pago confirmado por webhook"
+              },
+              {
+                scope: OrderStatusScope.SHIPPING,
+                fromStatus: null,
+                toStatus: this.getInitialShippingStatus(
+                  paymentIntent.shippingProvider ?? "Entrega protegida libremercado"
+                ),
+                note: "Operación lista para entrega"
+              }
+            ]
           }
         }
       });
@@ -585,6 +637,7 @@ export class PaymentsService {
       await tx.escrowTransaction.update({
         where: { id: paymentIntent.escrowId },
         data: {
+          paymentStatus: EscrowPaymentStatus.PAYMENT_REFUNDED,
           status: EscrowStatus.REFUNDED,
           events: {
             create: {
@@ -595,6 +648,14 @@ export class PaymentsService {
                 source: "payment_webhook"
               }
             }
+          },
+          orderHistory: {
+            create: {
+              scope: OrderStatusScope.PAYMENT,
+              fromStatus: null,
+              toStatus: EscrowPaymentStatus.PAYMENT_REFUNDED,
+              note: "Reembolso informado por webhook"
+            }
           }
         }
       });
@@ -604,6 +665,7 @@ export class PaymentsService {
       await tx.escrowTransaction.update({
         where: { id: paymentIntent.escrowId },
         data: {
+          paymentStatus: EscrowPaymentStatus.DISPUTED,
           status: EscrowStatus.DISPUTED,
           disputeReason: "Disputa informada por proveedor de pago.",
           events: {
@@ -614,6 +676,14 @@ export class PaymentsService {
                 providerPaymentId: webhook.providerPaymentId,
                 source: "payment_webhook"
               }
+            }
+          },
+          orderHistory: {
+            create: {
+              scope: OrderStatusScope.PAYMENT,
+              fromStatus: null,
+              toStatus: EscrowPaymentStatus.DISPUTED,
+              note: "Disputa informada por webhook"
             }
           }
         }
@@ -716,5 +786,13 @@ export class PaymentsService {
       sellerTitle: "Pago no aprobado",
       sellerBody: "El proveedor no aprobó el pago de la operación."
     };
+  }
+
+  private getInitialShippingStatus(shippingProvider: string) {
+    if (shippingProvider.toLowerCase().includes("encuentro")) {
+      return EscrowShippingStatus.WAITING_MEETING;
+    }
+
+    return EscrowShippingStatus.WAITING_DISPATCH;
   }
 }

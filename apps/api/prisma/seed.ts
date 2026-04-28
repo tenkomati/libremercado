@@ -1,11 +1,16 @@
 import {
   CurrencyCode,
+  DeliveryMethod,
   EscrowEventType,
+  EscrowPaymentStatus,
+  EscrowShippingStatus,
   EscrowStatus,
   KycDocumentType,
   KycStatus,
   ListingCondition,
+  ProductMediaType,
   ListingStatus,
+  OrderStatusScope,
   Prisma,
   PrismaClient,
   UserRole,
@@ -50,6 +55,74 @@ type SeedListing = {
   publishedAt?: Date;
   images: string[];
 };
+
+type SeedCatalogProduct = {
+  externalRef: string;
+  slug: string;
+  title: string;
+  brand?: string;
+  model?: string;
+  category: string;
+  releaseYear?: number;
+  defaultImageUrl?: string;
+  searchAliases: string[];
+  technicalSpecs: Record<string, unknown>;
+};
+
+const catalogProducts: SeedCatalogProduct[] = [
+  {
+    externalRef: "CAT-SONY-A7III",
+    slug: "sony-a7-iii",
+    title: "Sony A7 III",
+    brand: "Sony",
+    model: "A7 III",
+    category: "Fotografia",
+    releaseYear: 2018,
+    defaultImageUrl: "/demo-products/sony-a7iii.svg",
+    searchAliases: ["sony a7 iii", "sony alpha 7 iii", "a7iii"],
+    technicalSpecs: {
+      sensor: "24.2 MP Full Frame",
+      weight: "650 g",
+      launchYear: 2018,
+      video: "4K",
+      suggestedPrice: 2250
+    }
+  },
+  {
+    externalRef: "CAT-IPHONE-15-PRO-256",
+    slug: "iphone-15-pro-256-gb",
+    title: "iPhone 15 Pro 256 GB",
+    brand: "Apple",
+    model: "iPhone 15 Pro",
+    category: "Celulares",
+    releaseYear: 2023,
+    defaultImageUrl: "/demo-products/iphone-15-pro.svg",
+    searchAliases: ["iphone 15 pro", "iphone 15 pro 256", "apple iphone 15 pro"],
+    technicalSpecs: {
+      storage: "256 GB",
+      screen: "6.1 pulgadas",
+      chipset: "A17 Pro",
+      suggestedPrice: 1490000
+    }
+  },
+  {
+    externalRef: "CAT-MBA-M2-16",
+    slug: "macbook-air-m2-16gb",
+    title: "MacBook Air M2 13 pulgadas 16 GB",
+    brand: "Apple",
+    model: "MacBook Air M2",
+    category: "Computacion",
+    releaseYear: 2022,
+    defaultImageUrl: "/demo-products/macbook-air.svg",
+    searchAliases: ["macbook air m2", "mba m2", "macbook m2 16gb"],
+    technicalSpecs: {
+      memory: "16 GB",
+      storage: "512 GB SSD",
+      screen: "13 pulgadas",
+      suggestedPrice: 1700
+    }
+  }
+];
 
 const users: SeedUser[] = [
   {
@@ -179,8 +252,8 @@ const listings: SeedListing[] = [
     locationCity: "La Plata",
     publishedAt: new Date("2026-03-14T15:00:00.000Z"),
     images: [
-      "https://images.unsplash.com/photo-1695048133142-1a20484d2569?auto=format&fit=crop&w=1200&q=80",
-      "https://images.unsplash.com/photo-1592750475338-74b7b21085ab?auto=format&fit=crop&w=1200&q=80"
+      "/demo-products/iphone-15-pro.svg",
+      "/demo-products/iphone-15-pro.svg"
     ]
   },
   {
@@ -199,8 +272,8 @@ const listings: SeedListing[] = [
     locationCity: "Cordoba",
     publishedAt: new Date("2026-03-11T18:30:00.000Z"),
     images: [
-      "https://images.unsplash.com/photo-1517336714739-489689fd1ca8?auto=format&fit=crop&w=1200&q=80",
-      "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?auto=format&fit=crop&w=1200&q=80"
+      "/demo-products/macbook-air.svg",
+      "/demo-products/macbook-air.svg"
     ]
   },
   {
@@ -219,7 +292,7 @@ const listings: SeedListing[] = [
     locationCity: "La Plata",
     publishedAt: new Date("2026-03-10T13:00:00.000Z"),
     images: [
-      "https://images.unsplash.com/photo-1606144042614-b2417e99c4e3?auto=format&fit=crop&w=1200&q=80"
+      "/demo-products/ps5-slim.svg"
     ]
   },
   {
@@ -238,7 +311,7 @@ const listings: SeedListing[] = [
     locationCity: "Cordoba",
     publishedAt: new Date("2026-03-09T11:00:00.000Z"),
     images: [
-      "https://images.unsplash.com/photo-1505843490701-5be5d2b4b1a4?auto=format&fit=crop&w=1200&q=80"
+      "/demo-products/chair.svg"
     ]
   },
   {
@@ -257,7 +330,45 @@ const listings: SeedListing[] = [
     locationCity: "La Plata",
     publishedAt: new Date("2026-03-08T16:15:00.000Z"),
     images: [
-      "https://images.unsplash.com/photo-1548883354-94bcfe321cbb?auto=format&fit=crop&w=1200&q=80"
+      "/demo-products/jacket.svg"
+    ]
+  },
+  {
+    key: "sony-a7iii",
+    sellerKey: "seller-tech",
+    title: "Sony A7 III + lente 28-70 mm",
+    description:
+      "Cámara mirrorless full frame en excelente estado, con menos de 35 mil disparos. Incluye batería original, cargador y correa. Ideal para foto y video profesional.",
+    category: "Fotografia",
+    condition: ListingCondition.VERY_GOOD,
+    status: ListingStatus.PUBLISHED,
+    price: "2100",
+    currency: CurrencyCode.USD,
+    aiSuggestedPrice: "2250",
+    locationProvince: "Cordoba",
+    locationCity: "Cordoba",
+    publishedAt: new Date("2026-03-07T18:40:00.000Z"),
+    images: [
+      "/demo-products/sony-a7iii.svg"
+    ]
+  },
+  {
+    key: "garmin-fenix",
+    sellerKey: "seller-premium",
+    title: "Garmin Fenix 7 Sapphire Solar",
+    description:
+      "Reloj multideporte premium con GPS, mapas y cristal zafiro. Muy poco uso, caja y accesorios originales incluidos.",
+    category: "Tecnologia",
+    condition: ListingCondition.LIKE_NEW,
+    status: ListingStatus.PUBLISHED,
+    price: "980000",
+    currency: CurrencyCode.ARS,
+    aiSuggestedPrice: "1015000",
+    locationProvince: "Buenos Aires",
+    locationCity: "La Plata",
+    publishedAt: new Date("2026-03-06T12:10:00.000Z"),
+    images: [
+      "/demo-products/garmin-fenix.svg"
     ]
   },
   {
@@ -275,7 +386,7 @@ const listings: SeedListing[] = [
     locationProvince: "Santa Fe",
     locationCity: "Rosario",
     images: [
-      "https://images.unsplash.com/photo-1541625602330-2277a4c46182?auto=format&fit=crop&w=1200&q=80"
+      "/demo-products/gravel-bike.svg"
     ]
   }
 ];
@@ -287,12 +398,17 @@ async function main() {
   await prisma.escrowAvailabilitySlot.deleteMany();
   await prisma.escrowDeliveryProposal.deleteMany();
   await prisma.escrowMeetingProposal.deleteMany();
+  await prisma.orderHistory.deleteMany();
   await prisma.paymentEvent.deleteMany();
   await prisma.paymentIntent.deleteMany();
   await prisma.insurancePolicy.deleteMany();
   await prisma.escrowEvent.deleteMany();
   await prisma.escrowTransaction.deleteMany();
   await prisma.insuranceProvider.deleteMany();
+  await prisma.listingDraft.deleteMany();
+  await prisma.productMedia.deleteMany();
+  await prisma.catalogProduct.deleteMany();
+  await prisma.product.deleteMany();
   await prisma.listingImage.deleteMany();
   await prisma.listing.deleteMany();
   await prisma.kycVerification.deleteMany();
@@ -321,6 +437,26 @@ async function main() {
 
   const userMap = new Map<string, string>();
   const listingMap = new Map<string, string>();
+  const catalogMap = new Map<string, string>();
+
+  for (const catalogProduct of catalogProducts) {
+    const createdCatalogProduct = await prisma.catalogProduct.create({
+      data: {
+        externalRef: catalogProduct.externalRef,
+        slug: catalogProduct.slug,
+        title: catalogProduct.title,
+        brand: catalogProduct.brand,
+        model: catalogProduct.model,
+        category: catalogProduct.category,
+        releaseYear: catalogProduct.releaseYear,
+        defaultImageUrl: catalogProduct.defaultImageUrl,
+        searchAliases: catalogProduct.searchAliases,
+        technicalSpecs: catalogProduct.technicalSpecs
+      }
+    });
+
+    catalogMap.set(catalogProduct.slug, createdCatalogProduct.id);
+  }
 
   for (const user of users) {
     const passwordHash = await hash(user.password, 12);
@@ -375,10 +511,42 @@ async function main() {
       throw new Error(`Missing seller for listing ${listing.key}`);
     }
 
+    const inferredBrand = listing.title.split(" ")[0] ?? null;
+    const linkedCatalogId = inferCatalogId(listing.title, catalogMap);
+    const createdProduct = await prisma.product.create({
+      data: {
+        sellerId,
+        catalogProductId: linkedCatalogId,
+        title: listing.title,
+        slugBase: slugify(listing.title),
+        brand: linkedCatalogId ? undefined : inferredBrand,
+        category: listing.category,
+        description: listing.description,
+        condition: listing.condition,
+        technicalSpecs: linkedCatalogId
+          ? undefined
+          : {
+              suggestedPrice: listing.aiSuggestedPrice ? Number(listing.aiSuggestedPrice) : undefined
+            },
+        searchTags: [listing.category.toLowerCase(), listing.title.toLowerCase(), listing.locationCity.toLowerCase()],
+        marketTags: listing.condition === ListingCondition.LIKE_NEW ? ["estado-destacado"] : [],
+        media: {
+          create: listing.images.map((url, index) => ({
+            url,
+            type: ProductMediaType.IMAGE,
+            sortOrder: index,
+            aiQualityScore: 88
+          }))
+        }
+      }
+    });
+
     const createdListing = await prisma.listing.create({
       data: {
         sellerId,
+        productId: createdProduct.id,
         title: listing.title,
+        slug: slugify(`${listing.title}-${listing.locationCity}`),
         description: listing.description,
         category: listing.category,
         condition: listing.condition,
@@ -390,6 +558,8 @@ async function main() {
         aiSuggestedPrice: listing.aiSuggestedPrice
           ? new Prisma.Decimal(listing.aiSuggestedPrice)
           : null,
+        autoTags: [listing.category.toLowerCase(), listing.title.toLowerCase()],
+        marketTags: listing.condition === ListingCondition.LIKE_NEW ? ["estado-destacado"] : [],
         publishedAt: listing.publishedAt,
         images: {
           create: listing.images.map((url, index) => ({
@@ -413,6 +583,8 @@ async function main() {
       feeAmount: new Prisma.Decimal("46000"),
       netAmount: new Prisma.Decimal("874000"),
       currency: CurrencyCode.ARS,
+      paymentStatus: EscrowPaymentStatus.PAYMENT_RECEIVED,
+      shippingStatus: EscrowShippingStatus.IN_TRANSIT,
       status: EscrowStatus.SHIPPED,
       shippingProvider: "Andreani",
       shippingTrackingCode: "AND-LM-10004599",
@@ -436,7 +608,42 @@ async function main() {
     }
   });
 
-  await prisma.escrowTransaction.create({
+  await prisma.escrowTransaction.update({
+    where: { id: ps5Escrow.id },
+    data: {
+      paymentStatus: EscrowPaymentStatus.PAYMENT_RECEIVED,
+      shippingStatus: EscrowShippingStatus.IN_TRANSIT
+    }
+  });
+
+  await prisma.orderHistory.createMany({
+    data: [
+      {
+        escrowId: ps5Escrow.id,
+        scope: OrderStatusScope.PAYMENT,
+        toStatus: EscrowPaymentStatus.PAYMENT_RECEIVED,
+        note: "Pago acreditado y retenido en cuenta escrow.",
+        createdAt: new Date("2026-03-18T09:45:00.000Z")
+      },
+      {
+        escrowId: ps5Escrow.id,
+        scope: OrderStatusScope.SHIPPING,
+        toStatus: EscrowShippingStatus.WAITING_DISPATCH,
+        note: "Etiqueta emitida. Esperando despacho del vendedor.",
+        createdAt: new Date("2026-03-18T09:46:00.000Z")
+      },
+      {
+        escrowId: ps5Escrow.id,
+        scope: OrderStatusScope.SHIPPING,
+        fromStatus: EscrowShippingStatus.WAITING_DISPATCH,
+        toStatus: EscrowShippingStatus.IN_TRANSIT,
+        note: "Paquete escaneado por el operador logístico.",
+        createdAt: new Date("2026-03-18T10:00:00.000Z")
+      }
+    ]
+  });
+
+  const macbookEscrow = await prisma.escrowTransaction.create({
     data: {
       listingId: listingMap.get("macbook-air")!,
       buyerId: userMap.get("buyer-interior")!,
@@ -446,6 +653,8 @@ async function main() {
       feeAmount: new Prisma.Decimal("82.50"),
       netAmount: new Prisma.Decimal("1567.50"),
       currency: CurrencyCode.USD,
+      paymentStatus: EscrowPaymentStatus.PAYMENT_RECEIVED,
+      shippingStatus: EscrowShippingStatus.DELIVERED,
       status: EscrowStatus.DELIVERED,
       shippingProvider: "Correo Argentino",
       shippingTrackingCode: "CA-LM-2988771",
@@ -475,7 +684,50 @@ async function main() {
     }
   });
 
-  await prisma.escrowTransaction.create({
+  await prisma.escrowTransaction.update({
+    where: { id: macbookEscrow.id },
+    data: {
+      paymentStatus: EscrowPaymentStatus.PAYMENT_RECEIVED,
+      shippingStatus: EscrowShippingStatus.DELIVERED
+    }
+  });
+
+  await prisma.orderHistory.createMany({
+    data: [
+      {
+        escrowId: macbookEscrow.id,
+        scope: OrderStatusScope.PAYMENT,
+        toStatus: EscrowPaymentStatus.PAYMENT_RECEIVED,
+        note: "Pago acreditado y retenido en cuenta escrow.",
+        createdAt: new Date("2026-03-16T13:55:00.000Z")
+      },
+      {
+        escrowId: macbookEscrow.id,
+        scope: OrderStatusScope.SHIPPING,
+        toStatus: EscrowShippingStatus.WAITING_DISPATCH,
+        note: "Etiqueta emitida. Esperando despacho del vendedor.",
+        createdAt: new Date("2026-03-16T14:00:00.000Z")
+      },
+      {
+        escrowId: macbookEscrow.id,
+        scope: OrderStatusScope.SHIPPING,
+        fromStatus: EscrowShippingStatus.WAITING_DISPATCH,
+        toStatus: EscrowShippingStatus.IN_TRANSIT,
+        note: "El correo confirmó la recepción del paquete.",
+        createdAt: new Date("2026-03-16T14:30:00.000Z")
+      },
+      {
+        escrowId: macbookEscrow.id,
+        scope: OrderStatusScope.SHIPPING,
+        fromStatus: EscrowShippingStatus.IN_TRANSIT,
+        toStatus: EscrowShippingStatus.DELIVERED,
+        note: "El operador informó entrega exitosa.",
+        createdAt: new Date("2026-03-18T17:20:00.000Z")
+      }
+    ]
+  });
+
+  const jacketEscrow = await prisma.escrowTransaction.create({
     data: {
       listingId: listingMap.get("campera-patagonia")!,
       buyerId: userMap.get("buyer-frequent")!,
@@ -485,6 +737,8 @@ async function main() {
       feeAmount: new Prisma.Decimal("9250"),
       netAmount: new Prisma.Decimal("175750"),
       currency: CurrencyCode.ARS,
+      paymentStatus: EscrowPaymentStatus.DISPUTED,
+      shippingStatus: EscrowShippingStatus.DELIVERED,
       status: EscrowStatus.DISPUTED,
       shippingProvider: "Pickit",
       shippingTrackingCode: "PK-LM-558201",
@@ -518,12 +772,92 @@ async function main() {
     }
   });
 
+  await prisma.escrowTransaction.update({
+    where: { id: jacketEscrow.id },
+    data: {
+      paymentStatus: EscrowPaymentStatus.DISPUTED,
+      shippingStatus: EscrowShippingStatus.DELIVERED
+    }
+  });
+
+  await prisma.orderHistory.createMany({
+    data: [
+      {
+        escrowId: jacketEscrow.id,
+        scope: OrderStatusScope.PAYMENT,
+        toStatus: EscrowPaymentStatus.PAYMENT_RECEIVED,
+        note: "Pago acreditado y retenido en cuenta escrow.",
+        createdAt: new Date("2026-03-12T11:40:00.000Z")
+      },
+      {
+        escrowId: jacketEscrow.id,
+        scope: OrderStatusScope.SHIPPING,
+        toStatus: EscrowShippingStatus.WAITING_DISPATCH,
+        note: "Etiqueta emitida. Esperando despacho del vendedor.",
+        createdAt: new Date("2026-03-12T11:45:00.000Z")
+      },
+      {
+        escrowId: jacketEscrow.id,
+        scope: OrderStatusScope.SHIPPING,
+        fromStatus: EscrowShippingStatus.WAITING_DISPATCH,
+        toStatus: EscrowShippingStatus.IN_TRANSIT,
+        note: "El operador logístico recibió el paquete.",
+        createdAt: new Date("2026-03-12T12:00:00.000Z")
+      },
+      {
+        escrowId: jacketEscrow.id,
+        scope: OrderStatusScope.SHIPPING,
+        fromStatus: EscrowShippingStatus.IN_TRANSIT,
+        toStatus: EscrowShippingStatus.DELIVERED,
+        note: "El envío figura como entregado.",
+        createdAt: new Date("2026-03-14T15:40:00.000Z")
+      },
+      {
+        escrowId: jacketEscrow.id,
+        scope: OrderStatusScope.PAYMENT,
+        fromStatus: EscrowPaymentStatus.PAYMENT_RECEIVED,
+        toStatus: EscrowPaymentStatus.DISPUTED,
+        note: "El comprador abrió una disputa.",
+        createdAt: new Date("2026-03-14T16:10:00.000Z")
+      }
+    ]
+  });
+
   console.log("Seed completed successfully");
   console.log(`Users: ${users.length}`);
+  console.log(`Catalog products: ${catalogProducts.length}`);
   console.log(`Listings: ${listings.length}`);
   console.log(`Escrows: 3`);
   console.log("Admin credentials: sofia.romero@libremercado.test / Admin12345!");
   console.log(`Sample escrow id: ${ps5Escrow.id}`);
+}
+
+function slugify(value: string) {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "")
+    .slice(0, 90);
+}
+
+function inferCatalogId(title: string, catalogMap: Map<string, string>) {
+  const normalizedTitle = title.toLowerCase();
+
+  if (normalizedTitle.includes("sony a7 iii")) {
+    return catalogMap.get("sony-a7-iii") ?? null;
+  }
+
+  if (normalizedTitle.includes("iphone 15 pro")) {
+    return catalogMap.get("iphone-15-pro-256-gb") ?? null;
+  }
+
+  if (normalizedTitle.includes("macbook air m2")) {
+    return catalogMap.get("macbook-air-m2-16gb") ?? null;
+  }
+
+  return null;
 }
 
 main()

@@ -8,11 +8,14 @@ import {
   DeliveryMethod,
   DeliveryProposalStatus,
   EscrowEventType,
+  EscrowPaymentStatus,
+  EscrowShippingStatus,
   EscrowStatus,
   KycStatus,
   ListingStatus,
   MeetingProposalStatus,
   NotificationType,
+  OrderStatusScope,
   PaymentStatus,
   Prisma,
   UserRole
@@ -106,6 +109,8 @@ export class EscrowService {
           isInsured: dto.isInsured ?? false,
           insuranceFee,
           currency: listing.currency,
+          paymentStatus: EscrowPaymentStatus.PAYMENT_PENDING,
+          shippingStatus: null,
           status: EscrowStatus.FUNDS_PENDING,
           shippingProvider: dto.shippingProvider,
           shippingTrackingCode: dto.shippingTrackingCode,
@@ -126,8 +131,15 @@ export class EscrowService {
                   isInsured: dto.isInsured ?? false,
                   insuranceFee: insuranceFee.toString()
                 }
-              },
+              }
             ]
+          },
+          orderHistory: {
+            create: {
+              scope: OrderStatusScope.PAYMENT,
+              toStatus: EscrowPaymentStatus.PAYMENT_PENDING,
+              note: "Checkout iniciado"
+            }
           }
         },
         include: {
@@ -160,6 +172,13 @@ export class EscrowService {
     return this.prisma.escrowTransaction.update({
       where: { id },
       data: {
+        paymentStatus: EscrowPaymentStatus.PAYMENT_RECEIVED,
+        shippingStatus: this.getInitialShippingStatus(
+          escrow.shippingProvider,
+          escrow.deliveryProposals.find(
+            (proposal) => proposal.status === DeliveryProposalStatus.ACCEPTED
+          )?.method
+        ),
         status: EscrowStatus.FUNDS_HELD,
         events: {
           create: {
@@ -168,6 +187,28 @@ export class EscrowService {
               source: "payment"
             }
           }
+        },
+        orderHistory: {
+          create: [
+            this.createOrderHistoryEntry(
+              OrderStatusScope.PAYMENT,
+              EscrowPaymentStatus.PAYMENT_RECEIVED,
+              escrow.paymentStatus,
+              "Pago acreditado",
+              payload
+            ),
+            this.createOrderHistoryEntry(
+              OrderStatusScope.SHIPPING,
+              this.getInitialShippingStatus(
+                escrow.shippingProvider,
+                escrow.deliveryProposals.find(
+                  (proposal) => proposal.status === DeliveryProposalStatus.ACCEPTED
+                )?.method
+              ),
+              escrow.shippingStatus,
+              "Operación lista para coordinar entrega"
+            )
+          ]
         }
       }
     });
@@ -320,6 +361,11 @@ export class EscrowService {
                 }
               }
             }
+          },
+          orderHistory: {
+            orderBy: {
+              createdAt: "asc"
+            }
           }
         },
         orderBy: {
@@ -424,21 +470,26 @@ export class EscrowService {
             events: {
               orderBy: {
                 createdAt: "asc"
-                }
-              }
-            }
-          },
-          insurancePolicy: {
-            include: {
-              provider: {
-                select: {
-                  id: true,
-                  name: true
-                }
               }
             }
           }
+        },
+        insurancePolicy: {
+          include: {
+            provider: {
+              select: {
+                id: true,
+                name: true
+              }
+            }
+          }
+        },
+        orderHistory: {
+          orderBy: {
+            createdAt: "asc"
+          }
         }
+      }
       });
 
     if (!escrow) {
@@ -456,11 +507,7 @@ export class EscrowService {
     const escrow = await this.getEscrowById(escrowId);
     this.ensureCanOperateEscrow(escrow, user);
 
-    if (
-      escrow.status !== EscrowStatus.FUNDS_HELD &&
-      escrow.status !== EscrowStatus.SHIPPED &&
-      escrow.status !== EscrowStatus.DELIVERED
-    ) {
+    if (escrow.paymentStatus !== EscrowPaymentStatus.PAYMENT_RECEIVED) {
       throw new BadRequestException("Meeting can only be proposed for active escrows");
     }
 
@@ -589,6 +636,79 @@ export class EscrowService {
     };
   }
 
+  private getInitialShippingStatus(
+    shippingProvider: string,
+    deliveryMethod?: DeliveryMethod | null
+  ): EscrowShippingStatus {
+    if (deliveryMethod === DeliveryMethod.SAFE_MEETING) {
+      return EscrowShippingStatus.WAITING_MEETING;
+    }
+
+    if (shippingProvider.toLowerCase().includes("encuentro")) {
+      return EscrowShippingStatus.WAITING_MEETING;
+    }
+
+    return EscrowShippingStatus.WAITING_DISPATCH;
+  }
+
+  private deriveLegacyEscrowStatus(
+    paymentStatus: EscrowPaymentStatus,
+    shippingStatus: EscrowShippingStatus | null
+  ): EscrowStatus {
+    if (paymentStatus === EscrowPaymentStatus.PAYMENT_PENDING) {
+      return EscrowStatus.FUNDS_PENDING;
+    }
+
+    if (paymentStatus === EscrowPaymentStatus.PAYMENT_CANCELLED) {
+      return EscrowStatus.CANCELLED;
+    }
+
+    if (paymentStatus === EscrowPaymentStatus.PAYMENT_REFUNDED) {
+      return EscrowStatus.REFUNDED;
+    }
+
+    if (paymentStatus === EscrowPaymentStatus.DISPUTED) {
+      return EscrowStatus.DISPUTED;
+    }
+
+    if (paymentStatus === EscrowPaymentStatus.PAYMENT_RELEASED) {
+      return EscrowStatus.RELEASED;
+    }
+
+    if (
+      shippingStatus === EscrowShippingStatus.DELIVERED ||
+      shippingStatus === EscrowShippingStatus.QR_CONFIRMED
+    ) {
+      return EscrowStatus.DELIVERED;
+    }
+
+    if (
+      shippingStatus === EscrowShippingStatus.IN_TRANSIT ||
+      shippingStatus === EscrowShippingStatus.READY_FOR_PICKUP ||
+      shippingStatus === EscrowShippingStatus.AT_MEETING_POINT
+    ) {
+      return EscrowStatus.SHIPPED;
+    }
+
+    return EscrowStatus.FUNDS_HELD;
+  }
+
+  private createOrderHistoryEntry(
+    scope: OrderStatusScope,
+    toStatus: string,
+    fromStatus?: string | null,
+    note?: string,
+    metadata?: Prisma.InputJsonValue
+  ) {
+    return {
+      scope,
+      fromStatus: fromStatus ?? null,
+      toStatus,
+      note,
+      metadata
+    };
+  }
+
   async createDeliveryProposal(
     escrowId: string,
     dto: CreateDeliveryProposalDto,
@@ -685,10 +805,34 @@ export class EscrowService {
       });
 
       if (dto.status === DeliveryProposalStatus.ACCEPTED) {
+        const nextShippingStatus =
+          escrow.paymentStatus === EscrowPaymentStatus.PAYMENT_RECEIVED
+            ? this.getInitialShippingStatus(
+                this.getDeliveryMethodLabel(proposal.method),
+                proposal.method
+              )
+            : escrow.shippingStatus;
+
         await tx.escrowTransaction.update({
           where: { id: escrowId },
           data: {
-            shippingProvider: this.getDeliveryMethodLabel(proposal.method)
+            shippingProvider: this.getDeliveryMethodLabel(proposal.method),
+            shippingStatus: nextShippingStatus,
+            status: this.deriveLegacyEscrowStatus(
+              escrow.paymentStatus,
+              nextShippingStatus
+            ),
+            orderHistory:
+              nextShippingStatus && nextShippingStatus !== escrow.shippingStatus
+                ? {
+                    create: this.createOrderHistoryEntry(
+                      OrderStatusScope.SHIPPING,
+                      nextShippingStatus,
+                      escrow.shippingStatus,
+                      "Método de entrega aceptado"
+                    )
+                  }
+                : undefined
           }
         });
       }
@@ -901,12 +1045,11 @@ export class EscrowService {
     }
   }
 
-  private ensureActiveMeetingEscrow(escrow: { status: EscrowStatus }) {
-    if (
-      escrow.status !== EscrowStatus.FUNDS_HELD &&
-      escrow.status !== EscrowStatus.SHIPPED &&
-      escrow.status !== EscrowStatus.DELIVERED
-    ) {
+  private ensureActiveMeetingEscrow(escrow: {
+    paymentStatus: EscrowPaymentStatus;
+    shippingStatus: EscrowShippingStatus | null;
+  }) {
+    if (escrow.paymentStatus !== EscrowPaymentStatus.PAYMENT_RECEIVED) {
       throw new BadRequestException("Meeting can only be coordinated for active escrows");
     }
   }
@@ -971,23 +1114,44 @@ export class EscrowService {
     const escrow = await this.getEscrowById(id);
     this.ensureSellerOrOperator(escrow, user);
 
-    if (escrow.status !== EscrowStatus.FUNDS_HELD) {
-      throw new BadRequestException("Only funded escrows can be shipped");
+    if (escrow.paymentStatus !== EscrowPaymentStatus.PAYMENT_RECEIVED) {
+      throw new BadRequestException("Only paid operations can advance shipping");
     }
+
+    const nextShippingStatus =
+      escrow.shippingStatus === EscrowShippingStatus.WAITING_MEETING
+        ? EscrowShippingStatus.AT_MEETING_POINT
+        : EscrowShippingStatus.IN_TRANSIT;
 
     const updatedEscrow = await this.prisma.escrowTransaction.update({
       where: { id },
       data: {
-        status: EscrowStatus.SHIPPED,
+        shippingStatus: nextShippingStatus,
+        status: this.deriveLegacyEscrowStatus(
+          escrow.paymentStatus,
+          nextShippingStatus
+        ),
         shippingTrackingCode: dto.trackingCode,
         shippedAt: new Date(),
         events: {
           create: {
             type: EscrowEventType.SHIPPED,
             payload: {
-              trackingCode: dto.trackingCode ?? null
+              trackingCode: dto.trackingCode ?? null,
+              shippingStatus: nextShippingStatus
             }
           }
+        },
+        orderHistory: {
+          create: this.createOrderHistoryEntry(
+            OrderStatusScope.SHIPPING,
+            nextShippingStatus,
+            escrow.shippingStatus,
+            nextShippingStatus === EscrowShippingStatus.AT_MEETING_POINT
+              ? "Vendedor marcó llegada al punto de encuentro"
+              : "Vendedor despachó la operación",
+            dto.trackingCode ? { trackingCode: dto.trackingCode } : undefined
+          )
         }
       },
       include: {
@@ -1013,27 +1177,73 @@ export class EscrowService {
     const escrow = await this.getEscrowById(id);
     this.ensureBuyerOrOperator(escrow, user);
 
-    if (escrow.status !== EscrowStatus.SHIPPED) {
-      throw new BadRequestException("Only shipped escrows can be delivered");
+    if (
+      escrow.shippingStatus !== EscrowShippingStatus.IN_TRANSIT &&
+      escrow.shippingStatus !== EscrowShippingStatus.READY_FOR_PICKUP &&
+      escrow.shippingStatus !== EscrowShippingStatus.WAITING_MEETING &&
+      escrow.shippingStatus !== EscrowShippingStatus.AT_MEETING_POINT
+    ) {
+      throw new BadRequestException("Operation cannot be confirmed in current shipping status");
     }
 
     const deliveredAt = new Date();
     const releaseEligibleAt = new Date(deliveredAt.getTime() + 48 * 60 * 60 * 1000);
+    const isSafeMeeting =
+      escrow.shippingStatus === EscrowShippingStatus.WAITING_MEETING ||
+      escrow.shippingStatus === EscrowShippingStatus.AT_MEETING_POINT;
 
     const updatedEscrow = await this.prisma.$transaction(async (tx) => {
+      const nextShippingStatus = isSafeMeeting
+        ? EscrowShippingStatus.QR_CONFIRMED
+        : EscrowShippingStatus.DELIVERED;
+      const nextPaymentStatus = isSafeMeeting
+        ? EscrowPaymentStatus.PAYMENT_RELEASED
+        : EscrowPaymentStatus.PAYMENT_RECEIVED;
+      const nextLegacyStatus = isSafeMeeting
+        ? EscrowStatus.RELEASED
+        : EscrowStatus.DELIVERED;
       const updated = await tx.escrowTransaction.update({
         where: { id },
         data: {
-          status: EscrowStatus.DELIVERED,
+          paymentStatus: nextPaymentStatus,
+          shippingStatus: nextShippingStatus,
+          status: nextLegacyStatus,
           deliveredAt,
-          releaseEligibleAt,
+          releaseEligibleAt: isSafeMeeting ? null : releaseEligibleAt,
+          releasedAt: isSafeMeeting ? deliveredAt : null,
           events: {
             create: {
               type: EscrowEventType.DELIVERED,
               payload: {
-                releaseEligibleAt: releaseEligibleAt.toISOString()
+                releaseEligibleAt: isSafeMeeting
+                  ? null
+                  : releaseEligibleAt.toISOString(),
+                shippingStatus: nextShippingStatus,
+                paymentStatus: nextPaymentStatus
               }
             }
+          },
+          orderHistory: {
+            create: [
+              this.createOrderHistoryEntry(
+                OrderStatusScope.SHIPPING,
+                nextShippingStatus,
+                escrow.shippingStatus,
+                isSafeMeeting
+                  ? "Comprador confirmó encuentro por QR"
+                  : "Comprador confirmó recepción"
+              ),
+              ...(isSafeMeeting
+                ? [
+                    this.createOrderHistoryEntry(
+                      OrderStatusScope.PAYMENT,
+                      EscrowPaymentStatus.PAYMENT_RELEASED,
+                      escrow.paymentStatus,
+                      "Pago liberado instantáneamente por confirmación presencial"
+                    )
+                  ]
+                : [])
+            ]
           }
         },
         include: {
@@ -1045,14 +1255,26 @@ export class EscrowService {
         }
       });
 
-      await this.markPaymentsReadyToRelease(tx, id, releaseEligibleAt);
+      if (isSafeMeeting) {
+        await this.markPaymentsReleased(tx, id, deliveredAt);
+        await tx.listing.update({
+          where: { id: escrow.listingId },
+          data: {
+            status: ListingStatus.SOLD
+          }
+        });
+      } else {
+        await this.markPaymentsReadyToRelease(tx, id, releaseEligibleAt);
+      }
 
       return updated;
     });
 
     await this.notifyPaymentParties(escrow, id, {
       title: "Entrega confirmada",
-      body: "La entrega fue confirmada. Los fondos quedan listos para liberarse según las reglas de la operación."
+      body: isSafeMeeting
+        ? "La entrega presencial fue confirmada y el pago quedó liberado."
+        : "La entrega fue confirmada. Los fondos quedan listos para liberarse según las reglas de la operación."
     });
 
     return updatedEscrow;
@@ -1061,7 +1283,10 @@ export class EscrowService {
   async releaseFunds(id: string) {
     const escrow = await this.getEscrowById(id);
 
-    if (escrow.status !== EscrowStatus.DELIVERED) {
+    if (
+      escrow.paymentStatus !== EscrowPaymentStatus.PAYMENT_RECEIVED ||
+      escrow.shippingStatus !== EscrowShippingStatus.DELIVERED
+    ) {
       throw new BadRequestException("Escrow must be delivered before release");
     }
 
@@ -1070,6 +1295,7 @@ export class EscrowService {
       const updatedEscrow = await tx.escrowTransaction.update({
         where: { id },
         data: {
+          paymentStatus: EscrowPaymentStatus.PAYMENT_RELEASED,
           status: EscrowStatus.RELEASED,
           releasedAt,
           events: {
@@ -1079,6 +1305,14 @@ export class EscrowService {
                 netAmount: escrow.netAmount.toString()
               }
             }
+          },
+          orderHistory: {
+            create: this.createOrderHistoryEntry(
+              OrderStatusScope.PAYMENT,
+              EscrowPaymentStatus.PAYMENT_RELEASED,
+              escrow.paymentStatus,
+              "Pago liberado"
+            )
           }
         },
         include: {
@@ -1118,11 +1352,7 @@ export class EscrowService {
     const escrow = await this.getEscrowById(id);
     this.ensureCanOperateEscrow(escrow, user);
 
-    if (
-      escrow.status !== EscrowStatus.FUNDS_HELD &&
-      escrow.status !== EscrowStatus.SHIPPED &&
-      escrow.status !== EscrowStatus.DELIVERED
-    ) {
+    if (escrow.paymentStatus !== EscrowPaymentStatus.PAYMENT_RECEIVED) {
       throw new BadRequestException("Escrow cannot be disputed in current status");
     }
 
@@ -1130,6 +1360,7 @@ export class EscrowService {
       const updatedEscrow = await tx.escrowTransaction.update({
         where: { id },
         data: {
+          paymentStatus: EscrowPaymentStatus.DISPUTED,
           status: EscrowStatus.DISPUTED,
           disputeReason: dto.reason,
           events: {
@@ -1139,6 +1370,15 @@ export class EscrowService {
                 reason: dto.reason
               }
             }
+          },
+          orderHistory: {
+            create: this.createOrderHistoryEntry(
+              OrderStatusScope.PAYMENT,
+              EscrowPaymentStatus.DISPUTED,
+              escrow.paymentStatus,
+              "Disputa abierta",
+              { reason: dto.reason }
+            )
           }
         },
         include: {
@@ -1174,20 +1414,29 @@ export class EscrowService {
     const escrow = await this.getEscrowById(id);
 
     if (
-      escrow.status !== EscrowStatus.FUNDS_PENDING &&
-      escrow.status !== EscrowStatus.FUNDS_HELD &&
-      escrow.status !== EscrowStatus.DISPUTED
+      escrow.paymentStatus !== EscrowPaymentStatus.PAYMENT_PENDING &&
+      escrow.paymentStatus !== EscrowPaymentStatus.PAYMENT_RECEIVED &&
+      escrow.paymentStatus !== EscrowPaymentStatus.DISPUTED
     ) {
       throw new BadRequestException("Escrow cannot be cancelled in current status");
     }
 
     const reason =
       dto.reason ?? "Operación cancelada desde consola admin con reembolso controlado.";
+    const nextPaymentStatus =
+      escrow.paymentStatus === EscrowPaymentStatus.PAYMENT_PENDING
+        ? EscrowPaymentStatus.PAYMENT_CANCELLED
+        : EscrowPaymentStatus.PAYMENT_REFUNDED;
+    const nextLegacyStatus =
+      nextPaymentStatus === EscrowPaymentStatus.PAYMENT_CANCELLED
+        ? EscrowStatus.CANCELLED
+        : EscrowStatus.REFUNDED;
     const updatedEscrow = await this.prisma.$transaction(async (tx) => {
       const updated = await tx.escrowTransaction.update({
         where: { id },
         data: {
-          status: EscrowStatus.REFUNDED,
+          paymentStatus: nextPaymentStatus,
+          status: nextLegacyStatus,
           disputeReason: reason,
           events: {
             create: [
@@ -1205,6 +1454,15 @@ export class EscrowService {
                 }
               }
             ]
+          },
+          orderHistory: {
+            create: this.createOrderHistoryEntry(
+              OrderStatusScope.PAYMENT,
+              nextPaymentStatus,
+              escrow.paymentStatus,
+              "Operación cancelada",
+              { reason }
+            )
           }
         },
         include: {
@@ -1239,7 +1497,7 @@ export class EscrowService {
   async resolveDispute(id: string, dto: ResolveDisputeDto) {
     const escrow = await this.getEscrowById(id);
 
-    if (escrow.status !== EscrowStatus.DISPUTED) {
+    if (escrow.paymentStatus !== EscrowPaymentStatus.DISPUTED) {
       throw new BadRequestException("Only disputed escrows can be resolved");
     }
 
@@ -1249,6 +1507,7 @@ export class EscrowService {
         const updated = await tx.escrowTransaction.update({
           where: { id },
           data: {
+            paymentStatus: EscrowPaymentStatus.PAYMENT_RELEASED,
             status: EscrowStatus.RELEASED,
             releasedAt,
             disputeReason: dto.reason,
@@ -1261,6 +1520,15 @@ export class EscrowService {
                   netAmount: escrow.netAmount.toString()
                 }
               }
+            },
+            orderHistory: {
+              create: this.createOrderHistoryEntry(
+                OrderStatusScope.PAYMENT,
+                EscrowPaymentStatus.PAYMENT_RELEASED,
+                escrow.paymentStatus,
+                "Disputa resuelta a favor del vendedor",
+                { reason: dto.reason, resolution: dto.outcome }
+              )
             }
           },
           include: {
@@ -1296,6 +1564,7 @@ export class EscrowService {
       const updated = await tx.escrowTransaction.update({
         where: { id },
         data: {
+          paymentStatus: EscrowPaymentStatus.PAYMENT_REFUNDED,
           status: EscrowStatus.REFUNDED,
           disputeReason: dto.reason,
           events: {
@@ -1307,6 +1576,15 @@ export class EscrowService {
                 amount: escrow.amount.toString()
               }
             }
+          },
+          orderHistory: {
+            create: this.createOrderHistoryEntry(
+              OrderStatusScope.PAYMENT,
+              EscrowPaymentStatus.PAYMENT_REFUNDED,
+              escrow.paymentStatus,
+              "Disputa resuelta a favor del comprador",
+              { reason: dto.reason, resolution: dto.outcome }
+            )
           }
         },
         include: {

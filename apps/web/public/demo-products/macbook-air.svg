@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 900">
+  <rect width="1200" height="900" fill="#eef4ff"/>
+  <rect x="160" y="110" width="880" height="530" rx="26" fill="#b8c4d6"/>
+  <rect x="205" y="150" width="790" height="450" rx="16" fill="#17325f"/>
+  <rect x="245" y="190" width="710" height="370" rx="10" fill="#89b4ff"/>
+  <circle cx="812" cy="278" r="115" fill="#f4f7fb" opacity="0.3"/>
+  <circle cx="360" cy="420" r="160" fill="#0d2550" opacity="0.22"/>
+  <rect x="120" y="650" width="960" height="52" rx="26" fill="#9ba9bc"/>
+  <text x="240" y="790" fill="#17325f" font-family="Arial, sans-serif" font-size="58" font-weight="700">MacBook Air M2</text>
+  <text x="240" y="840" fill="#49638f" font-family="Arial, sans-serif" font-size="30">16 GB RAM · 512 GB SSD</text>
+</svg>

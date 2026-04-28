@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { apiFetchWithToken } from "../../../lib/api";
 import { AUTH_COOKIE_NAME, verifySessionToken } from "../../../lib/auth";
 import { formatDate } from "../../../lib/format";
+import { getKycStatusLabel } from "../../../lib/status-labels";
 
 import { KycCorrectionForm } from "../kyc-correction-form";
 
@@ -97,7 +98,7 @@ export default async function KycPage({ searchParams }: KycPageProps) {
           </p>
           <div className="mt-6 rounded-[1.5rem] border border-white/10 bg-white/8 p-5">
             <p className="text-sm text-white/60">Estado actual</p>
-            <p className="mt-2 text-4xl font-semibold">{user.kycStatus}</p>
+            <p className="mt-2 text-4xl font-semibold">{getKycStatusLabel(user.kycStatus)}</p>
           </div>
         </div>
 
@@ -189,7 +190,7 @@ export default async function KycPage({ searchParams }: KycPageProps) {
                   </div>
                 </div>
                 <span className="rounded-full bg-[#eef4ff] px-3 py-1 text-xs font-semibold text-[var(--brand-strong)]">
-                  {verification.status}
+                  {getKycStatusLabel(verification.status)}
                 </span>
               </div>
             </article>

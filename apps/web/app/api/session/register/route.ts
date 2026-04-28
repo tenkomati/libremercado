@@ -2,13 +2,12 @@ import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
 import { AUTH_COOKIE_NAME } from "../../../../lib/auth";
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
+import { INTERNAL_API_URL } from "../../../../lib/internal-api-url";
 
 export async function POST(request: Request) {
   const body = await request.json();
 
-  const response = await fetch(`${API_URL}/auth/register`, {
+  const response = await fetch(`${INTERNAL_API_URL}/auth/register`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json"

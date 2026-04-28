@@ -6,8 +6,7 @@ import { redirect } from "next/navigation";
 import { isRedirectError } from "next/dist/client/components/redirect-error";
 
 import { AUTH_COOKIE_NAME, canAccessAdmin, verifySessionToken } from "../../lib/auth";
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
+import { INTERNAL_API_URL } from "../../lib/internal-api-url";
 
 async function getAdminToken() {
   const token = (await cookies()).get(AUTH_COOKIE_NAME)?.value;
@@ -32,7 +31,7 @@ async function getAdminToken() {
 async function callAdminApi(path: string, method: string, body?: unknown) {
   const token = await getAdminToken();
 
-  const response = await fetch(`${API_URL}${path}`, {
+  const response = await fetch(`${INTERNAL_API_URL}${path}`, {
     method,
     headers: {
       Authorization: `Bearer ${token}`,

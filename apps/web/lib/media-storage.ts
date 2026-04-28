@@ -1,4 +1,5 @@
 import { createHash, createHmac, randomUUID } from "node:crypto";
+import { existsSync } from "node:fs";
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 
@@ -40,7 +41,7 @@ function getStorageDriver(): MediaStorageDriver {
 }
 
 async function storeLocalMediaFile({ body, key }: { body: Buffer; key: string }) {
-  const destination = path.join(process.cwd(), "public", key);
+  const destination = path.join(resolveLocalPublicDirectory(), key);
   await mkdir(path.dirname(destination), { recursive: true });
   await writeFile(destination, body);
 
@@ -50,6 +51,22 @@ async function storeLocalMediaFile({ body, key }: { body: Buffer; key: string })
     key,
     url: publicBaseUrl ? `${publicBaseUrl}/${key}` : `/${key}`
   };
+}
+
+export function resolveLocalPublicDirectory() {
+  const configuredDirectory = process.env.MEDIA_LOCAL_PUBLIC_DIR;
+
+  if (configuredDirectory) {
+    return configuredDirectory;
+  }
+
+  const candidates = [
+    path.join(process.cwd(), "apps", "web", "public"),
+    path.join(process.cwd(), "public"),
+    path.join(process.cwd(), "..", "public")
+  ];
+
+  return candidates.find((candidate) => existsSync(candidate)) ?? candidates[0];
 }
 
 async function storeS3MediaFile({

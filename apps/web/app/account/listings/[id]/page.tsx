@@ -6,6 +6,7 @@ import { apiFetchWithToken } from "../../../../lib/api";
 import { AUTH_COOKIE_NAME, verifySessionToken } from "../../../../lib/auth";
 import { formatCurrency, formatDate } from "../../../../lib/format";
 import { getPlatformSettings } from "../../../../lib/platform-settings";
+import { getEscrowStatusLabel, getListingStatusLabel } from "../../../../lib/status-labels";
 
 import { updateOwnListingAction, updateOwnListingStatusAction } from "../../actions";
 import { FeePreview } from "../fee-preview";
@@ -127,7 +128,7 @@ export default async function AccountListingPage({
             </div>
             <div className="p-6">
               <span className="rounded-full bg-[#eef4ff] px-3 py-1 text-xs font-semibold text-[var(--brand-strong)]">
-                {listing.status}
+                {getListingStatusLabel(listing.status)}
               </span>
               <h1
                 className="mt-4 text-4xl font-semibold tracking-[-0.04em] text-[var(--navy)]"
@@ -184,7 +185,7 @@ export default async function AccountListingPage({
                       <p className="text-sm text-[var(--muted)]">{escrow.buyer.email}</p>
                     </div>
                     <div className="text-right">
-                      <p className="text-sm font-semibold text-[var(--brand-strong)]">{escrow.status}</p>
+                      <p className="text-sm font-semibold text-[var(--brand-strong)]">{getEscrowStatusLabel(escrow.status)}</p>
                       <p className="font-semibold text-[var(--navy)]">{formatCurrency(escrow.amount, escrow.currency)}</p>
                       <p className="text-xs text-[var(--muted)]">
                         Neto {formatCurrency(escrow.netAmount, escrow.currency)}

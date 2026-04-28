@@ -10,6 +10,11 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d libremercado"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
 
   redis:
     image: redis:8-alpine
@@ -18,6 +23,135 @@ services:
       - "6379:6379"
     volumes:
       - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/libremercado
+      REDIS_URL: redis://redis:6379
+      NEXT_PUBLIC_API_URL: http://localhost:3001
+      PORT: 3001
+      DEFAULT_ESCROW_FEE_PERCENTAGE: 5
+      PAYMENT_PROVIDER: SANDBOX
+      PAYMENT_CHECKOUT_BASE_URL: ""
+      PAYMENT_WEBHOOK_SECRET: dev-only-webhook-secret-change-me
+      PAYMENT_WEBHOOK_SECRET_SANDBOX: dev-only-webhook-secret-change-me
+      PAYMENT_WEBHOOK_SECRET_MOBBEX: ""
+      PAYMENT_WEBHOOK_SECRET_MERCADO_PAGO: ""
+      INSURANCE_PROVIDER_ENDPOINT_API: https://api.generic-insurtech.example
+      INSURANCE_PROVIDER_API_KEY: generic-insurtech-dev-key
+      INSURANCE_MIN_AMOUNT_ARS: 150000
+      INSURANCE_PREMIUM_PERCENTAGE: 1.5
+      INSURANCE_ELIGIBLE_CATEGORIES: electronica,fotografia,computacion,celulares,gaming,deportes
+      JWT_SECRET: dev-only-local-secret-change-me
+      JWT_ACCESS_TOKEN_TTL_SECONDS: 604800
+      PASSWORD_RESET_TOKEN_TTL_SECONDS: 1800
+      GOOGLE_MAPS_API_KEY: ""
+      MEDIA_STORAGE_DRIVER: local
+      MEDIA_PUBLIC_BASE_URL: ""
+      S3_ENDPOINT: ""
+      S3_REGION: auto
+      S3_BUCKET: ""
+      S3_ACCESS_KEY_ID: ""
+      S3_SECRET_ACCESS_KEY: ""
+      S3_PUBLIC_BASE_URL: ""
+      S3_FORCE_PATH_STYLE: "true"
+      APP_PUBLIC_URL: http://localhost:3000
+      EMAIL_PROVIDER: log
+      EMAIL_FROM: LibreMercado <no-reply@libremercado.local>
+    ports:
+      - "3001:3001"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:3001/health >/dev/null 2>&1 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+    environment:
+      PORT: 3000
+      NEXT_PUBLIC_API_URL: http://localhost:3001
+      INTERNAL_API_URL: http://api:3001
+      APP_PUBLIC_URL: http://localhost:3000
+      JWT_SECRET: dev-only-local-secret-change-me
+      MEDIA_STORAGE_DRIVER: local
+      MEDIA_PUBLIC_BASE_URL: ""
+      S3_ENDPOINT: ""
+      S3_REGION: auto
+      S3_BUCKET: ""
+      S3_ACCESS_KEY_ID: ""
+      S3_SECRET_ACCESS_KEY: ""
+      S3_PUBLIC_BASE_URL: ""
+      S3_FORCE_PATH_STYLE: "true"
+    ports:
+      - "3000:3000"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:3000 >/dev/null 2>&1 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+
+  seed:
+    image: libremercado-api:latest
+    profiles: ["tools"]
+    depends_on:
+      api:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/libremercado
+      REDIS_URL: redis://redis:6379
+      NEXT_PUBLIC_API_URL: http://localhost:3001
+      PORT: 3001
+      DEFAULT_ESCROW_FEE_PERCENTAGE: 5
+      PAYMENT_PROVIDER: SANDBOX
+      PAYMENT_CHECKOUT_BASE_URL: ""
+      PAYMENT_WEBHOOK_SECRET: dev-only-webhook-secret-change-me
+      PAYMENT_WEBHOOK_SECRET_SANDBOX: dev-only-webhook-secret-change-me
+      PAYMENT_WEBHOOK_SECRET_MOBBEX: ""
+      PAYMENT_WEBHOOK_SECRET_MERCADO_PAGO: ""
+      INSURANCE_PROVIDER_ENDPOINT_API: https://api.generic-insurtech.example
+      INSURANCE_PROVIDER_API_KEY: generic-insurtech-dev-key
+      INSURANCE_MIN_AMOUNT_ARS: 150000
+      INSURANCE_PREMIUM_PERCENTAGE: 1.5
+      INSURANCE_ELIGIBLE_CATEGORIES: electronica,fotografia,computacion,celulares,gaming,deportes
+      JWT_SECRET: dev-only-local-secret-change-me
+      JWT_ACCESS_TOKEN_TTL_SECONDS: 604800
+      PASSWORD_RESET_TOKEN_TTL_SECONDS: 1800
+      GOOGLE_MAPS_API_KEY: ""
+      MEDIA_STORAGE_DRIVER: local
+      MEDIA_PUBLIC_BASE_URL: ""
+      S3_ENDPOINT: ""
+      S3_REGION: auto
+      S3_BUCKET: ""
+      S3_ACCESS_KEY_ID: ""
+      S3_SECRET_ACCESS_KEY: ""
+      S3_PUBLIC_BASE_URL: ""
+      S3_FORCE_PATH_STYLE: "true"
+      APP_PUBLIC_URL: http://localhost:3000
+      EMAIL_PROVIDER: log
+      EMAIL_FROM: LibreMercado <no-reply@libremercado.local>
+    command: >
+      sh -c "node --import tsx apps/api/prisma/seed.ts"
 
 volumes:
   postgres_data:

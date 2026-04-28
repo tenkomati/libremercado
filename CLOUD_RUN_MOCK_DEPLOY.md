@@ -31,7 +31,7 @@ Este modo sirve para staging/beta interna técnica, no para beta pública real.
 ```bash
 gcloud artifacts repositories create libremercado \
   --repository-format=docker \
-  --location=us \
+  --location=southamerica-east1 \
   --description="LibreMercado images"
 ```
 
@@ -71,7 +71,7 @@ Checklist mínimo de variables reales antes de deployar:
 ## 3. Deploy API
 
 ```bash
-PROJECT_ID="<tu-project-id>" REGION="southamerica-east1" \
+PROJECT_ID="<tu-project-id>" REGION="southamerica-east1" ARTIFACT_REGION="southamerica-east1" \
 bash scripts/cloudrun/deploy-api.sh
 ```
 
@@ -89,7 +89,7 @@ gcloud run services describe libremercado-api \
 Editar `cloudrun/web.mock.env.yaml` con la URL de la API y correr:
 
 ```bash
-PROJECT_ID="<tu-project-id>" REGION="southamerica-east1" \
+PROJECT_ID="<tu-project-id>" REGION="southamerica-east1" ARTIFACT_REGION="southamerica-east1" \
 bash scripts/cloudrun/deploy-web.sh
 ```
 
@@ -107,7 +107,7 @@ gcloud run services describe libremercado-web \
 Actualizar `APP_PUBLIC_URL` en `cloudrun/api.mock.env.yaml` con la URL pública del servicio web y volver a correr:
 
 ```bash
-PROJECT_ID="<tu-project-id>" REGION="southamerica-east1" \
+PROJECT_ID="<tu-project-id>" REGION="southamerica-east1" ARTIFACT_REGION="southamerica-east1" \
 bash scripts/cloudrun/deploy-api.sh
 ```
 

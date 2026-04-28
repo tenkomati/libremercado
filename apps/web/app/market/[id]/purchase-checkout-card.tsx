@@ -111,7 +111,7 @@ export function PurchaseCheckoutCard({
       ) : null}
 
       <button
-        className="w-full rounded-full bg-[var(--brand)] px-5 py-4 font-semibold text-white shadow-[0_14px_40px_rgba(18,107,255,0.24)] transition hover:bg-[var(--brand-strong)]"
+        className="button-primary w-full"
         type="submit"
       >
         {insuranceSelected

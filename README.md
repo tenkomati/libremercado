@@ -4,7 +4,7 @@ Marketplace C2C de alta confianza para Argentina. Este repositorio arranca con u
 
 - `apps/web`: frontend en Next.js 15 + Tailwind CSS.
 - `apps/api`: backend en NestJS.
-- `docker-compose.yml`: PostgreSQL y Redis para desarrollo local.
+- `docker-compose.yml`: stack completo local con PostgreSQL, Redis, API y web.
 
 ## Requisitos
 
@@ -14,16 +14,45 @@ Marketplace C2C de alta confianza para Argentina. Este repositorio arranca con u
 
 ## Primeros pasos
 
+Modo Docker completo:
+
+```bash
+npm install
+npm run docker:up
+npm run docker:seed
+```
+
+Si alguna vez una migración local queda a medio aplicar, reseteá los volúmenes
+locales y volvé a levantar:
+
+```bash
+npm run docker:reset
+npm run docker:up
+npm run docker:seed
+```
+
+Después abrí:
+
+- `http://localhost:3000`
+- `http://localhost:3001/health`
+
+Modo híbrido local:
+
 ```bash
 npm install
 cp .env.example .env
-docker compose up -d
+docker compose up -d postgres redis
 npm run dev
 ```
 
 ## Scripts
 
 - `npm run dev`: levanta web y api en paralelo.
+- `npm run docker:up`: construye y levanta postgres, redis, api y web.
+- `npm run docker:reset`: baja el stack y borra los volúmenes locales.
+- `npm run docker:seed`: carga datos demo dentro del stack Docker.
+- `npm run docker:logs`: sigue logs de web y api en Docker.
+- `npm run docker:down`: apaga el stack Docker.
 - `npm run build`: compila todas las apps.
 - `npm run lint`: ejecuta lint en workspaces.
 - `npm run typecheck`: ejecuta chequeo de tipos.

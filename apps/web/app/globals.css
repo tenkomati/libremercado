@@ -39,6 +39,45 @@ a {
   text-decoration: none;
 }
 
+.button-primary,
+.button-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  padding: 0.875rem 1.5rem;
+  font-weight: 600;
+  transition:
+    background-color 180ms ease,
+    border-color 180ms ease,
+    color 180ms ease,
+    box-shadow 180ms ease,
+    transform 180ms ease;
+}
+
+.button-primary {
+  border: 1px solid var(--navy);
+  background: var(--navy);
+  color: #fff;
+  box-shadow: 0 14px 40px rgba(8, 34, 71, 0.18);
+}
+
+.button-primary:hover {
+  background: #0c2d5a;
+  border-color: #0c2d5a;
+}
+
+.button-secondary {
+  border: 1px solid var(--navy);
+  background: var(--navy);
+  color: #fff;
+}
+
+.button-secondary:hover {
+  background: #0c2d5a;
+  border-color: #0c2d5a;
+}
+
 ::selection {
   background: rgba(18, 107, 255, 0.16);
 }

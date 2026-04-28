@@ -5,8 +5,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 
 import { AUTH_COOKIE_NAME, verifySessionToken } from "../../../lib/auth";
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
+import { INTERNAL_API_URL } from "../../../lib/internal-api-url";
 
 async function getErrorMessage(response: Response) {
   const raw = await response.text();
@@ -40,7 +39,7 @@ export async function createProtectedPurchaseAction(formData: FormData) {
     redirect(`/login?next=${encodeURIComponent(returnTo)}`);
   }
 
-  const response = await fetch(`${API_URL}/payments/checkout`, {
+  const response = await fetch(`${INTERNAL_API_URL}/payments/checkout`, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${token}`,
