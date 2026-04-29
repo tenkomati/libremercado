@@ -45,6 +45,10 @@ type SeedListing = {
   title: string;
   description: string;
   category: string;
+  brand?: string;
+  model?: string;
+  manufactureYear?: number;
+  technicalSpecs?: Record<string, unknown>;
   condition: ListingCondition;
   status: ListingStatus;
   price: string;
@@ -243,6 +247,14 @@ const listings: SeedListing[] = [
     description:
       "Equipo en excelente estado, siempre usado con funda y vidrio. Bateria al 96%, caja original y cable USB-C incluidos. Ideal para quien busca gama alta sin pagar precio retail.",
     category: "Celulares",
+    brand: "Apple",
+    model: "iPhone 15 Pro",
+    manufactureYear: 2023,
+    technicalSpecs: {
+      batteryHealth: "96%",
+      storage: "256 GB",
+      screen: "6.1 pulgadas"
+    },
     condition: ListingCondition.LIKE_NEW,
     status: ListingStatus.PUBLISHED,
     price: "1450000",
@@ -263,6 +275,14 @@ const listings: SeedListing[] = [
     description:
       "Notebook liviana para trabajo y estudio, con 16 GB de RAM y SSD de 512 GB. Sin golpes, teclado impecable y ciclo de bateria saludable.",
     category: "Computacion",
+    brand: "Apple",
+    model: "MacBook Air M2",
+    manufactureYear: 2022,
+    technicalSpecs: {
+      storage: "512 GB SSD",
+      memory: "16 GB",
+      screen: "13 pulgadas"
+    },
     condition: ListingCondition.VERY_GOOD,
     status: ListingStatus.PUBLISHED,
     price: "1650",
@@ -283,6 +303,9 @@ const listings: SeedListing[] = [
     description:
       "Consola comprada en 2025, poco uso y funcionamiento perfecto. Incluye dos joysticks originales, cableado completo y juego fisico.",
     category: "Gaming",
+    brand: "Sony",
+    model: "PlayStation 5 Slim",
+    manufactureYear: 2025,
     condition: ListingCondition.VERY_GOOD,
     status: ListingStatus.RESERVED,
     price: "920000",
@@ -302,6 +325,7 @@ const listings: SeedListing[] = [
     description:
       "Silla para home office con apoyabrazos regulables, respaldo respirable y ruedas siliconadas. Se entrega armada.",
     category: "Hogar y Muebles",
+    brand: "ErgoFlex",
     condition: ListingCondition.GOOD,
     status: ListingStatus.PUBLISHED,
     price: "210000",
@@ -321,6 +345,7 @@ const listings: SeedListing[] = [
     description:
       "Campera original con muy poco uso, ideal para lluvia y trekking urbano. Cierres en perfecto estado.",
     category: "Moda",
+    brand: "Patagonia",
     condition: ListingCondition.LIKE_NEW,
     status: ListingStatus.PUBLISHED,
     price: "185000",
@@ -340,6 +365,14 @@ const listings: SeedListing[] = [
     description:
       "Cámara mirrorless full frame en excelente estado, con menos de 35 mil disparos. Incluye batería original, cargador y correa. Ideal para foto y video profesional.",
     category: "Fotografia",
+    brand: "Sony",
+    model: "A7 III",
+    manufactureYear: 2018,
+    technicalSpecs: {
+      shutterCount: "34800",
+      sensor: "24.2 MP Full Frame",
+      video: "4K"
+    },
     condition: ListingCondition.VERY_GOOD,
     status: ListingStatus.PUBLISHED,
     price: "2100",
@@ -359,6 +392,9 @@ const listings: SeedListing[] = [
     description:
       "Reloj multideporte premium con GPS, mapas y cristal zafiro. Muy poco uso, caja y accesorios originales incluidos.",
     category: "Tecnologia",
+    brand: "Garmin",
+    model: "Fenix 7 Sapphire Solar",
+    manufactureYear: 2022,
     condition: ListingCondition.LIKE_NEW,
     status: ListingStatus.PUBLISHED,
     price: "980000",
@@ -377,7 +413,14 @@ const listings: SeedListing[] = [
     title: "Bicicleta gravel aluminio rodado 28",
     description:
       "Cuadro aluminio, transmision 2x10 y frenos a disco. Lista para salidas largas. Publicacion retenida hasta completar validacion del vendedor.",
-    category: "Deportes",
+    category: "Bicicletas",
+    brand: "Venzo",
+    model: "Gravel Aluminio",
+    manufactureYear: 2024,
+    technicalSpecs: {
+      wheelSize: "28",
+      frame: "Aluminio"
+    },
     condition: ListingCondition.GOOD,
     status: ListingStatus.UNDER_REVIEW,
     price: "850",
@@ -519,15 +562,16 @@ async function main() {
         catalogProductId: linkedCatalogId,
         title: listing.title,
         slugBase: slugify(listing.title),
-        brand: linkedCatalogId ? undefined : inferredBrand,
+        brand: linkedCatalogId ? listing.brand ?? undefined : listing.brand ?? inferredBrand,
+        model: listing.model,
         category: listing.category,
+        manufactureYear: listing.manufactureYear,
         description: listing.description,
         condition: listing.condition,
-        technicalSpecs: linkedCatalogId
-          ? undefined
-          : {
-              suggestedPrice: listing.aiSuggestedPrice ? Number(listing.aiSuggestedPrice) : undefined
-            },
+        technicalSpecs: {
+          ...(listing.technicalSpecs ?? {}),
+          suggestedPrice: listing.aiSuggestedPrice ? Number(listing.aiSuggestedPrice) : undefined
+        },
         searchTags: [listing.category.toLowerCase(), listing.title.toLowerCase(), listing.locationCity.toLowerCase()],
         marketTags: listing.condition === ListingCondition.LIKE_NEW ? ["estado-destacado"] : [],
         media: {

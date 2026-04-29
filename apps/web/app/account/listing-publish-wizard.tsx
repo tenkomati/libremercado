@@ -103,6 +103,17 @@ const stepOrder = [
   "REVIEW"
 ] as const;
 
+const listingCategoryOptions = [
+  "Celulares",
+  "Computacion",
+  "Fotografia",
+  "Bicicletas",
+  "Gaming",
+  "Tecnologia",
+  "Hogar y Muebles",
+  "Moda"
+] as const;
+
 const stepMeta: Record<(typeof stepOrder)[number], { title: string; subtitle: string }> = {
   PRODUCT_MATCH: {
     title: "1. Escáner de producto",
@@ -135,6 +146,14 @@ type ProductFormState = {
   model: string;
   manufactureYear: string;
   description: string;
+};
+
+type CategorySpecFormState = {
+  shutterCount: string;
+  batteryHealth: string;
+  storage: string;
+  memory: string;
+  wheelSize: string;
 };
 
 type SecurityFormState = {
@@ -174,6 +193,77 @@ function createSecurityFormState(draft: ListingDraft): SecurityFormState {
   };
 }
 
+function createCategorySpecFormState(draft: ListingDraft): CategorySpecFormState {
+  const specs = (draft.product.technicalSpecs ?? {}) as Record<string, unknown>;
+
+  return {
+    shutterCount: specs.shutterCount ? String(specs.shutterCount) : "",
+    batteryHealth: specs.batteryHealth ? String(specs.batteryHealth) : "",
+    storage: specs.storage ? String(specs.storage) : "",
+    memory: specs.memory ? String(specs.memory) : "",
+    wheelSize: specs.wheelSize ? String(specs.wheelSize) : ""
+  };
+}
+
+function getCategorySpecConfig(category?: string | null) {
+  const normalizedCategory = (category ?? "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
+
+  if (normalizedCategory === "fotografia") {
+    return [{ key: "shutterCount", label: "Cantidad de disparos", placeholder: "Ej. 34800" }] as const;
+  }
+
+  if (normalizedCategory === "celulares") {
+    return [
+      { key: "batteryHealth", label: "% de batería", placeholder: "Ej. 96%" },
+      { key: "storage", label: "Almacenamiento (GB)", placeholder: "Ej. 256 GB" }
+    ] as const;
+  }
+
+  if (normalizedCategory === "computacion") {
+    return [
+      { key: "storage", label: "Almacenamiento (GB)", placeholder: "Ej. 512 GB SSD" },
+      { key: "memory", label: "Memoria", placeholder: "Ej. 16 GB" }
+    ] as const;
+  }
+
+  if (normalizedCategory === "bicicletas") {
+    return [{ key: "wheelSize", label: "Rodado", placeholder: "Ej. 29" }] as const;
+  }
+
+  return [] as const;
+}
+
+function buildTechnicalSpecsPayload(
+  category: string,
+  formState: CategorySpecFormState,
+  baseSpecs?: Record<string, unknown> | null
+) {
+  const nextSpecs: Record<string, unknown> = { ...(baseSpecs ?? {}) };
+  const activeKeys = new Set(getCategorySpecConfig(category).map((item) => item.key));
+
+  (["shutterCount", "batteryHealth", "storage", "memory", "wheelSize"] as const).forEach((key) => {
+    if (!activeKeys.has(key)) {
+      delete nextSpecs[key];
+      return;
+    }
+
+    const value = formState[key].trim();
+
+    if (!value) {
+      delete nextSpecs[key];
+      return;
+    }
+
+    nextSpecs[key] = value;
+  });
+
+  return Object.keys(nextSpecs).length ? nextSpecs : undefined;
+}
+
 function createLogisticsFormState(
   draft: ListingDraft,
   currentUser: WizardUser
@@ -201,6 +291,9 @@ export function ListingPublishWizard({
   const [isPublishing, startPublishTransition] = useTransition();
   const [activeStep, setActiveStep] = useState<(typeof stepOrder)[number]>(draft.currentStep);
   const [productForm, setProductForm] = useState(() => createProductFormState(initialDraft));
+  const [categorySpecsForm, setCategorySpecsForm] = useState(() =>
+    createCategorySpecFormState(initialDraft)
+  );
   const [securityForm, setSecurityForm] = useState(() => createSecurityFormState(initialDraft));
   const [logisticsForm, setLogisticsForm] = useState(() =>
     createLogisticsFormState(initialDraft, currentUser)
@@ -231,6 +324,7 @@ export function ListingPublishWizard({
 
   useEffect(() => {
     setProductForm(createProductFormState(draft));
+    setCategorySpecsForm(createCategorySpecFormState(draft));
     setSecurityForm(createSecurityFormState(draft));
     setLogisticsForm(createLogisticsFormState(draft, currentUser));
   }, [draft, currentUser]);
@@ -274,6 +368,11 @@ export function ListingPublishWizard({
             ? Number(productForm.manufactureYear)
             : undefined,
           description: productForm.description || undefined,
+          technicalSpecs: buildTechnicalSpecsPayload(
+            productForm.category,
+            categorySpecsForm,
+            draft.product.technicalSpecs
+          ),
           currentStep: nextStep ?? step
         });
         return;
@@ -343,6 +442,7 @@ export function ListingPublishWizard({
   }
 
   const effectiveCurrency = logisticsForm.currency;
+  const categorySpecConfig = getCategorySpecConfig(productForm.category);
   const targetNetPreview = logisticsForm.targetNetAmount
     ? Number(logisticsForm.targetNetAmount)
     : draft.targetNetAmount
@@ -638,13 +738,20 @@ export function ListingPublishWizard({
                 </label>
                 <label className="grid gap-2 text-sm font-medium text-[var(--navy)]">
                   Categoría
-                  <input
+                  <select
                     className="rounded-2xl border border-[var(--surface-border)] bg-[#f8fbff] px-4 py-3 outline-none focus:border-[var(--brand)]"
                     onChange={(event) => {
                       setProductForm((current) => ({ ...current, category: event.target.value }));
                     }}
                     value={productForm.category}
-                  />
+                  >
+                    <option value="">Elegí una categoría</option>
+                    {listingCategoryOptions.map((category) => (
+                      <option key={category} value={category}>
+                        {category}
+                      </option>
+                    ))}
+                  </select>
                 </label>
                 <label className="grid gap-2 text-sm font-medium text-[var(--navy)]">
                   Marca
@@ -694,6 +801,35 @@ export function ListingPublishWizard({
                   />
                 </label>
               </div>
+
+              {categorySpecConfig.length ? (
+                <div className="rounded-[1.5rem] border border-[var(--surface-border)] bg-[#f8fbff] p-5">
+                  <h3 className="text-lg font-semibold text-[var(--navy)]">
+                    Datos específicos de la categoría
+                  </h3>
+                  <div className="mt-4 grid gap-5 md:grid-cols-2">
+                    {categorySpecConfig.map((field) => (
+                      <label
+                        className="grid gap-2 text-sm font-medium text-[var(--navy)]"
+                        key={field.key}
+                      >
+                        {field.label}
+                        <input
+                          className="rounded-2xl border border-[var(--surface-border)] bg-white px-4 py-3 outline-none focus:border-[var(--brand)]"
+                          onChange={(event) => {
+                            setCategorySpecsForm((current) => ({
+                              ...current,
+                              [field.key]: event.target.value
+                            }));
+                          }}
+                          placeholder={field.placeholder}
+                          value={categorySpecsForm[field.key]}
+                        />
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
             </section>
           ) : null}
 

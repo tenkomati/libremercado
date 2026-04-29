@@ -524,110 +524,81 @@ export class ListingsService {
       ["createdAt", "updatedAt", "publishedAt", "price", "status", "title"] as const,
       "createdAt"
     );
-    const where: Prisma.ListingWhereInput = {
+    const baseWhere: Prisma.ListingWhereInput = {
       sellerId: query.sellerId,
-      status: query.status,
-      ...(query.category
-        ? {
-            category: {
-              equals: query.category,
-              mode: "insensitive"
-            }
-          }
-        : {}),
-      ...((query.minPrice !== undefined || query.maxPrice !== undefined)
-        ? {
-            price: {
-              ...(query.minPrice !== undefined
-                ? { gte: new Prisma.Decimal(query.minPrice) }
-                : {}),
-              ...(query.maxPrice !== undefined
-                ? { lte: new Prisma.Decimal(query.maxPrice) }
-                : {})
-            }
-          }
-        : {}),
-      ...(query.q
-        ? {
-            OR: [
-              { title: { contains: query.q, mode: "insensitive" } },
-              { description: { contains: query.q, mode: "insensitive" } },
-              { category: { contains: query.q, mode: "insensitive" } },
-              { locationCity: { contains: query.q, mode: "insensitive" } },
-              { locationProvince: { contains: query.q, mode: "insensitive" } },
-              { autoTags: { has: query.q.toLowerCase() } },
-              { marketTags: { has: query.q.toLowerCase() } },
-              {
-                product: {
-                  OR: [
-                    { brand: { contains: query.q, mode: "insensitive" } },
-                    { model: { contains: query.q, mode: "insensitive" } },
-                    { searchTags: { has: query.q.toLowerCase() } }
-                  ]
-                }
-              },
-              {
-                seller: {
-                  OR: [
-                    { firstName: { contains: query.q, mode: "insensitive" } },
-                    { lastName: { contains: query.q, mode: "insensitive" } },
-                    { email: { contains: query.q, mode: "insensitive" } }
-                  ]
-                }
-              }
-            ]
-          }
-        : {})
+      status: query.status
     };
-    const [items, total] = await this.prisma.$transaction([
-      this.prisma.listing.findMany({
-        where,
-        include: {
-          images: {
-            orderBy: {
-              sortOrder: "asc"
-            }
-          },
-          seller: {
-            select: {
-              id: true,
-              publicSerial: true,
-              firstName: true,
-              lastName: true,
-              city: true,
-              province: true,
-              reputationScore: true,
-              kycStatus: true
-            }
-          },
-          product: {
-            select: {
-              brand: true,
-              model: true,
-              manufactureYear: true,
-              technicalSpecs: true,
-              transparencyBadge: true,
-              marketTags: true,
-              searchTags: true
-            }
-          },
-          _count: {
-            select: {
-              escrows: true
-            }
+    const candidates = await this.prisma.listing.findMany({
+      where: baseWhere,
+      include: {
+        images: {
+          orderBy: {
+            sortOrder: "asc"
           }
         },
-        orderBy: {
-          [sortBy]: getSortOrder(query.sortOrder)
+        seller: {
+          select: {
+            id: true,
+            publicSerial: true,
+            firstName: true,
+            lastName: true,
+            city: true,
+            province: true,
+            reputationScore: true,
+            kycStatus: true
+          }
         },
-        skip: pagination.skip,
-        take: pagination.take
-      }),
-      this.prisma.listing.count({ where })
-    ]);
+        product: {
+          select: {
+            brand: true,
+            model: true,
+            manufactureYear: true,
+            technicalSpecs: true,
+            transparencyBadge: true,
+            marketTags: true,
+            searchTags: true
+          }
+        },
+        _count: {
+          select: {
+            escrows: true
+          }
+        }
+      },
+      take: query.q ? 240 : 180
+    });
+
+    const rankedCandidates = rankListings(candidates, query.q, sortBy, query.sortOrder);
+    const facetSourceItems = rankedCandidates.filter((item) =>
+      matchesListingFilters(item, {
+        category: query.category,
+        currency: query.currency
+      })
+    );
+    const filteredItems = facetSourceItems.filter((item) =>
+      matchesListingFilters(item, {
+        category: query.category,
+        minPrice: query.minPrice,
+        maxPrice: query.maxPrice,
+        condition: query.condition,
+        currency: query.currency,
+        brand: query.brand,
+        year: query.year,
+        specKey: query.specKey,
+        specValue: query.specValue,
+        shutterCount: query.shutterCount,
+        batteryHealth: query.batteryHealth,
+        storage: query.storage,
+        memory: query.memory,
+        wheelSize: query.wheelSize
+      })
+    );
+    const total = filteredItems.length;
+    const items = filteredItems.slice(pagination.skip, pagination.skip + pagination.take);
 
     return {
       items,
+      facets: buildListingFacets(facetSourceItems),
       meta: makePaginationMeta({
         page: pagination.page,
         pageSize: pagination.pageSize,
@@ -814,6 +785,481 @@ export class ListingsService {
   }
 }
 
+type SearchableListing = Prisma.ListingGetPayload<{
+  include: {
+    images: true;
+    seller: {
+      select: {
+        id: true;
+        publicSerial: true;
+        firstName: true;
+        lastName: true;
+        city: true;
+        province: true;
+        reputationScore: true;
+        kycStatus: true;
+      };
+    };
+    product: {
+      select: {
+        brand: true;
+        model: true;
+        manufactureYear: true;
+        technicalSpecs: true;
+        transparencyBadge: true;
+        marketTags: true;
+        searchTags: true;
+      };
+    };
+    _count: {
+      select: {
+        escrows: true;
+      };
+    };
+  };
+}>;
+
+type ListingFacetOption = {
+  value: string;
+  label: string;
+  count: number;
+};
+
+type ListingFacetGroup = {
+  key: string;
+  label: string;
+  options: ListingFacetOption[];
+};
+
+function rankListings(
+  items: SearchableListing[],
+  query: string | undefined,
+  sortBy: string,
+  sortOrder?: string
+) {
+  if (!query?.trim()) {
+    return sortListingsByField(items, sortBy, sortOrder);
+  }
+
+  return items
+    .map((item) => ({
+      item,
+      score: scoreListingSearch(item, query)
+    }))
+    .filter((entry) => entry.score > 0)
+    .sort((left, right) => {
+      if (right.score !== left.score) {
+        return right.score - left.score;
+      }
+
+      return compareListings(right.item, left.item, "publishedAt", "desc");
+    })
+    .map((entry) => entry.item);
+}
+
+function sortListingsByField(
+  items: SearchableListing[],
+  sortBy: string,
+  sortOrder?: string
+) {
+  const direction = getSortOrder(sortOrder) === "asc" ? "asc" : "desc";
+
+  return [...items].sort((left, right) =>
+    compareListings(left, right, sortBy, direction)
+  );
+}
+
+function compareListings(
+  left: SearchableListing,
+  right: SearchableListing,
+  sortBy: string,
+  direction: "asc" | "desc"
+) {
+  const factor = direction === "asc" ? 1 : -1;
+
+  if (sortBy === "price") {
+    return (Number(left.price) - Number(right.price)) * factor;
+  }
+
+  if (sortBy === "title" || sortBy === "status") {
+    return left[sortBy].localeCompare(right[sortBy]) * factor;
+  }
+
+  const leftTime = new Date(String(left[sortBy as keyof SearchableListing] ?? 0)).getTime();
+  const rightTime = new Date(String(right[sortBy as keyof SearchableListing] ?? 0)).getTime();
+
+  return (leftTime - rightTime) * factor;
+}
+
+function scoreListingSearch(item: SearchableListing, query: string) {
+  const normalizedQuery = normalizeText(query);
+
+  if (!normalizedQuery) {
+    return 0;
+  }
+
+  const tokens = normalizedQuery.split(" ").filter(Boolean);
+  const title = normalizeText(item.title);
+  const description = normalizeText(item.description);
+  const category = normalizeText(item.category);
+  const brand = normalizeText(item.product?.brand ?? inferBrandFromTitle(item.title));
+  const model = normalizeText(item.product?.model);
+  const location = normalizeText(`${item.locationCity} ${item.locationProvince}`);
+  const tags = [
+    ...(item.autoTags ?? []),
+    ...(item.marketTags ?? []),
+    ...(item.product?.searchTags ?? []),
+    ...(item.product?.marketTags ?? [])
+  ].map(normalizeText);
+  const specs = Object.values((item.product?.technicalSpecs ?? {}) as Record<string, unknown>)
+    .map((value) => normalizeText(String(value)));
+  const searchCorpus = [title, description, category, brand, model, location, ...tags, ...specs].join(" ");
+  let score = 0;
+
+  if (title.includes(normalizedQuery)) {
+    score += 140;
+  }
+
+  if (brand.includes(normalizedQuery) || model.includes(normalizedQuery)) {
+    score += 110;
+  }
+
+  if (category.includes(normalizedQuery)) {
+    score += 70;
+  }
+
+  if (description.includes(normalizedQuery)) {
+    score += 35;
+  }
+
+  for (const token of tokens) {
+    if (title.includes(token)) score += 34;
+    if (brand.includes(token) || model.includes(token)) score += 24;
+    if (category.includes(token)) score += 16;
+    if (description.includes(token)) score += 10;
+    if (location.includes(token)) score += 8;
+    if (tags.some((tag) => tag.includes(token))) score += 12;
+    if (specs.some((spec) => spec.includes(token))) score += 10;
+  }
+
+  const fuzzyTargets = new Set(
+    [title, brand, model, category, ...tags]
+      .flatMap((value) => value.split(" "))
+      .filter(Boolean)
+  );
+
+  for (const token of tokens) {
+    const bestSimilarity = Math.max(
+      0,
+      ...Array.from(fuzzyTargets).map((target) => similarityScore(token, target))
+    );
+
+    if (bestSimilarity >= 0.92) score += 22;
+    else if (bestSimilarity >= 0.82) score += 16;
+    else if (bestSimilarity >= 0.74) score += 10;
+    else if (bestSimilarity >= 0.66) score += 22;
+  }
+
+  score += scoreIntentMatch(item, normalizedQuery);
+
+  return searchCorpus.includes(normalizedQuery) || score >= 18 ? score : 0;
+}
+
+function scoreIntentMatch(item: SearchableListing, normalizedQuery: string) {
+  const category = normalizeText(item.category);
+  const title = normalizeText(item.title);
+  let score = 0;
+
+  const intentRules = [
+    {
+      triggers: ["fotografia", "bodas", "camara", "mirrorless", "video profesional"],
+      matches: ["fotografia", "camara", "sony", "lente"]
+    },
+    {
+      triggers: ["gaming", "consola", "fifa", "play"],
+      matches: ["gaming", "playstation", "ps5", "xbox"]
+    },
+    {
+      triggers: ["notebook", "trabajo", "estudio", "laptop"],
+      matches: ["computacion", "macbook", "notebook", "ssd"]
+    },
+    {
+      triggers: ["celular", "smartphone", "iphone", "android"],
+      matches: ["celulares", "iphone", "samsung", "galaxy"]
+    }
+  ];
+
+  for (const rule of intentRules) {
+    const triggered = rule.triggers.some((trigger) => normalizedQuery.includes(trigger));
+
+    if (!triggered) {
+      continue;
+    }
+
+    if (rule.matches.some((match) => category.includes(match) || title.includes(match))) {
+      score += 28;
+    }
+  }
+
+  return score;
+}
+
+function matchesListingFilters(
+  item: SearchableListing,
+  filters: {
+    category?: string;
+    minPrice?: number;
+    maxPrice?: number;
+    condition?: string;
+    currency?: string;
+    brand?: string;
+    year?: number;
+    specKey?: string;
+    specValue?: string;
+    shutterCount?: string;
+    batteryHealth?: string;
+    storage?: string;
+    memory?: string;
+    wheelSize?: string;
+  }
+) {
+  if (
+    filters.category &&
+    normalizeText(item.category) !== normalizeText(filters.category)
+  ) {
+    return false;
+  }
+
+  if (filters.condition && item.condition !== filters.condition) {
+    return false;
+  }
+
+  if (filters.currency && item.currency !== filters.currency) {
+    return false;
+  }
+
+  if (
+    filters.brand &&
+    normalizeText(item.product?.brand ?? inferBrandFromTitle(item.title)) !== normalizeText(filters.brand)
+  ) {
+    return false;
+  }
+
+  if (
+    filters.year !== undefined &&
+    item.product?.manufactureYear !== filters.year
+  ) {
+    return false;
+  }
+
+  const price = Number(item.price);
+
+  if (filters.minPrice !== undefined && price < filters.minPrice) {
+    return false;
+  }
+
+  if (filters.maxPrice !== undefined && price > filters.maxPrice) {
+    return false;
+  }
+
+  if (filters.specKey && filters.specValue) {
+    const specs = (item.product?.technicalSpecs ?? {}) as Record<string, unknown>;
+    const rawValue = specs[filters.specKey];
+
+    if (!rawValue || normalizeText(String(rawValue)) !== normalizeText(filters.specValue)) {
+      return false;
+    }
+  }
+
+  const categorySpecFilters = [
+    ["shutterCount", filters.shutterCount],
+    ["batteryHealth", filters.batteryHealth],
+    ["storage", filters.storage],
+    ["memory", filters.memory],
+    ["wheelSize", filters.wheelSize]
+  ] as const;
+
+  if (
+    categorySpecFilters.some(([key, value]) => {
+      if (!value) {
+        return false;
+      }
+
+      const specs = (item.product?.technicalSpecs ?? {}) as Record<string, unknown>;
+      const rawValue = specs[key];
+      return !rawValue || normalizeText(String(rawValue)) !== normalizeText(value);
+    })
+  ) {
+    return false;
+  }
+
+  return true;
+}
+
+function buildListingFacets(items: SearchableListing[]) {
+  const categories = countFacetOptions(items, (item) => item.category);
+  const conditions = countFacetOptions(items, (item) => item.condition, getConditionFacetLabel);
+  const brands = countFacetOptions(
+    items,
+    (item) => item.product?.brand ?? inferBrandFromTitle(item.title) ?? ""
+  );
+  const currencies = countFacetOptions(items, (item) => item.currency);
+  const years = countFacetOptions(
+    items,
+    (item) => String(item.product?.manufactureYear ?? ""),
+    (value) => value
+  );
+  const dynamicSpecs = buildDynamicSpecFacets(items);
+
+  return {
+    categories,
+    conditions,
+    brands,
+    currencies,
+    years,
+    dynamicSpecs
+  };
+}
+
+function countFacetOptions(
+  items: SearchableListing[],
+  getValue: (item: SearchableListing) => string,
+  getLabel?: (value: string) => string
+) {
+  const counts = new Map<string, number>();
+
+  for (const item of items) {
+    const value = getValue(item).trim();
+
+    if (!value) {
+      continue;
+    }
+
+    counts.set(value, (counts.get(value) ?? 0) + 1);
+  }
+
+  return Array.from(counts.entries())
+    .map(([value, count]) => ({
+      value,
+      label: getLabel ? getLabel(value) : value,
+      count
+    }))
+    .sort((left, right) => right.count - left.count || left.label.localeCompare(right.label))
+    .slice(0, 12);
+}
+
+function buildDynamicSpecFacets(items: SearchableListing[]): ListingFacetGroup[] {
+  const specCounters = new Map<
+    string,
+    Map<string, number>
+  >();
+
+  for (const item of items) {
+    const specs = (item.product?.technicalSpecs ?? {}) as Record<string, unknown>;
+
+    for (const [key, rawValue] of Object.entries(specs)) {
+      if (rawValue === null || rawValue === undefined || key === "suggestedPrice") {
+        continue;
+      }
+
+      const value = String(rawValue).trim();
+
+      if (!value) {
+        continue;
+      }
+
+      const values = specCounters.get(key) ?? new Map<string, number>();
+      values.set(value, (values.get(value) ?? 0) + 1);
+      specCounters.set(key, values);
+    }
+  }
+
+  return Array.from(specCounters.entries())
+    .map(([key, values]) => ({
+      key,
+      label: specFacetLabel(key),
+      options: Array.from(values.entries())
+        .map(([value, count]) => ({
+          value,
+          label: value,
+          count
+        }))
+        .sort((left, right) => right.count - left.count || left.label.localeCompare(right.label))
+    }))
+    .filter((group) => group.options.length >= 1)
+    .sort((left, right) => right.options.length - left.options.length)
+    .slice(0, 4);
+}
+
+function getConditionFacetLabel(value: string) {
+  const labels: Record<string, string> = {
+    LIKE_NEW: "Como nuevo",
+    VERY_GOOD: "Muy bueno",
+    GOOD: "Bueno",
+    FAIR: "Para repuestos / con detalles"
+  };
+
+  return labels[value] ?? value;
+}
+
+function specFacetLabel(key: string) {
+  const labels: Record<string, string> = {
+    sensor: "Sensor",
+    video: "Video",
+    weight: "Peso",
+    storage: "Almacenamiento",
+    memory: "Memoria",
+    batteryHealth: "Batería",
+    shutterCount: "Disparos",
+    wheelSize: "Rodado",
+    screen: "Pantalla",
+    chipset: "Chipset",
+    launchYear: "Año de lanzamiento"
+  };
+
+  return labels[key] ?? key;
+}
+
+function similarityScore(left: string, right: string) {
+  if (!left || !right) {
+    return 0;
+  }
+
+  if (left === right) {
+    return 1;
+  }
+
+  const leftBigrams = buildBigrams(left);
+  const rightBigrams = buildBigrams(right);
+  const overlap = leftBigrams.filter((bigram) => rightBigrams.includes(bigram)).length;
+
+  return (2 * overlap) / (leftBigrams.length + rightBigrams.length || 1);
+}
+
+function buildBigrams(value: string) {
+  const normalized = normalizeText(value);
+
+  if (normalized.length <= 2) {
+    return [normalized];
+  }
+
+  const output: string[] = [];
+
+  for (let index = 0; index < normalized.length - 1; index += 1) {
+    output.push(normalized.slice(index, index + 2));
+  }
+
+  return output;
+}
+
+function normalizeText(value?: string | null) {
+  return (value ?? "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
+}
+
 function normalizeCatalogSearchInput(query?: string, referenceImageUrl?: string) {
   const normalizedQuery = query?.trim();
 
@@ -847,6 +1293,20 @@ function buildListingSlug(title: string, condition: ListingCondition, city: stri
 }
 
 function inferBrandFromTitle(title: string) {
+  const normalizedTitle = normalizeText(title);
+
+  if (normalizedTitle.includes("iphone") || normalizedTitle.includes("macbook")) {
+    return "Apple";
+  }
+
+  if (normalizedTitle.includes("playstation") || normalizedTitle.includes("ps5")) {
+    return "Sony";
+  }
+
+  if (normalizedTitle.includes("garmin")) {
+    return "Garmin";
+  }
+
   return title.trim().split(/\s+/)[0] || null;
 }
 
